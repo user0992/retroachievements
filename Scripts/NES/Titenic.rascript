@@ -134,35 +134,35 @@ rich_presence_display(
     "Aboard the maiden voyage of the 🚢 RMS Titenic"
 )
 
-STAGE_CLEARS = [
-    {"level": 0, "title": "Near, Far, Wherever You Are", "desc": "Clear Stage 1", "anim": 0x30},
-    {"level": 1, "title": "I Believe That the Heart Does Go On", "desc": "Clear Stage 2", "anim": 0x30},
-    {"level": 2, "title": "Once More, You Open the Door", "desc": "Clear Stage 3", "anim": 0x30},
-    {"level": 3, "title": "And You're Here in my Heart", "desc": "Clear Stage 4", "anim": 0x29},
-    {"level": 4, "title": "And My Heart Will Go On and On", "desc": "Clear Stage 5", "anim": 0x29},
-]
+STAGE_CLEARS = {
+    0x00: "Near, Far, Wherever You Are",
+    0x01: "I Believe That the Heart Does Go On",
+    0x02: "Once More, You Open the Door",
+    0x03: "And You're Here in my Heart",
+    0x04: "And My Heart Will Go On and On",
+}
 
 for stage in STAGE_CLEARS
 {
     type = "progression"
     points = 5
-    if (stage["level"] == 4)
+    if (stage == 4)
     {
         type = "win_condition"
         points = 25
     }
 
     achievement(
-        title=stage["title"],
-        description=stage["desc"],
+        title=STAGE_CLEARS[stage],
+        description="Clear Stage " + (stage + 1),
         points=points,
         type=type,
         trigger=(
-            // check if the character is in their victory pose animation
-            anim() == stage["anim"] &&
+            // game has just gone to cutscene
+            game_state() == STATE_CUTSCENE &&
 
             // as the level changes from the prev to the next level
-            prev(level()) == stage["level"] && level() == stage["level"] + 1
+            prev(level()) == stage && level() == stage + 1
         )
     )
 }
