@@ -74,15 +74,8 @@ function level() => byte(0x000199)
 //        0x2a-0x2e Rose idle frames
 function anim() => byte(0x00031E)
 
-// $0347: Boss Y Position [8 bit] - Stage 2
-//        goes to 0x80 when kicked in water
-//        0xd0 = boat deck, larger means kicked in water
-
-// $0348: Boss Y Position [8 bit] - Stage 5
-//        goes to 0x80 when kicked in water
-//        0xd0 = boat deck, larger means kicked in water
-BOSS_POSITION = [0, 0x000347, 0, 0, 0x000348]
-function boss_ypos(lvl) => byte(BOSS_POSITION[lvl])
+OBJECT_IDS = 0x030a
+OBJECT_Y = 0x0346
 
 // $04E8: Room ID [8 bit]
 //        0x00-0x02 = Stage 1 (1up in 0x02)
@@ -104,23 +97,6 @@ function room_id() => byte(0x0004E8)
 //        continues counting up to 0xF8 and snaps to 0x00 if standing
 function death_timer() => byte(0x000564)
 
-// $0675: Boss Health - Stage 2
-//        0x5f = dead
-
-// $0685: Boss Health - Stage 3
-//        0x5f = dead
-
-// $068C: Boss Health - Stage 1
-//        0x5f = dead
-
-// $0699: Boss Health - Stage 4
-//        0x5f = dead
-
-// $06A0: Boss Health - Stage 5
-//        0x5f = dead
-BOSS_HEALTH = [0x00068C, 0x000675, 0x000685, 0x000699, 0x0006A0]
-function boss_health(lvl) => byte(BOSS_HEALTH[lvl])
-
 CharLookup = {
     CHAR_JACK: "Jack",
     CHAR_ROSE: "Rose",
@@ -131,11 +107,11 @@ LifeLookup = {
 }
 
 DeckLookup = {
-	0: "1",
-	1: "2",
-	2: "3",
-	3: "4",
-	4: "5",
+    0: "1",
+    1: "2",
+    2: "3",
+    3: "4",
+    4: "5",
 }
 
 rich_presence_conditional_display(game_state() == STATE_PLAYING,
@@ -149,7 +125,9 @@ rich_presence_conditional_display(game_state() == STATE_PLAYING,
 )
 
 rich_presence_conditional_display(level() == 5 && !now_playing(),
-    "Being rescued from the 🚢 RMS Titenic (The story, all names, characters, and incidents portrayed in this production are fictitious. No identification with actual persons, living or deceased, is intended or should be inferred.)"
+    "Being rescued from the 🚢 RMS Titenic (The story, all names, characters, and incidents portrayed " +
+    "in this production are fictitious. No identification with actual persons, living or deceased, is " +
+    "intended or should be inferred.)"
 )
 
 rich_presence_display(
@@ -251,17 +229,19 @@ achievement
     )
 )
 
+SLOTS_TO_CHECK = 4
+CAL_OBJECTS = [0x03, 0x40, 0x41]
 achievement
 (
     title="You Are Safe in My Heart (But Not in the Water)",
     description="Cool Cal off by sending him for a swim",
     points=10,
     trigger=(
-        // boss fight in stage 2
-        (room_id() == 0x05 && boss_ypos(1) >= 0xe0) ||
-
-        // boss fight in stage 5
-        (room_id() == 0x11 && boss_ypos(4) >= 0xe0)
+        // we are in any of the rooms with an appropriate boss fight
+        any_of([0x05, 0x11], x => room_id() == x) && 
+        
+        // any of the first 4 object slots are Cal and below the boat deck
+        any_of(range(0,SLOTS_TO_CHECK-1), i => any_of(CAL_OBJECTS, x => byte(OBJECT_IDS + i) == x) && byte(OBJECT_Y + i) >= 0xE0)
     )
 )
 
@@ -338,20 +318,20 @@ achievement
 
 leaderboard
 (
-	title="Hurry to the Lifeboats!",
-	description="Starting from the title screen, escape the Titenic as quickly as possible.",
+    title="Hurry to the Lifeboats!",
+    description="Starting from the title screen, escape the Titenic as quickly as possible.",
 
-	// start when you finish watching the intro cutscene
-	start=(prev(game_state()) == STATE_CUTSCENE_INTRO && game_state() == STATE_PLAYING),
+    // start when you finish watching the intro cutscene
+    start=(prev(game_state()) == STATE_CUTSCENE_INTRO && game_state() == STATE_PLAYING),
 
-	// cancel if we ever return to the title screen
-	cancel=(game_state() == STATE_TITLE),
+    // cancel if we ever return to the title screen
+    cancel=(game_state() == STATE_TITLE),
 
-	// submit when level 4 is completed
-	submit=(prev(level()) == 4 && level() == 5),
+    // submit when level 4 is completed
+    submit=(prev(level()) == 4 && level() == 5),
 
-	// value is the number of frames spent playing the game
-	value=measured(tally(0, game_state() == STATE_PLAYING)),
-	format="FRAMES",
-	lower_is_better=true
+    // value is the number of frames spent playing the game
+    value=measured(tally(0, game_state() == STATE_PLAYING)),
+    format="FRAMES",
+    lower_is_better=true
 )
