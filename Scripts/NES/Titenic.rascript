@@ -230,18 +230,26 @@ achievement
 )
 
 SLOTS_TO_CHECK = 4
-CAL_OBJECTS = [0x03, 0x40, 0x41]
+ROOM_BOSSES = {
+    0x05: 0x40,
+    0x08: 0x41,
+    0x11: 0x03,
+}
 achievement
 (
     title="You Are Safe in My Heart (But Not in the Water)",
     description="Cool Cal off by sending him for a swim",
     points=10,
     trigger=(
-        // we are in any of the rooms with an appropriate boss fight
-        any_of([0x05, 0x11], x => room_id() == x) && 
+        // for each of the boss fights...
+        any_of(ROOM_BOSSES, room => 
+        (
+            // if we are in the boss room
+            room_id() == room && 
         
-        // any of the first 4 object slots are Cal and below the boat deck
-        any_of(range(0,SLOTS_TO_CHECK-1), i => any_of(CAL_OBJECTS, x => byte(OBJECT_IDS + i) == x) && byte(OBJECT_Y + i) >= 0xE0)
+            // and any of the first 4 object slots are Cal and below the boat deck
+            any_of(range(0,SLOTS_TO_CHECK-1), i => byte(OBJECT_IDS + i) == ROOM_BOSSES[room] && byte(OBJECT_Y + i) >= 0xE0)
+        ))
     )
 )
 
