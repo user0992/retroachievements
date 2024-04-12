@@ -160,24 +160,6 @@ PRESETS = {
     PRESET_SPRINT: "🏃‍♂️ Sprint",
 }
 
-MAIN_COURSES = [
-    {"c": 1, "offset": 23, "map": 0x09, "red": 4, "name": "Bob-omb Battlefield"},
-    {"c": 2, "offset": 22, "map": 0x18, "red": 4, "name": "Whomp's Fortress"},
-    {"c": 3, "offset": 21, "map": 0x0c, "red": 4, "name": "Jolly Roger Bay"},
-    {"c": 4, "offset": 20, "map": 0x05, "red": 4, "name": "Cool, Cool Mountain"},
-    {"c": 5, "offset": 27, "map": 0x04, "red": 4, "name": "Big Boo's Haunt"},
-    {"c": 6, "offset": 26, "map": 0x07, "red": 2, "name": "Hazy Maze Cave"},
-    {"c": 7, "offset": 25, "map": 0x16, "red": 3, "name": "Lethal Lava Land"},
-    {"c": 8, "offset": 24, "map": 0x08, "red": 5, "name": "Shifting Sand Land"},
-    {"c": 9, "offset": 31, "map": 0x17, "red": 3, "name": "Dire, Dire Docks"},
-    {"c": 10, "offset": 30, "map": 0x0a, "red": 5, "name": "Snowman's Land"},
-    {"c": 11, "offset": 29, "map": 0x0b, "red": 5, "name": "Wet-Dry World"},
-    {"c": 12, "offset": 28, "map": 0x24, "red": 3, "name": "Tall, Tall Mountain"},
-    {"c": 13, "offset": 35, "map": 0x0d, "red": 5, "name": "Tiny-Huge Island"},
-    {"c": 14, "offset": 34, "map": 0x0e, "red": 6, "name": "Tick Tock Clock"},
-    {"c": 15, "offset": 33, "map": 0x0f, "red": 3, "name": "Rainbow Ride"},
-]
-
 // $1787CA: Map ID [8 bit]
 //          0x00 = Starting the game
 //          0x01 = File Select
@@ -212,8 +194,10 @@ MAIN_COURSES = [
 //          0x21 = in Bowser's Sea Arena
 //          0x22 = in Bowser's Sky Arena
 //          0x24 = in Course 12 'Tall, Tall Mountain'
+
+MAP_MIN = 4
 function map_id() => byte(0x1787CA)
-function in_game() => map_id() >= 4
+function in_game() => map_id() >= MAP_MIN
 
 // $17A916: Selected Star for Course [8 bit]
 function selected_star_for_course() => byte(0x17A916)
@@ -264,8 +248,8 @@ function last_star_number() => byte(0x17CEEB)
 //          4 = Cool, Cool Mountain
 //          5 = Big Boo's Haunt
 //          6 = Hazy Maze Cave
-//          7 = Shifting Sand Land
-//          8 = Lethal Lava Land
+//          7 = Lethal Lava Land
+//          8 = Shifting Sand Land
 //          9 = Dire, Dire Docks
 //          10 = Snowman's Land
 //          11 = Wet-Dry World
@@ -350,44 +334,107 @@ function setup_seed() => dword(0x1B1E30)
 //          used for collecting red coins, secrets, and numbered stars
 function last_loaded_number() => byte(0x2BFF88)
 
+MAP_BBH = 0x04
+MAP_CCM = 0x05
+MAP_CASTLE_INSIDE = 0x06
+MAP_HMC = 0x07
+MAP_SSL = 0x08
+MAP_BOB = 0x09
+MAP_SL = 0x0a
+MAP_WDW = 0x0b
+MAP_JRB = 0x0c
+MAP_THI = 0x0d
+MAP_TTC = 0x0e
+MAP_RR = 0x0f
+MAP_CASTLE_OUTSIDE = 0x10
+MAP_BITDW = 0x11
+MAP_CAP_VANISH = 0x12
+MAP_BITFS = 0x13
+MAP_AQUA = 0x14
+MAP_BITS = 0x15
+MAP_LLL = 0x16
+MAP_DDD = 0x17
+MAP_WF = 0x18
+MAP_CREDITS = 0x19
+MAP_CASTLE_COURTYARD = 0x1a
+MAP_PSS = 0x1b
+MAP_CAP_METAL = 0x1c
+MAP_CAP_WING = 0x1d
+MAP_BITDW_ARENA = 0x1e
+MAP_WMOTR = 0x1f
+MAP_BITFS_ARENA = 0x21
+MAP_BITS_ARENA = 0x22
+MAP_TTM = 0x24
+
 MapLookup = {
-    0x04: "getting spooked in Big Boo's Haunt",
-    0x05: "chilling out in Cool, Cool Mountain",
-    0x06: "inside Peach's Castle",
-    0x07: "getting lost in Hazy Maze Cave",
-    0x08: "sinking into Shifting Sand Land",
-    0x09: "avoiding the fight in Bob-omb Battlefield",
-    0x0a: "losing his cool in Snowman's Land",
-    0x0b: "raising the bar in Wet-Dry World",
-    0x0c: "going for a swim in Jolly Roger Bay",
-    0x0d: "changing perspectives in Tiny-Huge Island",
-    0x0e: "passing time in Tick Tock Clock",
-    0x0f: "riding high in Rainbow Ride",
-    0x10: "outside Peach's Castle",
-    0x11: "in Bowser in the Dark World",
-    0x12: "hiding in Vanish Cap Under the Moat",
-    0x13: "in Bowser in the Fire Sea",
-    0x14: "getting comfy in the Secret Aquarium",
-    0x15: "in Bowser in the Sky",
-    0x16: "burning up in Lethal Lava Land",
-    0x17: "submerged in Dire, Dire Docks",
-    0x18: "storming Whomp's Fortress",
-    0x19: "watching the credits",
-    0x1a: "in the Castle Courtyard",
-    0x1b: "sliding down the Princess's Secret Slide",
-    0x1c: "in the Cavern of the Metal Cap",
-    0x1d: "high above the Tower of the Wing Cap",
-    0x1e: "fighting Bowser in the Dark World",
-    0x1f: "Winging Over the Rainbow",
-    0x21: "fighting Bowser in the Fire Sea",
-    0x22: "fighting Bowser in the Sky",
-    0x24: "climbing Tall, Tall Mountain",
+    MAP_CASTLE_OUTSIDE: "outside Peach's Castle",
+    MAP_CASTLE_INSIDE: "inside Peach's Castle",
+    MAP_CASTLE_COURTYARD: "in the Castle Courtyard",
+
+    MAP_BOB: "avoiding the fight in Bob-omb Battlefield",
+    MAP_WF: "storming Whomp's Fortress",
+    MAP_JRB: "going for a swim in Jolly Roger Bay",
+    MAP_CCM: "chilling out in Cool, Cool Mountain",
+    MAP_BBH: "getting spooked in Big Boo's Haunt",
+    MAP_HMC: "getting lost in Hazy Maze Cave",
+    MAP_LLL: "burning up in Lethal Lava Land",
+    MAP_SSL: "sinking into Shifting Sand Land",
+    MAP_DDD: "submerged in Dire, Dire Docks",
+    MAP_SL: "losing his cool in Snowman's Land",
+    MAP_WDW: "raising the bar in Wet-Dry World",
+    MAP_TTM: "climbing Tall, Tall Mountain",
+    MAP_THI: "changing perspectives in Tiny-Huge Island",
+    MAP_TTC: "passing time in Tick Tock Clock",
+    MAP_RR: "riding high in Rainbow Ride",
+
+    MAP_PSS: "sliding down the Princess's Secret Slide",
+    MAP_AQUA: "getting comfy in the Secret Aquarium",
+    MAP_WMOTR: "Winging Over the Rainbow",
+
+    MAP_BITDW: "in Bowser in the Dark World",
+    MAP_BITFS: "in Bowser in the Fire Sea",
+    MAP_BITS: "in Bowser in the Sky",
+
+    MAP_BITDW_ARENA: "fighting Bowser in the Dark World",
+    MAP_BITFS_ARENA: "fighting Bowser in the Fire Sea",
+    MAP_BITS_ARENA: "fighting Bowser in the Sky",
+
+    MAP_CAP_WING: "high above the Tower of the Wing Cap",
+    MAP_CAP_VANISH: "hiding in Vanish Cap Under the Moat",
+    MAP_CAP_METAL: "in the Cavern of the Metal Cap",
+
+    MAP_CREDITS: "watching the credits",
 }
 
+MAIN_COURSES = [
+    {"c": 1, "offset": 23, "map": MAP_BOB, "red": 4, "name": "Bob-omb Battlefield"},
+    {"c": 2, "offset": 22, "map": MAP_WF, "red": 4, "name": "Whomp's Fortress"},
+    {"c": 3, "offset": 21, "map": MAP_JRB, "red": 4, "name": "Jolly Roger Bay"},
+    {"c": 4, "offset": 20, "map": MAP_CCM, "red": 4, "name": "Cool, Cool Mountain"},
+    {"c": 5, "offset": 27, "map": MAP_BBH, "red": 4, "name": "Big Boo's Haunt"},
+    {"c": 6, "offset": 26, "map": MAP_HMC, "red": 2, "name": "Hazy Maze Cave"},
+    {"c": 7, "offset": 25, "map": MAP_LLL, "red": 3, "name": "Lethal Lava Land"},
+    {"c": 8, "offset": 24, "map": MAP_SSL, "red": 5, "name": "Shifting Sand Land"},
+    {"c": 9, "offset": 31, "map": MAP_DDD, "red": 3, "name": "Dire, Dire Docks"},
+    {"c": 10, "offset": 30, "map": MAP_SL, "red": 5, "name": "Snowman's Land"},
+    {"c": 11, "offset": 29, "map": MAP_WDW, "red": 5, "name": "Wet-Dry World"},
+    {"c": 12, "offset": 28, "map": MAP_TTM, "red": 3, "name": "Tall, Tall Mountain"},
+    {"c": 13, "offset": 35, "map": MAP_THI, "red": 5, "name": "Tiny-Huge Island"},
+    {"c": 14, "offset": 34, "map": MAP_TTC, "red": 6, "name": "Tick Tock Clock"},
+    {"c": 15, "offset": 33, "map": MAP_RR, "red": 3, "name": "Rainbow Ride"},
+]
+
 LEVELS_CONTAINING_STARS = [
-    0x04, 0x05, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
-    0x0d, 0x0e, 0x0f, 0x11, 0x12, 0x13, 0x14, 0x15,
-    0x16, 0x17, 0x18, 0x1b, 0x1c, 0x1d, 0x1f, 0x24,
+    // main 15 courses
+    MAP_BOB, MAP_WF, MAP_JRB, MAP_CCM, MAP_BBH,
+    MAP_HMC, MAP_SSL, MAP_LLL, MAP_DDD, MAP_SL,
+    MAP_WDW, MAP_TTM, MAP_THI, MAP_TTC, MAP_RR,
+
+    // three secret courses
+    MAP_PSS, MAP_AQUA, MAP_WMOTR,
+
+    // three bowser stages
+    MAP_BITDW, MAP_BITFS, MAP_BITS,
 ]
 
 CANNON_OFFSETS = [20, 21, 22, 27, 28, 29, 31, 32, 34, 35, 40]
@@ -457,7 +504,7 @@ function collect_star(i) => (collect_a_star() && last_star_number() == i)
 function collect_grand_star() => (collect_a_star() && dword((ptr_to_last_interacted_obj() & 0x00FFFFFF) + 0x190) == 0x00000800)
 
 // new random seed started (leave the file select on a file that doesn't exist that isn't a set seed)
-function new_file_created() => (prev(map_id()) <= 1 && map_id() > 1 && is_set_seed() == 0 && file_exists() == 0)
+function new_file_created() => (prev(map_id()) < MAP_MIN && map_id() >= MAP_MIN && is_set_seed() == 0 && file_exists() == 0)
 
 // check if entering a level
 function enter_level() =>
@@ -504,7 +551,7 @@ STAR_MILESTONES = [
     {"stars": 30, "points": 5, "title": "Build Ursa Major"},
     {"stars": 50, "points": 10, "title": "Build Cassiopeia (Tenfold)"},
     {"stars": 70, "points": 10, "title": "Build Ursa Major-er"},
-    {"stars": 120, "points": 25, "title": "Across the Milky Way"},
+    {"stars": 120, "points": 50, "title": "Across the Milky Way"},
 ]
 
 for m in STAR_MILESTONES
@@ -528,9 +575,23 @@ for m in STAR_MILESTONES
     )
 }
 
+achievement(
+    title="Hitting Bowser with the Mix-up",
+    description="Defeat Bowser and restore the power of the Grand Star to Peach's Castle",
+    points=25,
+    type="win_condition",
+    trigger=(
+        // correct settings (requires 70+ stars BitS door)
+        minimum_progression_settings() && //stars_needed() >= 70 &&
+
+        // collect the grand star
+        map_id() == MAP_BITS_ARENA && collect_grand_star()
+    )
+)
+
 KEYS = [
-    {"map": 0x1e, "name": "Dark World"}, 
-    {"map": 0x21, "name": "Fire Sea"},
+    {"map": MAP_BITDW_ARENA, "name": "Dark World"}, 
+    {"map": MAP_BITFS_ARENA, "name": "Fire Sea"},
 ]
 
 for key in KEYS
@@ -538,7 +599,7 @@ for key in KEYS
     achievement(
         title=format("A Useless Key in {0}", key["name"]),
         description="This key doesn't do anything, but you got it anyways. Cool! (keep structure must be off)",
-        points=10,
+        points=5,
         trigger=(
             // keys only matter when keep structure is on
             keep_structure() == 0 &&
@@ -566,19 +627,20 @@ for course in MAIN_COURSES
     )
 }
 
+GREEN_DEMON_STARS = 10
 achievement(
     title="Always on the Run",
-    description="In one session, collect any 10 stars in Green Demon mode (no set seed)",
+    description=format("In one session, collect any {0} stars in Green Demon mode (no set seed)", GREEN_DEMON_STARS),
     points=10,
     trigger=(
         // green demon mode active in-game
         is_green_demon() == 1 && is_set_seed() == 0 &&
 
         // setup initial checkpoint hit
-        once(prev(map_id()) <= 1 && in_game() && star_count() == 0) &&
+        once(prev(map_id()) <= MAP_MIN && in_game() && star_count() == 0) &&
 
         // collected any 10 stars
-        prev(star_count()) < 10 && trigger_when(star_count() >= 10) &&
+        prev(star_count()) < GREEN_DEMON_STARS && trigger_when(star_count() >= GREEN_DEMON_STARS) &&
 
         // reset if the player quits the game
         never(!in_game())
@@ -630,13 +692,13 @@ achievement(
     points=10,
     trigger=(
         // checkpoint hit upon entering the stage
-        once(prev(map_id()) != 0x1d && map_id() == 0x1d) &&
+        once(prev(map_id()) != MAP_CAP_WING && map_id() == MAP_CAP_WING) &&
 
         // trigger on collecting 8 red coins
         trigger_when(red_coin_count() == 8) &&
 
         // reset if this wing cap stage
-        never(map_id() != 0x1d) &&
+        never(map_id() != MAP_CAP_WING) &&
 
         // reset if mario is ever standing on the ground
         never(prev(mario_y_pos()) > prev(mario_floor_height()) && mario_y_pos() <= mario_floor_height())
@@ -652,7 +714,7 @@ achievement(
         randomize_all() == 1 && is_set_seed() == 0 &&
 
         // in TTC with random clock state
-        map_id() == 0x0e && ttc_clock_state() == TTC_RAND &&
+        map_id() == MAP_TTC && ttc_clock_state() == TTC_RAND &&
 
         // trigger on collecting the 100 coin star
         trigger_when(collect_star(7))
@@ -663,7 +725,7 @@ STAR_COLLECT_SECONDS = 10
 achievement(
     title="It's Just That Easy!",
     description=format("Collect a star within {0} seconds of entering a main course", STAR_COLLECT_SECONDS),
-    points=2,
+    points=1,
     trigger=(
         // no set seeds
         is_set_seed() == 0 &&
@@ -675,8 +737,8 @@ achievement(
         trigger_when(collect_a_star()) &&
 
         // pause if enough frames have passed, reset the timer
-        disable_when(repeated(STAR_COLLECT_SECONDS * 60, always_true()),
-            until=prev(map_id()) != map_id() || trans_active() == 1) &&
+        disable_when(repeated(STAR_COLLECT_SECONDS * 60, trans_active() == 0),
+            until=prev(map_id()) != map_id() || enter_level()) &&
 
         // reset if this isn't a main course
         never(stage_id() < 1 || stage_id() > 15)
@@ -684,7 +746,7 @@ achievement(
 )
 
 achievement(
-    title="The Pink Bob-omb Scavenger Hunt",
+    title="The Great Pink Bob-omb Scavenger Hunt",
     description=format("Unlock all {0} cannons in the game", length(CANNON_OFFSETS)),
     points=10,
     trigger=(
@@ -708,7 +770,7 @@ achievement(
                 randomize_all() == 1 && is_set_seed() == 0 &&
 
                 // correct stage
-                map_id() == 0x16 &&
+                map_id() == MAP_LLL &&
 
                 // checkpoint hit on starting to ride a shell
                 once(!mario_is(prev(mario_action()), ACT_FLAG_RIDING_SHELL) && mario_is(mario_action(), ACT_FLAG_RIDING_SHELL))
@@ -719,6 +781,28 @@ achievement(
         never(!mario_is(mario_action(), ACT_FLAG_RIDING_SHELL)) &&
 
         // reset if leaving LLL
-        never(map_id() != 0x16)
+        never(map_id() != MAP_LLL)
+    )
+)
+
+achievement(
+    title="Holiday at the Fire Sea Coast",
+    description="Collect the Fire Sea red coin star without taking damage",
+    points=5,
+    trigger=(
+        // no set seeds
+        is_set_seed() == 0 &&
+
+        // checkpoint hit on entering the stage
+        once(enter_level()) &&
+
+        // trigger on collecting the red coin star
+        trigger_when(red_coin_count() == 8 && collect_star(1)) &&
+
+        // reset if not in fire sea
+        never(map_id() != MAP_BITFS) &&
+
+        // reset if mario takes any damage
+        never(health() < prev(health()))
     )
 )
