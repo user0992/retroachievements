@@ -1,6 +1,10 @@
 // ~Unlicensed~ Titenic
 // #ID = 8654
 
+OBJECT_IDS = 0x030a
+OBJECT_ANIMS = 0x00031E
+OBJECT_Y = 0x0346
+
 // $0028: Game State [8 bit]
 //        0x01 = Playing
 //        0x02 = Continue?
@@ -72,10 +76,7 @@ function level() => byte(0x000199)
 //        0x0c = Rose fallen down
 //        0x29 = Rose wins
 //        0x2a-0x2e Rose idle frames
-function anim() => byte(0x00031E)
-
-OBJECT_IDS = 0x030a
-OBJECT_Y = 0x0346
+function anim() => byte(OBJECT_ANIMS)
 
 // $04E8: Room ID [8 bit]
 //        0x00-0x02 = Stage 1 (1up in 0x02)
@@ -235,6 +236,8 @@ ROOM_BOSSES = {
     0x08: 0x41,
     0x11: 0x03,
 }
+
+CAL_FALLING_FRAMES = [0x24, 0x25]
 achievement
 (
     title="You Are Safe in My Heart (But Not in the Water)",
@@ -248,7 +251,17 @@ achievement
             room_id() == room && 
         
             // and any of the first 4 object slots are Cal and below the boat deck
-            any_of(range(0,SLOTS_TO_CHECK-1), i => byte(OBJECT_IDS + i) == ROOM_BOSSES[room] && byte(OBJECT_Y + i) >= 0xE0)
+            any_of(range(1,SLOTS_TO_CHECK), i =>
+            (
+                // Cal in this slot
+                byte(OBJECT_IDS + i) == ROOM_BOSSES[room] && 
+
+                // animation for Cal falling is 0x24 and 0x25
+                any_of(CAL_FALLING_FRAMES, x => byte(OBJECT_ANIMS + i) == x) &&
+
+                // below deck
+                byte(OBJECT_Y + i) >= 0xE0
+            ))
         ))
     )
 )
