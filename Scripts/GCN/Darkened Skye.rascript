@@ -1,8 +1,24 @@
 // Darkened Skye
 // #ID = 25437
 
+// $16D97C: Menu Popup Visible [32 bit BE]
+//          0 = No, 1 = Yes
+function menu_popup_visible() => dword_be(0x16D97C)
+
+// $16D984: Pointer to Popup Text [32 bit BE]
+//          0x8013d248 = Loading confirmation
+LOADING_CONFIRMATION = 0x8013d248
+function menu_popup_text() => dword_be(0x16D984)
+
+// $1D5630: Loading screen active [32 bit BE]
+//          0 = not loading, 1 = loading
+function loading_screen() => dword_be(0x1D5630)
+
 // $16F010: Selected Item Index [32 bit BE]
+//          0xffffffff = <None>
+//          Index into item table
 function selected_item_index() => dword_be(0x16F010)
+function has_selected_item() => selected_item_index() != 0xFFFFFFFF
 
 // $16F034: Prepared Spell [32 bit BE]
 //          0xffffffff = <None>
@@ -22,6 +38,7 @@ function showing_boss_health() => prev(dword_be(0x16F08C)) == 0 && boss_health_b
 // $16F090: Boss Health Value [Float BE]
 //          ranges from 0 to 1
 function boss_health() => float_be(0x16F090)
+function boss_fight_starting() => prev(dword_be(0x16F08C)) == 0 && dword_be(0x16F08C) == 1 && boss_health() == 1.0
 
 // $16F098: Started Game? [32 bit BE]
 //          0 = Intro, Title Screen, Main Menu
@@ -39,8 +56,38 @@ function started_game() => dword_be(0x16F098) == 1
 function pause_menu_tab() => dword_be(0x16F0BC)
 function unpaused() => pause_menu_tab() == 0
 
+// jumping from File Load to Unpaused is a sign of loading a save game
+function loading_file() => prev(pause_menu_tab()) == 5 && pause_menu_tab() == 0
+
 // $16F10C: Number of Held Items [32 bit BE]
 function item_count() => dword_be(0x16F10C)
+
+// $16F11C: Pointer to Held Item Table [32 bit BE]
+//          .. Held Item Table (36 bytes x # of items)
+//          .. Struct for each item, indexed based on the item menu:
+//          .. +8 = Pointer to table of metadata [32 bit BE] (20 byte entries)
+//          .... +0 = Internal Identifier pointer [32 bit BE] -> ASCII Text
+//          .... +4 = Display Name pointer [32 bit BE] -> ASCII Text
+//          .... +8 = Item Description pointer [32 bit BE] -> ASCII Text
+//          .... +12 = Flags?
+//          .... +16 = Icon Index [32 bit BE], 0xffffffff if not loaded
+//          .. +12 = Flags?
+//          .. +24 = Current Item Count [32 bit BE]
+//          .. +28 = Max Item Count [32 bit BE], 0 if unlimited
+PTR_TO_ITEM_TABLE = 0x16F11C
+function item_table() => 0x37C640 // tbyte_be(PTR_TO_ITEM_TABLE + 1)
+
+function item_struct(i) => i * 36 + item_table()
+function item_id(i) => dword_be(tbyte_be(item_struct(i) + 9))
+function item_count(i) => dword_be(item_struct(i) + 24)
+
+function holding_item(x) => has_selected_item() && item_id(selected_item_index()) == x
+function current_item_used() => has_selected_item() && item_count(selected_item_index()) < prev(item_count(selected_item_index()))
+
+// list of item lookups
+ITEM_GEMSTONES = 0x8038CBB1
+ITEM_LIFE_POT = 0
+ITEM_MANA_POT = 0
 
 // $17F128: Number of Available Spells [32 bit BE]
 function spell_count() => dword_be(0x17F128)
@@ -55,7 +102,7 @@ function skittles_unallocated() => dword_be(0x17F150)
 //          Max = 100.0
 //          Dying sets this to -10.0
 function current_health() => float_be(0x19A810)
-function dead() => current_health() <= 0.0
+function is_dead() => current_health() <= 0.0
 function lose_health() => current_health() < prev(current_health())
 
 // $19A888: Pointer to Object Under Feet [32 bit BE]
@@ -99,7 +146,7 @@ function level_number_main() => word_be(0x19ADBC)
 //          08,03 = Warlord's Palace 2
 //          09,01 = Lynlora 3
 //          09,02 = Lynlora 3 Hut Cutscene
-//          09,03 = Lynlora 3 Post-Hut
+//          09,03 = Lynlora 3 Trade Quest
 //          09,04 = Zogle Gem Mines - x/50 rare gemstones
 //          09,05 = Lynlora 3 Hut Cutscene again
 //          0a,01 = Stoneheath Circles
@@ -132,11 +179,40 @@ function level_number_part() => word_be(0x19ADBE)
 
 // $19B6D4: Cutscene Active? [32 bit BE]
 //          0 = no, 1 = yes
-function cutscene_active() => dword_be(0x19B6D4) == 1
+function _cutscene_active() => dword_be(0x19B6D4)
+function cutscene_active() => _cutscene_active() == 1
 
 // $19B6F8: Cutscene Timer [Float BE]
 //          counts up from 0
 function cutscene_timer() => float_be(0x19B6F8)
+
+// $19B6A8: Cutscene ID Major [32 bit BE]
+// $19B6AC: Cutscene ID Minor [32 bit BE]
+// $19B6B0: Cutscene ID Sub [32 bit BE], usually 0xffffffff (-1)
+function cutscene_id_major() => dword_be(0x19B6A8)
+function cutscene_id_minor() => dword_be(0x19B6AC)
+function cutscene_id_sub() => dword_be(0x19B6B0)
+
+// 07, 05 -> ice heart defeat
+// 07, 1B, 00 -> fire heart defeat
+// 08, 04 -> assembled swordsman defeat
+// 09, 16 -> E to E flat
+function cutscene_playing(a, b, c=0xFFFFFFFF) =>
+(
+    cutscene_active() && 
+    cutscene_id_major() == a && 
+    cutscene_id_minor() == b && 
+    cutscene_id_sub() == c
+)
+
+function cutscene_ended(a, b, c=0xFFFFFFFF) =>
+(
+    prev(_cutscene_active()) == 1 &&
+    prev(cutscene_id_major()) == a && 
+    prev(cutscene_id_minor()) == b && 
+    prev(cutscene_id_sub()) == c &&
+    !cutscene_active() 
+)
 
 // $1B95DC: Pointer to Filename for Loaded Movie [32 bit BE]
 //          0x80159824 - intro (6355 frames)
@@ -248,20 +324,6 @@ function skittle_color(i) => dword_be(i * 12 + SKITTLES_TABLE + 0)
 function skittle_charge(i) => float_be(i * 12 + SKITTLES_TABLE + 4)
 function skittle_spell(i) => dword_be(i * 12 + SKITTLES_TABLE + 8)
 
-// $37C648: Held Item Table (36 bytes x # of items)
-//          Struct for each item, indexed based on the item menu:
-//          +0 = Pointer to table of metadata [32 bit BE] (20 byte entries)
-//          .. +0 = Internal Identifier pointer [32 bit BE] -> ASCII Text
-//          .. +4 = Display Name pointer [32 bit BE] -> ASCII Text
-//          .. +8 = Item Description pointer [32 bit BE] -> ASCII Text
-//          .. +12 = Flags?
-//          .. +16 = Icon Index [32 bit BE], 0xffffffff if not loaded
-//          +4 = Flags?
-//          +16 = Current Item Count [32 bit BE]
-//          +20 = Max Item Count [32 bit BE], 0 if unlimited
-ITEM_TABLE = 0x37C648
-function item_slot(i) => dword_be(dword_be(i * 36 + ITEM_TABLE) & 0xFFFFFF) & 0xFFFF
-
 MapLookup = {
     0x00010001: "Lynlora",
     0x00010002: "Lynlora",
@@ -346,19 +408,6 @@ SpellLookup = {
     0x16: "Veil", // 4
 }
 
-rich_presence_conditional_display(prepared_spell_index() == 0xFFFFFFFF,
-    "Skye is collecting Skittles® in {0} | ❤️{1}%",
-    rich_presence_lookup("Map", level_number(), MapLookup, fallback="the Five Lands"),
-    rich_presence_value("Number", current_health())
-)
-
-rich_presence_display(
-    "Skye is collecting Skittles® in {0} | ❤️{1}% | 🪄{2}",
-    rich_presence_lookup("Map", level_number(), MapLookup, fallback="the Five Lands"),
-    rich_presence_value("Number", current_health()),
-    rich_presence_lookup("Spell", current_spell(), SpellLookup, fallback="<Unknown>")
-)
-
 function cast_spell(spell)
 {
     // should only need to check the charge of the first slotted Skittles®
@@ -372,6 +421,25 @@ function cast_any_spell()
     charge = skittle_charge(dword_be(prepared_spell_index() * 128 + SPELL_TABLE + 88))
     return has_prepared_spell() && charge < prev(charge)
 }
+
+rich_presence_conditional_display(level_number() == 0x00090004 && holding_item(ITEM_GEMSTONES),
+    "Skye is collecting rare gemstones in the Zogle Gem Mines | ❤️{0}% | 💎{1}%",
+    rich_presence_value("Number", current_health()),
+    rich_presence_value("Number", item_count(selected_item_index()) * 2)
+)
+
+rich_presence_conditional_display(prepared_spell_index() != 0xFFFFFFFF,
+    "Skye is collecting Skittles® in {0} | ❤️{1}% | 🪄{2}",
+    rich_presence_lookup("Map", level_number(), MapLookup, fallback="the Five Lands"),
+    rich_presence_value("Number", current_health()),
+    rich_presence_lookup("Spell", current_spell(), SpellLookup, fallback="<Unknown>")
+)
+
+rich_presence_display(
+    "Skye is collecting Skittles® in {0} | ❤️{1}%",
+    rich_presence_lookup("Map", level_number(), MapLookup, fallback="the Five Lands"),
+    rich_presence_value("Number", current_health())
+)
 
 STAGE_CLEARS = [
     {
@@ -428,6 +496,90 @@ STAGE_CLEARS = [
         "title": "The Hills Have Zen'jais", 
         "desc": "Escape the Zen'jai Hills with Dorian",
     },
+    {
+        "src": 0x00070004, 
+        "dst": 0x00080001, 
+        "title": "How to Train Your Dragon", 
+        "desc": "Hitch a ride on Black Heart's back-- destination: the dark warlord's palace",
+    },
+    {
+        "src": 0x00080002, 
+        "dst": 0x00080003, 
+        "title": "Some Assembly Required", 
+        "desc": "Assemble the pieces of General Quang's secret weapon",
+    },
+    {
+        "src": 0x00080003, 
+        "dst": 0x00090001, 
+        "title": "<Completing Warlord's Palace>", 
+        "desc": "Bring together the five birds of harmony and leave Zen'jai",
+    },
+    {
+        "src": 0x00090003, 
+        "dst": 0x00090004, 
+        "title": "Fruitcake Millionaire", 
+        "desc": "Trade your fruitcake for entry into the Zogle Gem Mines",
+    },
+    {
+        "src": 0x00090005, 
+        "dst": 0x000A0001, 
+        "title": "<Lynlora -> Stoneheath>", 
+        "desc": "",
+    },
+    {
+        "src": 0x000A0002, 
+        "dst": 0x000B0001, 
+        "title": "<Stoneheath -> Goblin Prison>", 
+        "desc": "",
+    },
+    { // TODO: is this one needed?
+        "src": 0x000B0002, 
+        "dst": 0x000B0003, 
+        "title": "<Goblin Lab -> Goblin Lair>", 
+        "desc": "",
+    },
+    {
+        "src": 0x000B0004, 
+        "dst": 0x000C0001, 
+        "title": "<Goblin Lair -> Bone Lands>", 
+        "desc": "",
+    },
+    {
+        "src": 0x000C0001, 
+        "dst": 0x000D0001, 
+        "title": "<Bone Lands -> Lynlora>", 
+        "desc": "",
+    },
+    {
+        "src": 0x000D0004, 
+        "dst": 0x000D0005, 
+        "title": "<Lynlora -> Twell Country>", 
+        "desc": "",
+    },
+    {
+        "src": 0x000D0005, 
+        "dst": 0x000D0006, 
+        "title": "<Complete Twell Country>", 
+        "desc": "",
+    },
+    {
+        "src": 0x000E0001, 
+        "dst": 0x000E0002, 
+        "title": "<Gargoyle Cemetery -> Catacombs 1>", 
+        "desc": "",
+    },
+    {
+        "src": 0x000E0003, 
+        "dst": 0x000E0004, 
+        "title": "<Gargoyle Catacombs 2 -> Cemetery>", 
+        "desc": "",
+    },
+    {
+        "src": 0x000E0006, 
+        "dst": 0x000F0001, 
+        "title": "<Gargoyle Catacombs 4 (Vampire) -> Cathedral Library>", 
+        "desc": "",
+    },
 ]
 
 RIDDLES = [
@@ -460,7 +612,7 @@ RIDDLES = [
 achievement(
     title="I Thought This Game Was About Skittles®",
     description="Watch the intro cutscene to learn the lore",
-    points=1,
+    points=0,
     trigger=(
         // watching the intro cutscene
         level_number() == 0 && loaded_movie() == 0x80159824 &&
@@ -510,27 +662,44 @@ for riddle in RIDDLES
 {
     solution = always_true()
     for i in range(0, 4)
-    {
         solution = solution && get_skull(riddle["level"], i) == LETTER_TO_NUM[riddle["answer"][i]]
-    }
 
     achievement(
         title=riddle["title"],
-        description=riddle["desc"],
+        description=("\"" + riddle["desc"] + "\""),
         points=5,
         trigger=(level_number() == riddle["level"] && trigger_when(solution))
     )
 }
 
 achievement(
-    title="Full of Skittles® Juice",
-    description="Collect and hold 9 Life Potions at the same time",
+    title="Never Pay for Squelk Insurance",
+    description="Collect and turn in a full bag of gems in the Zogle Gem Mines without your squelk's health dropping below 50%",
     points=10,
-    trigger=always_false() // TODO
+    trigger=(
+        // in the correct level
+        level_number() == 0x00090004 &&
+
+        // trigger on watching the cutscene at the start of stage
+        // (cutscene replays on death/failure)
+        once(cutscene_ended(0x09, 0x29)) &&
+
+        // trigger when the success cutscene plays
+        trigger_when(cutscene_playing(0x09, 0x2c)) &&
+
+        // reset if health ever drops below 50%
+        never(current_health() < 50.0) &&
+
+        // reset if the player loads a save game
+        never(loading_file()) &&
+
+        // reset if leave the stage somehow
+        never(level_number() != 0x00090004)
+    )
 )
 
 achievement(
-    title="A Slow Thaw",
+    title="[TODO] A Slow Thaw",
     description="Defeat Ice Heart without using the Pyro Pulse spell",
     points=10,
     trigger=(
@@ -538,13 +707,16 @@ achievement(
         level_number() == 0x00070001 &&
 
         // checkpoint hit for starting the boss fight
-        once(showing_boss_health() && boss_health() == 1.0) &&
+        once(boss_fight_starting()) &&
 
         // trigger when boss dies
-        trigger_when(boss_health() <= 0.0) &&
+        trigger_when(cutscene_playing(0x07, 0x05)) &&
 
         // never cast Pyro Pulse
-        never(cast_spell(0x07))
+        never(cast_spell(0x07)) &&
+
+        // reset if the health bar goes away
+        never(!boss_health_bar_shown())
     )
 )
 
@@ -557,12 +729,15 @@ achievement(
         level_number() == 0x00070003 &&
 
         // checkpoint hit for starting the boss fight
-        once(showing_boss_health() && boss_health() == 1.0) &&
+        once(boss_fight_starting()) &&
 
         // trigger when boss dies
-        trigger_when(boss_health() <= 0.0) &&
+        trigger_when(cutscene_playing(0x07, 0x1B, 0x00)) &&
 
         // reset if we lose health
-        never(lose_health())
+        never(lose_health()) &&
+
+        // reset if the health bar goes away
+        never(!boss_health_bar_shown())
     )
 )
