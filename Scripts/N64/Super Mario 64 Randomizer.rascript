@@ -1,0 +1,724 @@
+// ~Hack~ Super Mario 64: Randomizer
+// #ID = 10509
+
+// HELPERS - ternary
+function if_else(p, t, f) { if (p) { return t } else return f }
+
+// $1787C8: Current File [8 bit]
+//          1 = File A
+//          2 = File B
+//          3 = File C
+//          4 = File D
+function current_file() => byte(0x1787C8)
+
+SAVE_GAME_OFFSETS = 0x0411E0 // backed up by 0x40 to account for 1 indexing
+function save_game(i) => SAVE_GAME_OFFSETS + 0x40 * i
+function current_save_game() => save_game(current_file())
+
+// $041220: File A - Save Game [64 bytes]
+//          +0 = Lost cap location? (seems unused)
+//          +4 = Seed [32 bit] (0-99999)
+function seed() => dword(current_save_game() + 4)
+//          +8 = Settings [32 bit]
+function settings() => dword(current_save_game() + 8)
+//              +0
+//                  b0 = Green Demon Mode active
+function is_green_demon() => bit0(current_save_game() + 8)
+//                  b1-4 = BitS Stars Needed (0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 119)
+//                         **not quite accurate, because b1100 should map to 119, not 120**
+function stars_needed() => bit1(current_save_game() + 8) * 10 + bit2(current_save_game() + 8) * 20 + 
+                           bit3(current_save_game() + 8) * 40 + bit4(current_save_game() + 8) * 80
+//                  b5 = Randomize Level Spawn active
+function random_level_spawn() => bit5(current_save_game() + 8)
+//                  b6 = Randomize Star Doors on
+function random_star_doors() => bit6(current_save_game() + 8)
+//                  b7 = Star Door restrictions disabled (including wing cap)
+function star_door_restrictions_disabled() => bit7(current_save_game() + 8)
+//              +1
+//                  b0 = Randomize Star Spawns active
+function random_star_spawns() => bit0(current_save_game() + 9)
+//                  b1-2 = Spawn Difficulty (00 = Safe, 01 = Normal, 10 = Danger)
+function spawn_difficulty() => bit1(current_save_game() + 9) * 2 + bit2(current_save_game() + 9)
+//                  b3 = Nonstop Mode - save
+//                  b4 = Nonstop Mode - nosave
+function is_nonstop() => bit3(current_save_game() + 9) + bit4(current_save_game() + 9)
+//                  b5 = Object Types (0 = key, 1 = all)
+function randomize_all() => bit5(current_save_game() + 9)
+//                  b6 = Adjust Warp Exits active
+function adjust_warp_exits() => bit6(current_save_game() + 9)
+//              +2
+//                  b0 = Randomize Level Warps active
+function random_level_warps() => bit0(current_save_game() + 10)
+//                  b1 = Keep Structure on
+function keep_structure() => bit1(current_save_game() + 10)
+//          +12 = Cosmetic Settings [32 bit]
+//              +3
+//                  b0-1 = Star Colors (00 = Off, 01 = Per Star, 10 = Per Level, 11 = Global)
+//                  b2 = Coin Colors
+//                  b3 = Random Skyboxes
+//                  b4 = Random Music
+//                  b5 = Music Muted
+//                  b6 = Randomize Clothes Colors
+//                  b7 = Randomize All Colors + Clothes
+//          +16
+//              b0 = File exists
+function file_exists(i) => bit0(i + 16)
+//              b1 = Red Switch pressed
+//              b2 = Green Switch pressed
+//              b3 = Blue Switch pressed
+//              b4 = Bowser 1 Key obtained
+//              b5 = Bowser 2 Key obtained
+//              b6 = Basement Door opened
+//              b7 = 2F Door opened
+//          +17
+//              b1 = Moat-Water lowered
+//              b2 = Secret Slide Door opened
+//              b3 = Course 2 Door opened
+//              b4 = Course 4 Door opened
+//              b5 = Course 3 Door opened
+//              b6 = Star Door (8) opened
+//              b7 = Star Door (30) opened
+//          +18
+//              b0 = Mario's Cap is lying somewhere
+//              b1 = Klepto has Mario's Cap
+//              b2 = Ukiki has Mario's Cap
+//              b3 = Mr Blizzard has Mario's Cap
+//              b4 = Star Door (50) opened
+//              b5 = Set Seed (vs Random Seed)
+function is_set_seed() => bit5(current_save_game() + 18)
+//          +19
+//              b0 = Toad Star (12) collected
+//              b1 = Toad Star (25) collected
+//              b2 = Toad Star (35) collected
+//              b3 = MIPS Star (15) collected
+//              b4 = MIPS Star (50) collected
+//          +20 = Course 04 - Stars [b0-6] / Course 03 - Cannon [b7] X
+//          +21 = Course 03 - Stars [b0-6] / Course 02 - Cannon [b7] X
+//          +22 = Course 02 - Stars [b0-6] / Course 01 - Cannon [b7] X
+//          +23 = Course 01 - Stars [b0-6]
+//          +24 = Course 08 - Stars [b0-6] / Course 07 - Cannon [b7]
+//          +25 = Course 07 - Stars [b0-6] / Course 06 - Cannon [b7]
+//          +26 = Course 06 - Stars [b0-6] / Course 05 - Cannon [b7]
+//          +27 = Course 05 - Stars [b0-6] / Course 04 - Cannon [b7] X
+//          +28 = Course 12 - Stars [b0-6] / Course 11 - Cannon [b7] X
+//          +29 = Course 11 - Stars [b0-6] / Course 10 - Cannon [b7] X
+//          +30 = Course 10 - Stars [b0-6] / Course 09 - Cannon [b7]
+//          +31 = Course 09 - Stars [b0-6] / Course 08 - Cannon [b7] X
+//          +32 = Bowser 01 - Stars [b0-6] / Course 15 - Cannon [b7] X
+//          +33 = Course 15 - Stars [b0-6] / Course 14 - Cannon [b7]
+//          +34 = Course 14 - Stars [b0-6] / Course 13 - Cannon [b7] X
+//          +35 = Course 13 - Stars [b0-6] / Course 12 - Cannon [b7] X
+//          +36 = Secret 02 - Stars [b0-6] / Secret 01 - Cannon [b7]
+//          +37 = Secret 01 - Stars [b0-6] / Bowser 03 - Cannon [b7]
+//          +38 = Bowser 03 - Stars [b0-6] / Bowser 02 - Cannon [b7]
+//          +39 = Bowser 02 - Stars [b0-6] / Bowser 01 - Cannon [b7]
+//          +40 = Secret 06 - Stars [b0-6] / Secret 05 - Cannon [b7] X
+//          +41 = Secret 05 - Stars [b0-6] / Secret 04 - Cannon [b7]
+//          +42 = Secret 04 - Stars [b0-6] / Secret 03 - Cannon [b7]
+//          +43 = Secret 03 - Stars [b0-6] / Secret 02 - Cannon [b7]
+function star_count_by_course(c) => bitcount(current_save_game() + c) - bit7(current_save_game() + c)
+function cannon_open(c) => bit7(current_save_game() + c)
+//          +44 = Course 3 - Jolly Roger Bay [8 bit]
+//          +45 = Course 2 - Whomp's Fortress [8 bit]
+//          +46 = Course 1 - Bob-omb Battlefield [8 bit]
+//          +47 =
+//          +48 = Course 7 - Lethal Lava Land [8 bit]
+//          +49 = Course 6 - Hazy Maze Cave [8 bit]
+//          +50 = Course 5 - Big Boo's Haunt [8 bit]
+//          +51 = Course 4 - Cool, Cool Mountain [8 bit]
+//          +52 = Course 11 - Wet-Dry World [8 bit]
+//          +53 = Course 10 - Snowman's Land [8 bit]
+//          +54 = Course 9 - Dire, Dire Docks [8 bit]
+//          +55 = Course 8 - Shifting Sand Land [8 bit]
+//          +56 = Course 15 - Rainbow Ride [8 bit]
+//          +57 = Course 14 - Tick Tock Clock [8 bit]
+//          +58 = Course 13 - Tiny-Huge Island [8 bit]
+//          +59 = Course 12 - Tall, Tall Mountain [8 bit]
+//          +60 = Checksum [32 bits]
+//          
+//          Presets:
+//              Default = 0x1236e
+//              Extreme = 0x36574
+//              Easy = 0x1288a
+//              New Game = 0x36a50
+//              Calm = 0x2020e
+//              Sprint = 0x133a6
+
+PRESET_DEFAULT = 0x1236e
+PRESET_EXTREME = 0x36574
+PRESET_EASY = 0x1288a
+PRESET_NEW_GAME = 0x36a50
+PRESET_CALM = 0x2020e
+PRESET_SPRINT = 0x133a6
+
+PRESETS = {
+    PRESET_DEFAULT: "Default",
+    PRESET_EXTREME: "⚠️ Extreme",
+    PRESET_EASY: "Easy",
+    PRESET_NEW_GAME: "New Game",
+    PRESET_CALM: "🏖️ Calm",
+    PRESET_SPRINT: "🏃‍♂️ Sprint",
+}
+
+MAIN_COURSES = [
+    {"c": 1, "offset": 23, "map": 0x09, "red": 4, "name": "Bob-omb Battlefield"},
+    {"c": 2, "offset": 22, "map": 0x18, "red": 4, "name": "Whomp's Fortress"},
+    {"c": 3, "offset": 21, "map": 0x0c, "red": 4, "name": "Jolly Roger Bay"},
+    {"c": 4, "offset": 20, "map": 0x05, "red": 4, "name": "Cool, Cool Mountain"},
+    {"c": 5, "offset": 27, "map": 0x04, "red": 4, "name": "Big Boo's Haunt"},
+    {"c": 6, "offset": 26, "map": 0x07, "red": 2, "name": "Hazy Maze Cave"},
+    {"c": 7, "offset": 25, "map": 0x16, "red": 3, "name": "Lethal Lava Land"},
+    {"c": 8, "offset": 24, "map": 0x08, "red": 5, "name": "Shifting Sand Land"},
+    {"c": 9, "offset": 31, "map": 0x17, "red": 3, "name": "Dire, Dire Docks"},
+    {"c": 10, "offset": 30, "map": 0x0a, "red": 5, "name": "Snowman's Land"},
+    {"c": 11, "offset": 29, "map": 0x0b, "red": 5, "name": "Wet-Dry World"},
+    {"c": 12, "offset": 28, "map": 0x24, "red": 3, "name": "Tall, Tall Mountain"},
+    {"c": 13, "offset": 35, "map": 0x0d, "red": 5, "name": "Tiny-Huge Island"},
+    {"c": 14, "offset": 34, "map": 0x0e, "red": 6, "name": "Tick Tock Clock"},
+    {"c": 15, "offset": 33, "map": 0x0f, "red": 3, "name": "Rainbow Ride"},
+]
+
+// $1787CA: Map ID [8 bit]
+//          0x00 = Starting the game
+//          0x01 = File Select
+//          0x04 = in Course 5 'Big Boo's Haunt'
+//          0x05 = in Course 4 'Cool, Cool Mountain'
+//          0x06 = inside the Castle
+//          0x07 = in Course 6 'Hazy Maze Cave'
+//          0x08 = in Course 8 'Shifting Sand Land'
+//          0x09 = in Course 1 'Bob-omb Battlefield'
+//          0x0a = in Course 10 'Snowman's Land'
+//          0x0b = in Course 11 'Wet-Dry World'
+//          0x0c = in Course 3 'Jolly Roger Bay'
+//          0x0d = in Course 13 'Tiny-Huge Island'
+//          0x0e = in Course 14 'Tick Tock Clock'
+//          0x0f = in Course 15 'Rainbow Ride'
+//          0x10 = outside the Castle
+//          0x11 = in 'Bowser in the Dark World'
+//          0x12 = in 'Vanish Cap Under the Moat'
+//          0x13 = in 'Bowser in the Fire Sea'
+//          0x14 = in 'Secret Aquarium'
+//          0x15 = in 'Bowser in the Sky'
+//          0x16 = in Course 7 'Lethal Lava Land'
+//          0x17 = in Course 9 'Dire, Dire Docks'
+//          0x18 = in Course 2 'Whomp's Fortress'
+//          0x19 = in the Credits
+//          0x1a = in the Castle Courtyard
+//          0x1b = in 'Princess's Secret Slide'
+//          0x1c = in 'Cavern of the Metal Cap'
+//          0x1d = in 'Tower of the Wing Cap'
+//          0x1e = in Bowser's Dark Arena
+//          0x1f = in 'Wing Mario Over the Rainbow'
+//          0x21 = in Bowser's Sea Arena
+//          0x22 = in Bowser's Sky Arena
+//          0x24 = in Course 12 'Tall, Tall Mountain'
+function map_id() => byte(0x1787CA)
+function in_game() => map_id() >= 4
+
+// $17A916: Selected Star for Course [8 bit]
+function selected_star_for_course() => byte(0x17A916)
+
+// $17AA5B: Pause Menu Type [8 bit]
+//          0 = Unpaused
+//          1 = Stage Pause
+//          2 = Castle Pause
+function pause_menu_type() => byte(0x17AA5B)
+
+// $17AD9C: Pointer to The Mario [32 bit]
+//          .. +0x0C = action [32 bit bitfield]
+function ptr_to_mario() => dword(0x17AD9C) & 0x00FFFFFF
+function mario_action() => dword(ptr_to_mario() + 0x0C)
+
+function mario_y_pos() => float(ptr_to_mario() + 0x40)
+function mario_floor_height() => float(ptr_to_mario() + 0x70)
+
+ACT_GROUP_CUTSCENE    = 0x00000100
+ACT_FLYING            = 0x10880899
+ACT_FLAG_RIDING_SHELL = 0x00010000
+
+function mario_is(mario, act) => (mario & act) == act
+
+// $17C2D2: (TTC) Clock State [8 bit]
+//          0 = Slow (3:00)
+//          1 = Fast (9:00)
+//          2 = Random (6:00)
+//          3 = Stopped (12:00)
+function ttc_clock_state() => byte(0x17C2D2)
+
+TTC_SLOW = 0
+TTC_FAST = 1
+TTC_RAND = 2
+TTC_STOP = 3
+
+// $17CEEA: Last Star Collected - Stage Number [8 bit]
+function last_star_stage() => byte(0x17CEEA)
+
+// $17CEEB: Last Star Collected - Star Number [8 bit]
+function last_star_number() => byte(0x17CEEB)
+
+// $1858EE: Stage ID [8 bit]
+//          0 = Castle
+//          1 = Bob-omb Battlefield
+//          2 = Whomp's Fortress
+//          3 = Jolly Roger Bay
+//          4 = Cool, Cool Mountain
+//          5 = Big Boo's Haunt
+//          6 = Hazy Maze Cave
+//          7 = Shifting Sand Land
+//          8 = Lethal Lava Land
+//          9 = Dire, Dire Docks
+//          10 = Snowman's Land
+//          11 = Wet-Dry World
+//          12 = Tall, Tall Mountain
+//          13 = Tiny-Huge Island
+//          14 = Tick Tock Clock
+//          15 = Rainbow Ride
+//          16 = Bowser in the Dark World
+//          17 = Bowser in the Fire Sea
+//          18 = Bowser in the Sky
+//          19 = Princess's Secret Slide
+//          20 = Metal Cap
+//          21 = Wing Cap
+//          22 = Vanish Cap
+//          23 = Wing Mario Over the Rainbow
+//          24 = Aquarium
+function stage_id() => byte(0x1858EE)
+
+// $1858F1: Warp Transition Length (Time) [8 bit]
+// $1858F2: Warp Transition Type [8 bit]
+//          0x00, 0x01 = from/to color
+//          0x08, 0x09 = from/to star
+//          0x0a, 0x0b = from/to circle
+//          0x0e, 0x0f = from/to large
+//          0x10, 0x11 = from/to mario
+//          0x12, 0x13 = from/to bowser
+// $1858F3: Warp Transition Active? [8 bit]
+function trans_len() => byte(0x1858F1)
+function trans_type() => byte(0x1858F2)
+function trans_active() => byte(0x1858F3)
+
+FADE_IN_FROM_COLOR = 0x00
+
+// $1870DB: Red Coin Count [8 bit]
+function red_coin_count() => byte(0x1870DB)
+
+// $187153: Race Timer Running [8 bit]
+function race_timer_running() => byte(0x187153)
+
+// $18716C: Game Pause State [8 bit]
+//          b1 = Paused
+//          b2 = Loading
+function game_pause_state() => byte(0x18716C)
+
+// $18717E: Race Timer [16 bit] (frames)
+//          divide by 30 to get seconds
+function race_timer_frames() => word(0x18717E)
+
+// $1871F8: Pointer to Interacted Object [32 bit]
+//          .. +0x130 = interaction type (0x00001000 for stars)
+//          .. +0x190 = interaction subtype (0x00000800 for grand star)
+function ptr_to_last_interacted_obj() => dword(0x1871F8)
+
+// $187228: Star Count [8 bit] (displayed)
+function star_count() => byte(0x187228)
+
+// $18722A: Coins [8 bit]
+function coins() => byte(0x18722A)
+
+// $18722D: Health Remaining [8 bit] (0-8)
+function health() => byte(0x18722D)
+
+// $18722E: Lives [8 bit]
+function lives() => byte(0x18722E)
+
+// $187230: Healing Frames [8 bit]
+function healing_frames() => byte(0x187230)
+
+// $187231: Damage Frames [8 bit]
+function damage_frames() => byte(0x187231)
+
+// $1B1978: Current Settings [32 bit]
+function setup_settings() => dword(0x1B1978)
+
+// $1B197C: Current Cosmetic Settings [32 bit]
+function setup_cosmetics() => dword(0x1B197C)
+
+// $1B1E30: Current Seed [32 bit] (0-99999)
+function setup_seed() => dword(0x1B1E30)
+
+// $2BFF88: Last Loaded Number [8 bit]
+//          used for collecting red coins, secrets, and numbered stars
+function last_loaded_number() => byte(0x2BFF88)
+
+MapLookup = {
+    0x04: "getting spooked in Big Boo's Haunt",
+    0x05: "chilling out in Cool, Cool Mountain",
+    0x06: "inside Peach's Castle",
+    0x07: "getting lost in Hazy Maze Cave",
+    0x08: "sinking into Shifting Sand Land",
+    0x09: "avoiding the fight in Bob-omb Battlefield",
+    0x0a: "losing his cool in Snowman's Land",
+    0x0b: "raising the bar in Wet-Dry World",
+    0x0c: "going for a swim in Jolly Roger Bay",
+    0x0d: "changing perspectives in Tiny-Huge Island",
+    0x0e: "passing time in Tick Tock Clock",
+    0x0f: "riding high in Rainbow Ride",
+    0x10: "outside Peach's Castle",
+    0x11: "in Bowser in the Dark World",
+    0x12: "hiding in Vanish Cap Under the Moat",
+    0x13: "in Bowser in the Fire Sea",
+    0x14: "getting comfy in the Secret Aquarium",
+    0x15: "in Bowser in the Sky",
+    0x16: "burning up in Lethal Lava Land",
+    0x17: "submerged in Dire, Dire Docks",
+    0x18: "storming Whomp's Fortress",
+    0x19: "watching the credits",
+    0x1a: "in the Castle Courtyard",
+    0x1b: "sliding down the Princess's Secret Slide",
+    0x1c: "in the Cavern of the Metal Cap",
+    0x1d: "high above the Tower of the Wing Cap",
+    0x1e: "fighting Bowser in the Dark World",
+    0x1f: "Winging Over the Rainbow",
+    0x21: "fighting Bowser in the Fire Sea",
+    0x22: "fighting Bowser in the Sky",
+    0x24: "climbing Tall, Tall Mountain",
+}
+
+LEVELS_CONTAINING_STARS = [
+    0x04, 0x05, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+    0x0d, 0x0e, 0x0f, 0x11, 0x12, 0x13, 0x14, 0x15,
+    0x16, 0x17, 0x18, 0x1b, 0x1c, 0x1d, 0x1f, 0x24,
+]
+
+CANNON_OFFSETS = [20, 21, 22, 27, 28, 29, 31, 32, 34, 35, 40]
+
+SetSeedLookup = {
+    0: "",
+    1: "✍️",
+}
+
+GreenDemonLookup = {
+    0: "",
+    1: " 🟩😈",
+}
+
+NonstopLookup = {
+    0: "",
+    1: " ♾️",
+}
+
+rich_presence_conditional_display(!in_game(),
+    "🔀 Setting up a New Randomizer 🎲"
+)
+
+rich_presence_conditional_display(any_of(PRESETS, (x) => settings() == x),
+    "Mario is {0} | ⭐{1} | 🌱{2}{3} | {4} Preset",
+    rich_presence_lookup("Map", map_id(), MapLookup, fallback="in the Mushroom Kingdom"),
+    rich_presence_value("Number", star_count()),
+    rich_presence_value("Number", seed()),
+    rich_presence_lookup("SetSeed", is_set_seed(), SetSeedLookup, fallback=""),
+    rich_presence_lookup("Preset", settings(), PRESETS, fallback="Default")
+)
+
+rich_presence_display(
+    "Mario is {0} | ⭐{1} | 🌱{2}{3} | 🎲{4}{5}{6}",
+    rich_presence_lookup("Map", map_id(), MapLookup, fallback="in the Mushroom Kingdom"),
+    rich_presence_value("Number", star_count()),
+    rich_presence_value("Number", seed()),
+    rich_presence_lookup("SetSeed", is_set_seed(), SetSeedLookup, fallback=""),
+    rich_presence_value("Number", settings()),
+    rich_presence_lookup("GreenDemon", is_green_demon(), GreenDemonLookup, fallback=""),
+    rich_presence_lookup("NonStop", is_nonstop(), NonstopLookup, fallback="")
+)
+
+// PLANS:
+// - cannons? (11) + wing mario
+//      wing mario might deserve its own achievement with the caveat of random spawns enabled
+// - collect a star within 10 seconds of entering a level
+// - collect stars somewhere with green shell in nonstop
+
+// check for collecting any star (or key)
+function collect_a_star() =>
+(
+    // an interaction just occurred
+    prev(ptr_to_last_interacted_obj()) != ptr_to_last_interacted_obj() &&
+
+    // type is star (obj->oInteractType == INTERACT_STAR_OR_KEY)
+    dword((ptr_to_last_interacted_obj() & 0x00FFFFFF) + 0x130) == 0x00001000
+)
+
+// alias for readability
+collect_a_key = collect_a_star
+
+// check for collecting a specific star
+function collect_star(i) => (collect_a_star() && last_star_number() == i)
+
+// check for collecting the grand star
+function collect_grand_star() => (collect_a_star() && dword((ptr_to_last_interacted_obj() & 0x00FFFFFF) + 0x190) == 0x00000800)
+
+// new random seed started (leave the file select on a file that doesn't exist that isn't a set seed)
+function new_file_created() => (prev(map_id()) <= 1 && map_id() > 1 && is_set_seed() == 0 && file_exists() == 0)
+
+// check if entering a level
+function enter_level() =>
+(
+    // loading a stage is always a fade-from-color type
+    // could check color if we're picky (seems to always be white, ff ff ff)
+    trans_type() == FADE_IN_FROM_COLOR &&
+
+    // stage loading transitions seem to specifically be the 0x1a type
+    // this is different from the 0x10 len for the star select menu?
+    trans_len() == 0x1A &&
+
+    // transition is complete (this seems to flip after the previously mentioned
+    // number of frames have passed)
+    prev(trans_active()) == 1 && trans_active() == 0
+)
+
+// the required settings for completion-based achievements
+function minimum_completion_settings() =>
+(
+    randomize_all() == 1 &&
+    random_star_spawns() == 1 &&
+    is_set_seed() == 0
+)
+
+// the required settings for progression-based achievements
+function minimum_progression_settings() =>
+(
+    random_level_spawn() == 1 &&
+    random_level_warps() == 1 &&
+    // spawn_difficulty() >= 1 &&
+    minimum_completion_settings()
+)
+
+achievement(
+    title="[Warning] Minimum Randomization Settings Required",
+    description="All achievements require minimum randomization settings (see comments)",
+    points=0,
+    trigger=(in_game() && (!minimum_progression_settings() || stars_needed() < 70))
+)
+
+STAR_MILESTONES = [
+    {"stars": 8, "points": 5, "title": "Build Ursa Minor"},
+    {"stars": 30, "points": 5, "title": "Build Ursa Major"},
+    {"stars": 50, "points": 10, "title": "Build Cassiopeia (Tenfold)"},
+    {"stars": 70, "points": 10, "title": "Build Ursa Major-er"},
+    {"stars": 120, "points": 25, "title": "Across the Milky Way"},
+]
+
+for m in STAR_MILESTONES
+{
+    // progression achievements require BitS door setting to be 70+
+    SETTINGS = minimum_progression_settings()
+    if (m["stars"] <= 70) SETTINGS = SETTINGS && stars_needed() >= 70
+
+    achievement(
+        title=m["title"],
+        description=format("Collect {0} stars (see comments for required settings)", m["stars"]),
+        points=m["points"],
+        type=if_else(m["stars"] <= 70, "progression", ""),
+        trigger=(
+            // in game with minimum requirements
+            in_game() && SETTINGS &&
+
+            // collected enough stars to reach the milestone
+            prev(star_count()) < m["stars"] && star_count() >= m["stars"]
+        )
+    )
+}
+
+KEYS = [
+    {"map": 0x1e, "name": "Dark World"}, 
+    {"map": 0x21, "name": "Fire Sea"},
+]
+
+for key in KEYS
+{
+    achievement(
+        title=format("A Useless Key in {0}", key["name"]),
+        description="This key doesn't do anything, but you got it anyways. Cool! (keep structure must be off)",
+        points=10,
+        trigger=(
+            // keys only matter when keep structure is on
+            keep_structure() == 0 &&
+
+            // collect a key from the correct stage
+            map_id() == key["map"] && collect_a_key()
+        )
+    )
+}
+
+for course in MAIN_COURSES
+{
+    achievement(
+        title=format("Extremely Jumbled up in {0}", course["name"]),
+        description=format("In one session, collect all 7 stars in {0} on the EXTREME preset", course["name"]),
+        points=5,
+        trigger=(
+            // the player collected 7 stars from the same stage
+            measured(tally_of(range(1,7), 7, i => map_id() == course["map"] && collect_star(i)),
+                when=settings() == PRESET_EXTREME && is_set_seed() == 0) &&
+
+            // reset if the player quits the game
+            never(!in_game())
+        )
+    )
+}
+
+achievement(
+    title="Always on the Run",
+    description="In one session, collect any 10 stars in Green Demon mode (no set seed)",
+    points=10,
+    trigger=(
+        // green demon mode active in-game
+        is_green_demon() == 1 && is_set_seed() == 0 &&
+
+        // setup initial checkpoint hit
+        once(prev(map_id()) <= 1 && in_game() && star_count() == 0) &&
+
+        // collected any 10 stars
+        prev(star_count()) < 10 && trigger_when(star_count() >= 10) &&
+
+        // reset if the player quits the game
+        never(!in_game())
+    )
+)
+
+achievement(
+    title="Shoutouts to Simpleflips",
+    description="Collect any red coin star from one of the main courses in Green Demon mode",
+    points=10,
+    trigger=(
+        // green demon mode active in-game
+        in_game() && is_green_demon() == 1 && is_set_seed() == 0 &&
+
+        // must have collected 8 red coins
+        trigger_when(red_coin_count() == 8) &&
+
+        // check all 15 main courses
+        any_of(MAIN_COURSES, course => (
+            // currently in the correct map/stage
+            map_id() == course["map"] && stage_id() == course["c"] &&
+
+            // trigger when the star is collected
+            trigger_when(collect_star(course["red"]))
+        ))
+    )
+)
+
+achievement(
+    title="One-Stop Shopping",
+    description="Collect all 7 stars in any course in one trip in non-stop mode",
+    points=10,
+    trigger=(
+        // add a hit for each of the stars
+        measured(tally_of(range(1,7), 7, x => collect_star(x)),
+            when=in_game() && minimum_completion_settings() && is_nonstop() != 0) &&
+
+        // reset if you ever leave the level
+        never(prev(stage_id()) != stage_id()) &&
+
+        // reset if this isn't a main course
+        never(stage_id() < 1 || stage_id() > 15)
+    )
+)
+
+achievement(
+    title="Chaotic Coin Collection above the Tower",
+    description="Without landing, collect all 8 red coins above the Tower of the Wing Cap",
+    points=10,
+    trigger=(
+        // checkpoint hit upon entering the stage
+        once(prev(map_id()) != 0x1d && map_id() == 0x1d) &&
+
+        // trigger on collecting 8 red coins
+        trigger_when(red_coin_count() == 8) &&
+
+        // reset if this wing cap stage
+        never(map_id() != 0x1d) &&
+
+        // reset if mario is ever standing on the ground
+        never(prev(mario_y_pos()) > prev(mario_floor_height()) && mario_y_pos() <= mario_floor_height())
+    )
+)
+
+achievement(
+    title="A Randomizer in my Randomizer",
+    description="Collect the TTC 100 coin star while the clock is set to random (6:00)",
+    points=10,
+    trigger=(
+        // randomize all required
+        randomize_all() == 1 && is_set_seed() == 0 &&
+
+        // in TTC with random clock state
+        map_id() == 0x0e && ttc_clock_state() == TTC_RAND &&
+
+        // trigger on collecting the 100 coin star
+        trigger_when(collect_star(7))
+    )
+)
+
+STAR_COLLECT_SECONDS = 10
+achievement(
+    title="It's Just That Easy!",
+    description=format("Collect a star within {0} seconds of entering a main course", STAR_COLLECT_SECONDS),
+    points=2,
+    trigger=(
+        // no set seeds
+        is_set_seed() == 0 &&
+
+        // checkpoint hit on entering a stage
+        once(enter_level()) &&
+
+        // trigger on collecting a star
+        trigger_when(collect_a_star()) &&
+
+        // pause if enough frames have passed, reset the timer
+        disable_when(repeated(STAR_COLLECT_SECONDS * 60, always_true()),
+            until=prev(map_id()) != map_id() || trans_active() == 1) &&
+
+        // reset if this isn't a main course
+        never(stage_id() < 1 || stage_id() > 15)
+    )
+)
+
+achievement(
+    title="The Pink Bob-omb Scavenger Hunt",
+    description=format("Unlock all {0} cannons in the game", length(CANNON_OFFSETS)),
+    points=10,
+    trigger=(
+        // check if all cannons are open
+        measured(sum_of(CANNON_OFFSETS, i => cannon_open(i)) == length(CANNON_OFFSETS),
+            when=in_game() && is_set_seed() == 0 && randomize_all() == 1)
+    )
+)
+
+LLL_SHELL_COINS = 50
+achievement(
+    title=format("Shell Surfing for {0} Hot Coins", LLL_SHELL_COINS),
+    description=format("Collect {0} coins while riding a green shell in Lethal Lava Land", LLL_SHELL_COINS),
+    points=5,
+    trigger=(
+        // measure the number of coins collected since starting to ride the shell
+        measured(tally(LLL_SHELL_COINS, array_map(range(1,10), x => coins() - prev(coins()) >= x)),
+            when=
+            (
+                // correct settings
+                randomize_all() == 1 && is_set_seed() == 0 &&
+
+                // correct stage
+                map_id() == 0x16 &&
+
+                // checkpoint hit on starting to ride a shell
+                once(!mario_is(prev(mario_action()), ACT_FLAG_RIDING_SHELL) && mario_is(mario_action(), ACT_FLAG_RIDING_SHELL))
+            )
+        ) &&
+
+        // reset if mario is not riding a shell anymore
+        never(!mario_is(mario_action(), ACT_FLAG_RIDING_SHELL)) &&
+
+        // reset if leaving LLL
+        never(map_id() != 0x16)
+    )
+)
