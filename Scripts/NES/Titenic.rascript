@@ -103,10 +103,6 @@ CharLookup = {
     CHAR_ROSE: "Rose",
 }
 
-LifeLookup = {
-    0x01: "Life",
-}
-
 DeckLookup = {
     0: "1",
     1: "2",
@@ -121,7 +117,7 @@ rich_presence_conditional_display(game_state() == STATE_PLAYING,
     rich_presence_lookup("Deck", level(), DeckLookup, fallback="1"),
     rich_presence_value("Number", health()),
     rich_presence_value("Number", lives()),
-    rich_presence_lookup("Life", lives(), LifeLookup, fallback="Lives"),
+    rich_presence_lookup("Life", lives(), {1: "Life"}, fallback="Lives"),
     rich_presence_value("Number", score())
 )
 
