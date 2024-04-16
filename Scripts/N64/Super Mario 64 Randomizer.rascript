@@ -1,8 +1,9 @@
 // ~Hack~ Super Mario 64: Randomizer
 // #ID = 10509
 
-// HELPERS - ternary
+// HELPERS
 function if_else(p, t, f) { if (p) { return t } else return f }
+idfunc = (x) => x
 
 // $1787C8: Current File [8 bit]
 //          1 = File A
@@ -212,15 +213,18 @@ function pause_menu_type() => byte(0x17AA5B)
 //          .. +0x0C = action [32 bit bitfield]
 function ptr_to_mario() => dword(0x17AD9C) & 0x00FFFFFF
 function mario_action() => dword(ptr_to_mario() + 0x0C)
+function mario_held_obj() => dword(ptr_to_mario() + 0x7C) & 0x00FFFFFF
 
 function mario_y_pos() => float(ptr_to_mario() + 0x40)
 function mario_floor_height() => float(ptr_to_mario() + 0x70)
 
 ACT_GROUP_CUTSCENE    = 0x00000100
+ACT_GROUP_SUBMERGED   = 0x000000C0
 ACT_FLYING            = 0x10880899
 ACT_FLAG_RIDING_SHELL = 0x00010000
 
 function mario_is(mario, act) => (mario & act) == act
+function mario_in(mario, act) => (mario & act) != 0
 
 // $17C2D2: (TTC) Clock State [8 bit]
 //          0 = Slow (3:00)
@@ -292,7 +296,9 @@ function race_timer_running() => byte(0x187153)
 // $18716C: Game Pause State [8 bit]
 //          b1 = Paused
 //          b2 = Loading
-function game_pause_state() => byte(0x18716C)
+PAUSE_STATE = 0x18716C
+function is_paused() => bit1(PAUSE_STATE)
+function is_loading() => bit2(PAUSE_STATE)
 
 // $18717E: Race Timer [16 bit] (frames)
 //          divide by 30 to get seconds
@@ -307,10 +313,17 @@ function ptr_to_last_interacted_obj() => dword(0x1871F8)
 function star_count() => byte(0x187228)
 
 // $18722A: Coins [8 bit]
+// $187170: Coins (HUD) [8 bit]
 function coins() => byte(0x18722A)
+function coins_hud() => byte(0x187170)
+
+// $18722C: Air Frames [8 bit]
+function air() => byte(0x18722C)
+function drowning() => prev(air()) == 0x00 && air() == 0xFF // && mario_in(mario_action(), ACT_GROUP_SUBMERGED)
 
 // $18722D: Health Remaining [8 bit] (0-8)
 function health() => byte(0x18722D)
+function take_damage() => health() < prev(health()) && !drowning()
 
 // $18722E: Lives [8 bit]
 function lives() => byte(0x18722E)
@@ -391,9 +404,9 @@ MapLookup = {
     MAP_AQUA: "getting comfy in the Secret Aquarium",
     MAP_WMOTR: "Winging Over the Rainbow",
 
-    MAP_BITDW: "in Bowser in the Dark World",
-    MAP_BITFS: "in Bowser in the Fire Sea",
-    MAP_BITS: "in Bowser in the Sky",
+    MAP_BITDW: "in the Dark World",
+    MAP_BITFS: "in the Fire Sea",
+    MAP_BITS: "in the Sky",
 
     MAP_BITDW_ARENA: "fighting Bowser in the Dark World",
     MAP_BITFS_ARENA: "fighting Bowser in the Fire Sea",
@@ -478,12 +491,6 @@ rich_presence_display(
     rich_presence_lookup("NonStop", is_nonstop(), NonstopLookup, fallback="")
 )
 
-// PLANS:
-// - cannons? (11) + wing mario
-//      wing mario might deserve its own achievement with the caveat of random spawns enabled
-// - collect a star within 10 seconds of entering a level
-// - collect stars somewhere with green shell in nonstop
-
 // check for collecting any star (or key)
 function collect_a_star() =>
 (
@@ -503,8 +510,8 @@ function collect_star(i) => (collect_a_star() && last_star_number() == i)
 // check for collecting the grand star
 function collect_grand_star() => (collect_a_star() && dword((ptr_to_last_interacted_obj() & 0x00FFFFFF) + 0x190) == 0x00000800)
 
-// new random seed started (leave the file select on a file that doesn't exist that isn't a set seed)
-function new_file_created() => (prev(map_id()) < MAP_MIN && map_id() >= MAP_MIN && is_set_seed() == 0 && file_exists() == 0)
+// new random seed started (leave the file select on a file that doesn't exist)
+function new_file_created() => (prev(map_id()) < MAP_MIN && map_id() >= MAP_MIN && file_exists(current_save_game()) == 0)
 
 // check if entering a level
 function enter_level() =>
@@ -576,13 +583,13 @@ for m in STAR_MILESTONES
 }
 
 achievement(
-    title="Hitting Bowser with the Mix-up",
+    title="Everything Back in its Place",
     description="Defeat Bowser and restore the power of the Grand Star to Peach's Castle",
     points=25,
     type="win_condition",
     trigger=(
         // correct settings (requires 70+ stars BitS door)
-        minimum_progression_settings() && //stars_needed() >= 70 &&
+        minimum_progression_settings() && stars_needed() >= 70 &&
 
         // collect the grand star
         map_id() == MAP_BITS_ARENA && collect_grand_star()
@@ -630,7 +637,7 @@ for course in MAIN_COURSES
 GREEN_DEMON_STARS = 10
 achievement(
     title="Always on the Run",
-    description=format("In one session, collect any {0} stars in Green Demon mode (no set seed)", GREEN_DEMON_STARS),
+    description=format("In one session, collect any {0} stars in Green Demon mode", GREEN_DEMON_STARS),
     points=10,
     trigger=(
         // green demon mode active in-game
@@ -679,7 +686,7 @@ achievement(
             when=in_game() && minimum_completion_settings() && is_nonstop() != 0) &&
 
         // reset if you ever leave the level
-        never(prev(stage_id()) != stage_id()) &&
+        never(prev(map_id()) != map_id()) &&
 
         // reset if this isn't a main course
         never(stage_id() < 1 || stage_id() > 15)
@@ -728,7 +735,7 @@ achievement(
     points=1,
     trigger=(
         // no set seeds
-        is_set_seed() == 0 &&
+        in_game() && is_set_seed() == 0 &&
 
         // checkpoint hit on entering a stage
         once(enter_level()) &&
@@ -763,7 +770,7 @@ achievement(
     points=5,
     trigger=(
         // measure the number of coins collected since starting to ride the shell
-        measured(tally(LLL_SHELL_COINS, array_map(range(1,10), x => coins() - prev(coins()) >= x)),
+        measured(tally(LLL_SHELL_COINS, coins_hud() > prev(coins_hud())),
             when=
             (
                 // correct settings
@@ -803,6 +810,71 @@ achievement(
         never(map_id() != MAP_BITFS) &&
 
         // reset if mario takes any damage
-        never(health() < prev(health()))
+        never(take_damage())
     )
+)
+
+// start when a new file is created (cannot start from an existing file or set seed, generally)
+function start_game() => new_file_created() && is_set_seed() == 0
+
+// cancel if we change files, or if we delete the file from the file select screen
+function leave_game() => (!in_game() && file_exists(current_save_game()) == 0) || prev(current_file()) != current_file()
+
+// submit when you collect the grand star at the end of the game
+function end_game() => map_id() == MAP_BITS_ARENA && collect_grand_star()
+
+// count frames
+function frame_count() => measured(tally(0, always_true())) // measured(tally(0, is_loading() == 0))
+
+leaderboard(
+    title="70 Star Speedrun - Default",
+    description="On the Default preset, collect 70 stars and defeat Bowser",
+
+    start=(start_game() && settings() == PRESET_DEFAULT),
+    cancel=leave_game(),
+    submit=(star_count() >= 70 && end_game()),
+    
+    value=frame_count(),
+    format="FRAMES",
+    lower_is_better=true
+)
+
+leaderboard(
+    title="70 Star Speedrun - Extreme, Set Seed",
+    description="On the Extreme preset, with seed 10509, collect 70 stars and defeat Bowser",
+
+    start=(new_file_created() && seed() == 10509 && settings() == PRESET_EXTREME),
+    cancel=leave_game(),
+    submit=(star_count() >= 70 && end_game()),
+    
+    value=frame_count(),
+    format="FRAMES",
+    lower_is_better=true
+)
+
+leaderboard(
+    title="Sprint to the Grand Star",
+    description="On the Sprint preset, collect 30 stars and defeat Bowser",
+
+    start=(start_game() && settings() == PRESET_SPRINT),
+    cancel=leave_game(),
+    submit=(star_count() >= 30 && end_game()),
+    
+    value=frame_count(),
+    format="FRAMES",
+    lower_is_better=true
+)
+
+leaderboard(
+    title="Max Stars Damageless - Default",
+    description="Collect as many stars as possible without taking damage on the Default preset",
+
+    start=(start_game() && settings() == PRESET_DEFAULT),
+    cancel=leave_game(),
+    submit=(star_count() == 120 || end_game() || take_damage()),
+    
+    // value is the star count
+    value=measured(star_count()),
+    format="VALUE",
+    lower_is_better=false
 )
