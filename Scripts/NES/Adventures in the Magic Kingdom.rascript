@@ -91,6 +91,15 @@ TALK_MICKEY = 0x0c
 TALK_GHOUL = 0x0e
 TALK_COWBOY_MICKEY = 0x0f
 
+// $00D0: Sound Effect Metadata [32 bit]
+//        byte0 = tone value
+//        byte3 = timer (frames)
+//        star collect: 0x04feae3d
+function sound_effect() => dword(0x00D0)
+
+STAR_SOUND = 0x04feae3d
+function collect_star() => prev(sound_effect()) != STAR_SOUND && sound_effect() == STAR_SOUND
+
 // $00EA: Map ID [8 bit]
 //        0x00 = Overworld
 //        0x02 = Pirates
@@ -260,11 +269,11 @@ function name_is(chars)
 
 achievement(id=47911,
     title="Ya Dun Goofed!",
-    description="Give us your name, not his",
+    description="Give us your name, not his!",
     points=1,
     trigger=(
-        // transitioning from name entry to gameplay
-        prev(map_id()) == MAP_INTRO && map_id() == MAP_OVERWORLD &&
+        // transitioning from name entry to intro
+        prev(map_id()) == MAP_TITLE && map_id() == MAP_INTRO &&
 
         // name is input as "GOOFY"
         name_is(["G", "O", "O", "F", "Y"])
@@ -276,7 +285,7 @@ achievement(id=47924,
     description="How did Goofy know my *real* name?",
     points=1,
     trigger=(
-        // transitioning from name entry to gameplay
+        // transitioning from name entry to intro
         prev(map_id()) == MAP_TITLE && map_id() == MAP_INTRO &&
 
         // player didn't enter a name
@@ -434,10 +443,24 @@ achievement(id=47917,
 achievement(id=47918,
     title="Gold Cup on the Disney 500", // rename: "World Record"
     description="Complete the race with 15 or more seconds left",
-    points=10, // rescore: 5
+    points=10, // rescore: 25
 
     // cross the finish line on Autopia with 15 or more seconds left on the timer
-    trigger=(map_id() == MAP_CARS && prev(y_position()) > 0x0a && y_position() <= 0x0a && timer() >= 15)
+    trigger=(map_id() == MAP_CARS && talking_portrait() == TALK_PETE && timer() >= 15)
+)
+
+AUTOPIA_STARS = 35
+achievement(
+    title="Autopia Superstar",
+    description=format("Collect {0} or more stars in one race on Autopia", AUTOPIA_STARS),
+    points=10,
+    trigger=(
+        // count the correct number of stars
+        measured(tally(AUTOPIA_STARS, collect_star())) &&
+        
+        // as long as we are on Autopia
+        never(map_id() != MAP_CARS)
+    )
 )
 
 achievement(id=47920,
@@ -477,16 +500,31 @@ achievement(id=47921,
     )
 )
 
+SMALL_WORLD_DOOR = [
+    {"x": 0x150d, "y": 0x0104},
+    {"x": 0x150e, "y": 0x0104},
+]
+achievement(
+    title="It's a Small World", 
+    description="This ride is closed for maintenance. Sorry for the inconvenience!",
+    points=1,
+    trigger=(
+        // correct level
+        map_id() == MAP_OVERWORLD && 
+        
+        // stand in front of It's a Small World for 5 consecutive frames
+        // (need frame count because x/y pos flicker for 3f on overworld)
+        any_of(SMALL_WORLD_DOOR, c => repeated(5, x_position() == c["x"] && y_position() == c["y"]))
+    )
+)
+
 achievement(id=47925,
     title="When You Wish Upon a Star", // rename: "Super Star"
     description="Collect and hold 99 stars",
     points=5, // rescore: 10
     trigger=(
-        // are we in a level?
-        health() > 0 && health() <= 3 && // TODO
-
-        // check that the number of stars reached 99
-        prev(stars()) < 99 && stars() == 99
+        // if we collected our 99th star
+        collect_star() && stars() >= 99
     )
 )
 
@@ -504,9 +542,9 @@ achievement(id=47926,
 )
 
 achievement(
-    title="The Capeless Crusader",
+    title="A Damsel in Distress",
     description="Rescue a maiden in Pirates of the Caribbean while under the effect of invincibility",
-    points=5,
+    points=1,
     trigger=(
         // correct stage
         map_id() == MAP_PIRATE &&
@@ -533,23 +571,25 @@ achievement(
     points=5,
     trigger=(
         // count the number of times we buy freeze time
-        measured(tally(3, prev(stars()) - stars() == PRICE_FREEZE && freeze_timer() == 0xb4),
-            when=map_id() == MAP_GHOST) &&
+        measured(tally(3, prev(stars()) - stars() == PRICE_FREEZE && freeze_timer() == 0xb4)) &&
 
-        // reset if we are not on the 2nd floor
-        never(room_id() != 4)
+        // reset if we are not on the 2nd floor of the Haunted Mansion
+        never(map_id() == MAP_GHOST || room_id() != 4)
     )
 )
 
+count_stars = [collect_star()]
+for i in range(2,5) array_push(count_stars, collect_star() && map_id() == MAP_TRAIN)
+
 leaderboard(id=85700,
-    title="Star Power",
+    title="Star of the Matterhorn",
     description="Collect as many stars as possible before completing the game or running out of lives",
 
     start=start_game(),
     cancel=map_id() == MAP_INTRO,
     submit=win_the_game() || lives() == 0,
     
-    value=measured(tally(0, stars() > prev(stars()))), // TODO: find a way to track stars other than star count
+    value=measured(tally(0, count_stars)),
     format="VALUE"
 )
 
