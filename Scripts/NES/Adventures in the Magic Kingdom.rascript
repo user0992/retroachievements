@@ -267,7 +267,7 @@ function name_is(chars)
     return trigger
 }
 
-achievement(id=47911,
+achievement(id=47911, // badge=48437,
     title="Ya Dun Goofed!",
     description="Give us your name, not his!",
     points=1,
@@ -280,7 +280,7 @@ achievement(id=47911,
     )
 )
 
-achievement(id=47924,
+achievement(id=47924, // badge=48455,
     title="Checking My ID",
     description="How did Goofy know my *real* name?",
     points=1,
@@ -296,7 +296,7 @@ achievement(id=47924,
     )
 )
 
-achievement(id=47912,
+achievement(id=47912, // badge=48438,
     title="Silver Mic-keys: Pirates of the Caribbean",
     description="Rescue six maidens and light the signal fire for a silver key",
     points=10,
@@ -342,7 +342,7 @@ achievement(
     trigger=earn_key(MAP_CARS, key_cars())
 )
 
-achievement(id=47919,
+achievement(id=47919, // badge=48445,
     title="Silver Mic-keys: Trivia Master",
     description="Earn a silver key by answering Disney trivia questions around the park",
     points=10,
@@ -357,7 +357,7 @@ achievement(id=47919,
     )
 )
 
-achievement(id=47922,
+achievement(id=47922, // badge=48452,
     title="Time to Party",
     description="Collect all six silver keys and start the big parade!",
     points=25,
@@ -365,7 +365,7 @@ achievement(id=47922,
     trigger=win_the_game()
 )
 
-achievement(id=47913,
+achievement(id=47913, // badge=48439,
     title="Meet Jack Sparrow",
     description="Collect the candle in Pirates of the Caribbean",
     points=1, // rescore: 10
@@ -379,7 +379,7 @@ achievement(id=47913,
     )
 )
 
-achievement(id=47927,
+achievement(id=47927, // badge=48460,
     title="Sailing With the Wind", // rename: "Speedy Rescue"
     description="Complete Pirates of the Caribbean with 85 or more seconds left on the clock",
     points=10, // rescore: 25
@@ -395,7 +395,7 @@ achievement(id=47927,
     )
 )
 
-achievement(id=47914,
+achievement(id=47914, // badge=48440,
     title="In a Rush", 
     description="Become number 1000 within 1 second",
     points=2, // rescore: 10
@@ -408,7 +408,7 @@ achievement(id=47914,
     )
 )
 
-achievement(id=47916,
+achievement(id=47916, // badge=48449,
     title="Happy Birthday", // rename: "Conservative"
     description="Reach the second floor of the Haunted Mansion with 60 or more candles",
     points=10, // rescore: 25
@@ -424,7 +424,7 @@ achievement(id=47916,
     )
 )
 
-achievement(id=47917,
+achievement(id=47917, // badge=48443,
     title="An Actual Fire Hazard", // rename: "A b-press is a b-press"
     description="Reach the boss of the Haunted Mansion with 79 or more candles",
     points=25, // rescore: 50
@@ -440,7 +440,7 @@ achievement(id=47917,
     )
 )
 
-achievement(id=47918,
+achievement(id=47918, // badge=48444,
     title="Gold Cup on the Disney 500", // rename: "World Record"
     description="Complete the race with 15 or more seconds left",
     points=10, // rescore: 25
@@ -463,7 +463,7 @@ achievement(
     )
 )
 
-achievement(id=47920,
+achievement(id=47920, // badge=48447,
     title="To Boldly Go Where No Mouse Has Gone Before", // rename: "Star Wars"
     description="Reach Star F without getting hit", // on the most difficult route (D<><>, E<>)",
     points=25,
@@ -481,7 +481,7 @@ achievement(id=47920,
 )
 
 TRAIN_LIMIT = 45
-achievement(id=47921,
+achievement(id=47921, // badge=48450,
     title="Full Steam Ahead", // rename: "Mine Craft"
     description=format("Reach the correct station within {0} seconds without getting hit", TRAIN_LIMIT),
     points=10, // rescore: 25
@@ -518,7 +518,7 @@ achievement(
     )
 )
 
-achievement(id=47925,
+achievement(id=47925, // badge=48458,
     title="When You Wish Upon a Star", // rename: "Super Star"
     description="Collect and hold 99 stars",
     points=5, // rescore: 10
@@ -528,7 +528,7 @@ achievement(id=47925,
     )
 )
 
-achievement(id=47926,
+achievement(id=47926, // badge=48459,
     title="You Know There Are Unlimited Continues, Right?",
     description="Waste your stars on something useless",
     points=5, // rescore: 10
