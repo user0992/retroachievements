@@ -26,30 +26,13 @@ OVERWORLD_NORMAL = 0x96
 OVERWORLD_GATE_OPENING = 0x1b
 OVERWORLD_PARADE = 0xb3
 
-// $0045: Map ID [8 bit] (Unused, Legacy)
-//        00 = Space, Train
-//        01 = Train (later in the stage)
-//        02 = Pirates
-//        03 = <Intro Cutscene, The End>
-//        04 = Haunted Mansion
-//        05 = <Overworld>
-//        06 = Autopia
-function map_id_unused_legacy() => byte(0x000045)
-function map_id_unused_legacy() => word(0x000045)
-
 // $0050: Train - Meters Remaining [3 bytes]
 //        hundreds, tens, ones - expanded BCD
 function train_meters_remaining() => byte(0x000050) * 100 + byte(0x000051) * 10 + byte(0x000052)
 
-// $0060: Camera Y Position [16 bit]
-function camera_y_position() => word(0x000060)
-
 // $0061: Room ID [8 bit]
 //        Mansion: 01, 05, 04, 03, 02
 function room_id() => byte(0x000061)
-
-// $0062: Camera X Position [16 bit]
-function camera_x_position() => word(0x000062)
 
 // $0092: Cursor Position in Name Entry [8 bit]
 function name_entry_cursor() => byte(0x000092)
@@ -122,25 +105,6 @@ MAP_TITLE = 0x0a
 MAP_TRAIN = 0x0b
 MAP_SPACE = 0x0c
 
-// $03C9: Stage Section ID [8 bit]
-//        
-//        -- Pirates [02]
-//        01 = first area
-//        23 = underground
-//        16 = second area
-//        
-//        -- Haunted Mansion [04]
-//        01 = outside
-//        20 = room 1
-//        10 = room 2
-//        12 = room 3
-//        20 = boss room
-//        
-//        -- Overworld [05]
-//        01 = gate opening
-//        30 = parade started
-function stage_section_id() => byte(0x0003C9)
-
 // $0603: Current Star [8 bit] - Space Mountain
 //        0 -> 4 for A-E, does not change to 5
 function space_star() => byte(0x000603)
@@ -165,7 +129,7 @@ function train_target_station() => byte(0x0006E4)
 // $06EC: Key - Space Mountain [8 bit]
 //        0x00 = No Key
 //        0xC0 = Have Key
-function key_pirates() => byte(0x0006E6)
+function key_pirate() => byte(0x0006E6)
 function key_train() => byte(0x0006E7)
 function key_cars() => byte(0x0006E8)
 function key_ghost() => byte(0x0006E9)
@@ -207,7 +171,7 @@ function name_length() => byte(0x0006FF)
 
 LevelNameLookup = {
     MAP_OVERWORLD: "looking for silver keys in the Magic Kingdom",
-    MAP_PIRATE: "rescuing maidens from Pirates of the Caribbean",
+    MAP_PIRATE: "rescuing maidens in Pirates of the Caribbean",
     MAP_GHOST: "being spooked in the Haunted Mansion",
     MAP_CARS: "racing Panhandle Pete at Autopia",
     MAP_THEEND: "enjoying the parade at the Magic Kingdom",
@@ -301,13 +265,7 @@ achievement(id=47912, // badge=48438,
     description="Rescue six maidens and light the signal fire for a silver key",
     points=10,
     type="progression",
-    trigger=(
-        measured(bitcount(PIRATES_COLLECTABLES) - bit7(PIRATES_COLLECTABLES) >= 6,
-            when=map_id() == MAP_PIRATE) &&
-
-        // earn the key
-        prev(key_pirates()) == 0 && key_pirates() == HAVE_KEY
-    )
+    trigger=earn_key(MAP_PIRATE, key_pirate())
 )
 
 achievement(
@@ -375,7 +333,7 @@ achievement(id=47913, // badge=48439,
         map_id() == MAP_PIRATE &&
 
         // collect the candle weapon
-        candles() == 255 && bit7(PIRATES_COLLECTABLES) == 1
+        bit7(PIRATES_COLLECTABLES) == 1
     )
 )
 
@@ -391,7 +349,7 @@ achievement(id=47927, // badge=48460,
         timer() > 85 &&
 
         // trigger when talking to the grateful old man after collecting all of the items
-        trigger_when(bitcount(PIRATES_COLLECTABLES) == 7 && talking_portrait() == TALK_OLDMAN)
+        trigger_when(talking_portrait() == TALK_OLDMAN)
     )
 )
 
@@ -496,7 +454,8 @@ achievement(id=47921, // badge=48450,
         trigger_when(talking_portrait() == TALK_COWBOY_GOOFY) &&
 
         // pause lock if we ever take damage
-        disable_when(health() < prev(health()), until=map_id() != MAP_TRAIN)
+        disable_when(health() < prev(health()),
+            until=map_id() != MAP_TRAIN)
     )
 )
 
@@ -524,7 +483,7 @@ achievement(id=47925, // badge=48458,
     points=5, // rescore: 10
     trigger=(
         // if we collected our 99th star
-        collect_star() && stars() >= 99
+        measured(stars() >= 99, when=collect_star())
     )
 )
 
@@ -566,7 +525,7 @@ achievement(
 )
 
 achievement(
-    title="The Day the Music Died",
+    title="Pressing Pause",
     description="Stop the dancers by freezing time three or more times on the second floor of the Haunted Mansion",
     points=5,
     trigger=(
@@ -574,11 +533,13 @@ achievement(
         measured(tally(3, prev(stars()) - stars() == PRICE_FREEZE && freeze_timer() == 0xb4)) &&
 
         // reset if we are not on the 2nd floor of the Haunted Mansion
-        never(map_id() == MAP_GHOST || room_id() != 4)
+        never(map_id() != MAP_GHOST || room_id() != 4)
     )
 )
 
+// star pickup worth 1 in every stage 
 count_stars = [collect_star()]
+// except Big Thunder Mountain Railroad, where they're worth 5
 for i in range(2,5) array_push(count_stars, collect_star() && map_id() == MAP_TRAIN)
 
 leaderboard(id=85700,
@@ -602,5 +563,6 @@ leaderboard(id=85701,
     submit=prev(key_count()) == 5 && key_count() == 6,
 
     value=measured(tally(0, always_true())),
-    format="FRAMES"
+    format="FRAMES",
+    lower_is_better=true
 )
