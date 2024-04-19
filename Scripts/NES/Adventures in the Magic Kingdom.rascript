@@ -327,7 +327,6 @@ achievement(id=47913, // badge=48439,
     title="Meet Jack Sparrow",
     description="Collect the candle in Pirates of the Caribbean",
     points=1, // rescore: 10
-    type="progression",
     trigger=(
         // correct stage
         map_id() == MAP_PIRATE &&
@@ -424,7 +423,7 @@ achievement(
 achievement(id=47920, // badge=48447,
     title="To Boldly Go Where No Mouse Has Gone Before", // rename: "Star Wars"
     description="Reach Star F without getting hit", // on the most difficult route (D<><>, E<>)",
-    points=25,
+    points=10,
     trigger=(
         // if we are on Space Mountain
         map_id() == MAP_SPACE &&
@@ -507,9 +506,6 @@ achievement(
     trigger=(
         // correct stage
         map_id() == MAP_PIRATE &&
-
-        // don't show the indicator if player cannot afford invincibility
-        stars() >= PRICE_INVINC &&
 
         trigger_when(
             // current invincible
