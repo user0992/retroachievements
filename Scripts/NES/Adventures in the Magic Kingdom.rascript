@@ -34,6 +34,12 @@ function train_meters_remaining() => byte(0x000050) * 100 + byte(0x000051) * 10 
 //        Mansion: 01, 05, 04, 03, 02
 function room_id() => byte(0x000061)
 
+GHOST_OUTSIDE = 1
+GHOST_FLOOR1 = 5
+GHOST_FLOOR2 = 4
+GHOST_FLOOR3 = 3
+GHOST_BOSS = 2
+
 // $0092: Cursor Position in Name Entry [8 bit]
 function name_entry_cursor() => byte(0x000092)
 
@@ -367,14 +373,14 @@ achievement(id=47914, // badge=48440,
 
 achievement(id=47916, // badge=48449,
     title="Happy Birthday", // rename: "Conservative"
-    description="Reach the second floor of the Haunted Mansion with 60 or more candles",
+    description="Leave the second floor of the Haunted Mansion with 60 or more candles",
     points=10, // rescore: 25
     trigger=(
         // correct level
         map_id() == MAP_GHOST && 
         
-        // transitioning from 1st floor to 2nd floor
-        prev(room_id()) == 5 && room_id() == 4 &&
+        // transitioning from 2nd floor to 3rd floor
+        prev(room_id()) == GHOST_FLOOR2 && room_id() == GHOST_FLOOR3 &&
 
         // enough candles
         candles() >= 60
@@ -390,7 +396,7 @@ achievement(id=47917, // badge=48443,
         map_id() == MAP_GHOST && 
         
         // transitioning from 3rd floor to boss room
-        prev(room_id()) == 3 && room_id() == 2 &&
+        prev(room_id()) == GHOST_FLOOR3 && room_id() == GHOST_BOSS &&
 
         // enough candles
         candles() >= 79
@@ -492,7 +498,7 @@ achievement(id=47926, // badge=48459,
     points=5, // rescore: 10
     trigger=(
         // spend the correct number of stars
-        prev(stars()) - stars() == PRICE_1UP &&
+        prior(stars()) - stars() == PRICE_1UP &&
 
         // buy a life from the pause menu
         prev(lives()) == 8 && lives() == 9
@@ -529,7 +535,7 @@ achievement(
         measured(tally(3, prev(stars()) - stars() == PRICE_FREEZE && freeze_timer() == 0xb4)) &&
 
         // reset if we are not on the 2nd floor of the Haunted Mansion
-        never(map_id() != MAP_GHOST || room_id() != 4)
+        never(map_id() != MAP_GHOST || room_id() != GHOST_FLOOR2)
     )
 )
 
