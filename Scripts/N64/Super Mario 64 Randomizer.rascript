@@ -304,6 +304,9 @@ function is_loading() => bit2(PAUSE_STATE)
 //          divide by 30 to get seconds
 function race_timer_frames() => word(0x18717E)
 
+// $187F64: Time since loading [32 bit]
+function level_timer() => dword(0x187F64)
+
 // $1871F8: Pointer to Interacted Object [32 bit]
 //          .. +0x130 = interaction type (0x00001000 for stars)
 //          .. +0x190 = interaction subtype (0x00000800 for grand star)
@@ -319,7 +322,13 @@ function coins_hud() => byte(0x187170)
 
 // $18722C: Air Frames [8 bit]
 function air() => byte(0x18722C)
-function drowning() => prev(air()) == 0x00 && air() == 0xFF // && mario_in(mario_action(), ACT_GROUP_SUBMERGED)
+function drowning() => (
+    // air timer rolled over during this frame, so damage is due to drowning
+    prev(air()) == 0x00 && air() == 0xFF
+
+    // can only drown underwater
+    // && mario_in(mario_action(), ACT_GROUP_SUBMERGED)
+)
 
 // $18722D: Health Remaining [8 bit] (0-8)
 function health() => byte(0x18722D)
@@ -513,6 +522,18 @@ function collect_grand_star() => (collect_a_star() && dword((ptr_to_last_interac
 // new random seed started (leave the file select on a file that doesn't exist)
 function new_file_created() => (prev(map_id()) < MAP_MIN && map_id() >= MAP_MIN && file_exists(current_save_game()) == 0)
 
+// start when a new file is created (cannot start from an existing file or set seed, generally)
+function start_game() => new_file_created() && is_set_seed() == 0
+
+// submit when you collect the grand star at the end of the game
+function end_game() => map_id() == MAP_BITS_ARENA && collect_grand_star()
+
+// cancel if we change files, or if we delete the file from the file select screen
+function leave_game() => (!in_game() && file_exists(current_save_game()) == 0) || prev(current_file()) != current_file()
+
+// count frames
+function frame_count() => measured(tally(0, always_true())) // measured(tally(0, is_loading() == 0))
+
 // check if entering a level
 function enter_level() =>
 (
@@ -548,7 +569,7 @@ function minimum_progression_settings() =>
 
 achievement(
     title="[Warning] Minimum Randomization Settings Required",
-    description="All achievements require minimum randomization settings (see comments)",
+    description="All achievements require minimum randomization settings (see forum)",
     points=0,
     trigger=(in_game() && (!minimum_progression_settings() || stars_needed() < 70))
 )
@@ -629,7 +650,7 @@ for course in MAIN_COURSES
                 when=settings() == PRESET_EXTREME && is_set_seed() == 0) &&
 
             // reset if the player quits the game
-            never(!in_game())
+            never(leave_game())
         )
     )
 }
@@ -649,8 +670,8 @@ achievement(
         // collected any 10 stars
         prev(star_count()) < GREEN_DEMON_STARS && trigger_when(star_count() >= GREEN_DEMON_STARS) &&
 
-        // reset if the player quits the game
-        never(!in_game())
+        // reset if the leaves their file
+        never(leave_game())
     )
 )
 
@@ -673,6 +694,24 @@ achievement(
             // trigger when the star is collected
             trigger_when(collect_star(course["red"]))
         ))
+    )
+)
+
+SPRINT_MINUTES = 40
+achievement(
+    title="Better Than Sonic",
+    description=format("In one session, defeat Bowser in under {0} minutes on the Sprint preset", SPRINT_MINUTES),
+    points=10,
+    trigger=(
+        // start on new file on sprint preset
+        once(start_game() && settings() == PRESET_SPRINT) &&
+
+        // time passed is still under goal time
+        disable_when(tally(SPRINT_MINUTES * 60 * 60, always_true()),
+            until=leave_game()) &&
+
+        // trigger on collecting grand star
+        trigger_when(star_count() >= 30 && end_game())
     )
 )
 
@@ -744,7 +783,8 @@ achievement(
         trigger_when(collect_a_star()) &&
 
         // pause if enough frames have passed, reset the timer
-        disable_when(repeated(STAR_COLLECT_SECONDS * 60, trans_active() == 0),
+        // timer is 30 fps because that's how often the level_timer() updates, every other frame
+        disable_when(repeated(STAR_COLLECT_SECONDS * 30, trans_active() == 0 && prev(level_timer()) != level_timer()),
             until=prev(map_id()) != map_id() || enter_level()) &&
 
         // reset if this isn't a main course
@@ -813,18 +853,6 @@ achievement(
         never(take_damage())
     )
 )
-
-// start when a new file is created (cannot start from an existing file or set seed, generally)
-function start_game() => new_file_created() && is_set_seed() == 0
-
-// cancel if we change files, or if we delete the file from the file select screen
-function leave_game() => (!in_game() && file_exists(current_save_game()) == 0) || prev(current_file()) != current_file()
-
-// submit when you collect the grand star at the end of the game
-function end_game() => map_id() == MAP_BITS_ARENA && collect_grand_star()
-
-// count frames
-function frame_count() => measured(tally(0, always_true())) // measured(tally(0, is_loading() == 0))
 
 leaderboard(
     title="70 Star Speedrun - Default",
