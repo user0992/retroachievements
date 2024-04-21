@@ -528,8 +528,17 @@ function start_game() => new_file_created() && is_set_seed() == 0
 // submit when you collect the grand star at the end of the game
 function end_game() => map_id() == MAP_BITS_ARENA && collect_grand_star()
 
-// cancel if we change files, or if we delete the file from the file select screen
-function leave_game() => (!in_game() && file_exists(current_save_game()) == 0) || prev(current_file()) != current_file()
+// we have "left the game" if...
+function leave_game() => (
+    // the file we were playing on is deleted
+    (!in_game() && file_exists(current_save_game()) == 0) || 
+
+    // or, we change which slot we are playing (from the menu)
+    prev(current_file()) != current_file() ||
+
+    // or, the settings are changed somehow (some are able to be changed at will)
+    prev(settings()) != settings()
+)
 
 // count frames
 function frame_count() => measured(tally(0, always_true())) // measured(tally(0, is_loading() == 0))
@@ -642,15 +651,17 @@ for course in MAIN_COURSES
 {
     achievement(
         title=format("Extremely Jumbled up in {0}", course["name"]),
-        description=format("In one session, collect all 7 stars in {0} on the EXTREME preset", course["name"]),
+        description=format("Collect all 7 stars in {0} on the EXTREME preset", course["name"]),
         points=5,
         trigger=(
-            // the player collected 7 stars from the same stage
-            measured(tally_of(range(1,7), 7, i => map_id() == course["map"] && collect_star(i)),
-                when=settings() == PRESET_EXTREME && is_set_seed() == 0) &&
+            // settings must be correct
+            settings() == PRESET_EXTREME && is_set_seed() == 0 &&
 
-            // reset if the player quits the game
-            never(leave_game())
+            // previously did not have 7 stars from this stage
+            prev(star_count_by_course(course["offset"])) == 6 &&
+
+            // the player collected 7 stars from the same stage
+            measured(star_count_by_course(course["offset"]) == 7, when=map_id() == course["map"])
         )
     )
 }
@@ -867,13 +878,13 @@ leaderboard(
     lower_is_better=true
 )
 
-leaderboard(
-    title="70 Star Speedrun - Extreme, Set Seed",
-    description="On the Extreme preset, with seed 10509, collect 70 stars and defeat Bowser",
+leaderboard(id=95145,
+    title="100 Star Speedrun - Extreme, Set Seed",
+    description="On the Extreme preset, with seed 10509, collect 100 stars and defeat Bowser",
 
     start=(new_file_created() && seed() == 10509 && settings() == PRESET_EXTREME),
     cancel=leave_game(),
-    submit=(star_count() >= 70 && end_game()),
+    submit=(star_count() >= 100 && end_game()),
     
     value=frame_count(),
     format="FRAMES",
