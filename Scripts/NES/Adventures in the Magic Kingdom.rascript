@@ -389,14 +389,14 @@ achievement(id=47916, // badge=48449,
 
 achievement(id=47917, // badge=48443,
     title="An Actual Fire Hazard", // rename: "A b-press is a b-press"
-    description="Reach the boss of the Haunted Mansion with 79 or more candles",
+    description="Collect 79 or more candles before reaching the boss of the Haunted Mansion",
     points=25, // rescore: 50
     trigger=(
         // correct level
         map_id() == MAP_GHOST && 
         
-        // transitioning from 3rd floor to boss room
-        prev(room_id()) == GHOST_FLOOR3 && room_id() == GHOST_BOSS &&
+        // haven't reached boss room
+        room_id() != GHOST_BOSS &&
 
         // enough candles
         candles() >= 79
