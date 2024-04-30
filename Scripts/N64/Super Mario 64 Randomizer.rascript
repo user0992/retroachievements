@@ -580,7 +580,7 @@ achievement(
     title="[Warning] Minimum Randomization Settings Required",
     description="All achievements require minimum randomization settings (see forum)",
     points=0,
-    trigger=(in_game() && (!minimum_progression_settings() || stars_needed() < 70))
+    trigger=(in_game() || (map_id() == 1 && prev(setup_settings()) == PRESET_DEFAULT && setup_settings() != PRESET_DEFAULT))
 )
 
 STAR_MILESTONES = [
@@ -654,14 +654,12 @@ for course in MAIN_COURSES
         description=format("Collect all 7 stars in {0} on the EXTREME preset", course["name"]),
         points=5,
         trigger=(
-            // settings must be correct
-            settings() == PRESET_EXTREME && is_set_seed() == 0 &&
-
             // previously did not have 7 stars from this stage
             prev(star_count_by_course(course["offset"])) == 6 &&
 
             // the player collected 7 stars from the same stage
-            measured(star_count_by_course(course["offset"]) == 7, when=map_id() == course["map"])
+            measured(star_count_by_course(course["offset"]) == 7,
+                when=settings() == PRESET_EXTREME && is_set_seed() == 0 && map_id() == course["map"])
         )
     )
 }
