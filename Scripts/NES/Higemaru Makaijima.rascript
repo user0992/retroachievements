@@ -255,7 +255,7 @@ rich_presence_keys = rich_presence_value("Number", num_keys())
 rich_presence_island = rich_presence_lookup("Island", map_id(), ISLAND_LOOKUP, fallback="the seven islands")
 
 rich_presence_conditional_display(in_game() == 0x0000,
-    "🦜 Getting ready for an adventure in the seven islands"
+    "🦜 Gettin' a crew together for an adventure in the seven islands"
 )
 
 rich_presence_conditional_display(on_land() == 0 && num_keys() == num_bosses() && num_bosses() < 7,
