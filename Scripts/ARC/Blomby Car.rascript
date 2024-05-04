@@ -53,14 +53,14 @@ GROUP_WINNER = 0x5
 GROUP_TITLE = 0xE
 
 EMOJI_STATE = {
-	STATE_DEMO: "📽",
-	0x1E: "🚥",
-	0x1F: "🚥",
-	0x1D: "🚥",
-	STATE_RACE: "🚩",
-	STATE_FINISH: "🏁",
-	STATE_RACE_OVERTIME: "❗🚩",
-	STATE_RACE_OVER: "❌🚩",
+    STATE_DEMO: "📽",
+    0x1E: "🚥",
+    0x1F: "🚥",
+    0x1D: "🚥",
+    STATE_RACE: "🚩",
+    STATE_FINISH: "🏁",
+    STATE_RACE_OVERTIME: "❗🚩",
+    STATE_RACE_OVER: "❌🚩",
 }
 
 // $2CC6: Current Speed [8 bit]
@@ -83,8 +83,8 @@ function crash() => byte(0x002FA1)
 function is_crashing() => crash() == 3
 
 CRASH_STATE = {
-	0: "",
-	3: "🔧",
+    0: "",
+    3: "🔧",
 }
 
 // $3010: Clock Time (in tenths) [16 bit]
@@ -131,10 +131,10 @@ DIFF_HARD = 2
 DIFF_HARDEST = 3
 
 DIFFICULTY = {
-	DIFF_EASY: "Easy",
-	DIFF_NORMAL: "Normal",
-	DIFF_HARD: "Hard",
-	DIFF_HARDEST: "Hardest",
+    DIFF_EASY: "Easy",
+    DIFF_NORMAL: "Normal",
+    DIFF_HARD: "Hard",
+    DIFF_HARDEST: "Hardest",
 }
 
 // $5C42: Player Current Rank [8 bit]
@@ -152,27 +152,27 @@ rp_diff = rich_presence_lookup("Difficulty", difficulty(), DIFFICULTY, fallback=
 
 rich_presence_conditional_display(game_state_group() == GROUP_RACE,
     "{0}{1} Racing from {2} | 🏎 {3} km/h | ⏲️ {4} | 💰 {5} | {6} Difficulty",
-	rp_state, rp_crash, rp_leg, rp_speed, rp_time, rp_score, rp_diff
+    rp_state, rp_crash, rp_leg, rp_speed, rp_time, rp_score, rp_diff
 )
 
 rich_presence_conditional_display(game_state_group() == GROUP_WINNER,
     "🏆 You are the champion! 🏅 | 💰 {0} | {1} Difficulty",
-	rp_score, rp_diff
+    rp_score, rp_diff
 )
 
 rich_presence_conditional_display(game_state_group() == GROUP_SETUP && game_state() <= 0x1D,
     "🗺️ Reviewing the route from {0}",
-	rp_leg
+    rp_leg
 )
 
 rich_presence_conditional_display(game_state_group() == GROUP_SETUP,
     "{0}{1} Racing from {2} | 🏎{3} km/h | ⏲️ {4} | 💰 {5} | {6} Difficulty",
-	rp_state, rp_crash, rp_leg, rp_speed, rp_time, rp_score, rp_diff
+    rp_state, rp_crash, rp_leg, rp_speed, rp_time, rp_score, rp_diff
 )
 
 rich_presence_conditional_display(game_state() == STATE_DEMO,
     "📽 [DEMO] Racing from {0} | 🏎 {1} km/h | ⏲️ {2}",
-	rp_demo_leg, rp_speed, rp_time
+    rp_demo_leg, rp_speed, rp_time
 )
 
 rich_presence_display(
@@ -186,143 +186,143 @@ function rally_complete() => race_complete() && track() == 3
 function win_game() => game_state() == STATE_CHAMPION
 
 ach_names = [
-	"Vive la Blombe",
-	"Strait Into Gibraltar",
-	"From Here to Timbuktu",
-	"The Tsar of Dakar",
+    "Vive la Blombe",
+    "Strait Into Gibraltar",
+    "From Here to Timbuktu",
+    "The Tsar of Dakar",
 ]
 
 for track in range(0,3)
 {
-	achievement(
-		title=ach_names[track],
-		description=format("Complete the {0} leg of the race on Normal difficulty or higher", LEGS[track]),
-		points=if_else(track == TRACK_DAKAR, 25, 5),
-		type=if_else(track == TRACK_DAKAR, "win_condition", "progression"),
-		trigger=(track() == track && difficulty() != DIFF_EASY && race_complete())
-	)
+    achievement(
+        title=ach_names[track],
+        description=format("Complete the {0} leg of the race on Normal difficulty or higher", LEGS[track]),
+        points=if_else(track == TRACK_DAKAR, 25, 5),
+        type=if_else(track == TRACK_DAKAR, "win_condition", "progression"),
+        trigger=(track() == track && difficulty() != DIFF_EASY && race_complete())
+    )
 }
 
 if (false) // DISABLED
 achievement(
-	title="Super Blomby Dakart",
-	description="Complete all four legs of the Paris-Dakar rally on Hard difficulty or higher",
-	points=25,
-	trigger=(
-		// a hit for completing each track in the rally on Hardest
-		measured(
-			tally_of(range(0,3), 4, (x) => once(track() == x && race_complete())), 
-			when=difficulty() >= DIFF_HARD
-		) &&
+    title="Super Blomby Dakart",
+    description="Complete all four legs of the Paris-Dakar rally on Hard difficulty or higher",
+    points=25,
+    trigger=(
+        // a hit for completing each track in the rally on Hardest
+        measured(
+            tally_of(range(0,3), 4, (x) => once(track() == x && race_complete())), 
+            when=difficulty() >= DIFF_HARD
+        ) &&
 
-		// trigger on You Are The Champion
-		game_state() == STATE_CHAMPION &&
+        // trigger on You Are The Champion
+        game_state() == STATE_CHAMPION &&
 
-		// reset if you're back at the start
-		never(game_state() == STATE_BONVOIAGE)
-	)
+        // reset if you're back at the start
+        never(game_state() == STATE_BONVOIAGE)
+    )
 )
 
 achievement(
-	title="From Paris to Dakar, One-Way Non-Stop (1CC)",
-	description="Complete all four legs with only one credit on Normal difficulty or higher",
-	points=50,
-	trigger=(
-		// checkpoint hit at the start of the rally if we are on the right difficulty
-		difficulty() != DIFF_EASY && once(rally_start()) &&
+    title="From Paris to Dakar, One-Way Non-Stop (1CC)",
+    description="Complete all four legs with only one credit on Normal difficulty or higher",
+    points=50,
+    trigger=(
+        // checkpoint hit at the start of the rally if we are on the right difficulty
+        difficulty() != DIFF_EASY && once(rally_start()) &&
 
-		// trigger when we complete the rally
-		trigger_when(rally_complete()) &&
+        // trigger when we complete the rally
+        trigger_when(rally_complete()) &&
 
-		// reset if we ever use a continue
-		never(game_state() == STATE_CONTINUE || credits() < prev(credits())) &&
+        // reset if we ever use a continue
+        never(game_state() == STATE_CONTINUE || credits() < prev(credits())) &&
 
-		// reset if you're back at the start
-		never(game_state() == STATE_BONVOIAGE)
-	)
+        // reset if you're back at the start
+        never(game_state() == STATE_BONVOIAGE)
+    )
 )
 
 TOP_SPEED_TIME = 15
 achievement(
-	title="Speed Demon",
-	description=format("Reach and maintain top speed (200 km/h) for more than {0} seconds", TOP_SPEED_TIME),
-	points=5,
-	trigger=(tally(TOP_SPEED_TIME * 60, speed() >= 0x16) && never(speed() < 0x16) && never(game_state() != STATE_RACE))
+    title="Speed Demon",
+    description=format("Reach and maintain top speed (200 km/h) for more than {0} seconds", TOP_SPEED_TIME),
+    points=5,
+    trigger=(tally(TOP_SPEED_TIME * 60, speed() >= 0x16) && never(speed() < 0x16) && never(game_state() != STATE_RACE))
 )
 
 for track in range(0,3)
 {
-	achievement(
-		title=format("Rally Expert {0}: {1}", ROMAN[track+1], LEGS[track]),
-		description=format("Complete the {0} leg of the race without crashing", LEGS[track]),
-		points=10,
-		trigger=(
-			// correct track
-			track() == track && game_state_group() == GROUP_RACE &&
+    achievement(
+        title=format("Rally Expert {0}: {1}", ROMAN[track+1], LEGS[track]),
+        description=format("Complete the {0} leg of the race without crashing", LEGS[track]),
+        points=10,
+        trigger=(
+            // correct track
+            track() == track && game_state_group() == GROUP_RACE &&
 
-			// trigger when the player crosses the finish line
-			trigger_when(race_complete()) &&
+            // trigger when the player crosses the finish line
+            trigger_when(race_complete()) &&
 
-			// disable if the player crashes
-			disable_when(is_crashing(), until=race_start())
-		)
-	)
+            // disable if the player crashes
+            disable_when(is_crashing(), until=race_start())
+        )
+    )
 }
 
 GOAL_TIMES = {
-	TRACK_MADRID: 1450,
-	TRACK_GIBRALTAR: 1300,
-	TRACK_TOMBOUCTOU: 1400,
-	TRACK_DAKAR: 1650,
+    TRACK_MADRID: 1450,
+    TRACK_GIBRALTAR: 1300,
+    TRACK_TOMBOUCTOU: 1400,
+    TRACK_DAKAR: 1650,
 }
 
 for track in range(0,3)
 {
-	achievement(
-		title=format("Infernal Raid {0}: {1}", ROMAN[track+1], LEGS[track]),
-		description=format("Complete the {0} leg of the race in {1}.{2} seconds or less on Normal difficulty or higher",
-			LEGS[track], GOAL_TIMES[track]/10, GOAL_TIMES[track]%10),
-		points=10,
-		trigger=(
-			// correct track, difficulty, and the time is still valid
-			track() == track && game_state_group() == GROUP_RACE && difficulty() != DIFF_EASY &&
-			
-			// timer hasn't expired yet
-			clock() <= GOAL_TIMES[track] &&
-			
-			// trigger when the player crosses the finish line
-			trigger_when(race_complete())
-		)
-	)
+    achievement(
+        title=format("Infernal Raid {0}: {1}", ROMAN[track+1], LEGS[track]),
+        description=format("Complete the {0} leg of the race in {1}.{2} seconds or less on Normal difficulty or higher",
+            LEGS[track], GOAL_TIMES[track]/10, GOAL_TIMES[track]%10),
+        points=10,
+        trigger=(
+            // correct track, difficulty, and the time is still valid
+            track() == track && game_state_group() == GROUP_RACE && difficulty() != DIFF_EASY &&
+            
+            // timer hasn't expired yet
+            clock() <= GOAL_TIMES[track] &&
+            
+            // trigger when the player crosses the finish line
+            trigger_when(race_complete())
+        )
+    )
 }
 
 //for diff in [DIFF_NORMAL, DIFF_HARD, DIFF_HARDEST]
 diff = DIFF_NORMAL
 for track in range(0,3)
 {
-	leaderboard(
-		title=format("#{0} {1} ({2})", track+1, LEGS[track], DIFFICULTY[diff]),
-		description=format("Complete the {0} leg as quickly as possible on {1} difficulty", LEGS[track], DIFFICULTY[diff]),
+    leaderboard(
+        title=format("#{0} {1} ({2})", track+1, LEGS[track], DIFFICULTY[diff]),
+        description=format("Complete the {0} leg as quickly as possible on {1} difficulty", LEGS[track], DIFFICULTY[diff]),
 
-		start=race_complete() && track() == track && difficulty() == diff,
-		cancel=track() != track,
-		submit=always_true(),
+        start=race_complete() && track() == track && difficulty() == diff,
+        cancel=track() != track,
+        submit=always_true(),
 
-		value=clock(),
-		format="FIXED1",
-		lower_is_better=true
-	)
+        value=clock(),
+        format="FIXED1",
+        lower_is_better=true
+    )
 }
 
 leaderboard(
-	title=format("Paris-Dakar Star ({0})", DIFFICULTY[diff]),
-	description=format("Clear all four legs of the Paris-Dakar rally as quickly as possible on {0} difficulty", DIFFICULTY[diff]),
+    title=format("Paris-Dakar Star ({0})", DIFFICULTY[diff]),
+    description=format("Clear all four legs of the Paris-Dakar rally as quickly as possible on {0} difficulty", DIFFICULTY[diff]),
 
-	start=game_state() == STATE_CHAMPION && difficulty() == diff,
-	cancel=game_state() != STATE_CHAMPION,
-	submit=always_true(),
+    start=game_state() == STATE_CHAMPION && difficulty() == diff,
+    cancel=game_state() != STATE_CHAMPION,
+    submit=always_true(),
 
-	value=sum_of(range(0,3), clear_time),
-	format="FIXED1",
-	lower_is_better=true
+    value=sum_of(range(0,3), clear_time),
+    format="FIXED1",
+    lower_is_better=true
 )
