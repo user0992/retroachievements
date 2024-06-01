@@ -253,6 +253,7 @@ for island in ISLANDS { ISLAND_LOOKUP[island["i"]] = island["name"] }
 rich_presence_health = rich_presence_value("Score", health(), "SCORE")
 rich_presence_keys = rich_presence_value("Number", num_keys())
 rich_presence_island = rich_presence_lookup("Island", map_id(), ISLAND_LOOKUP, fallback="the seven islands")
+rich_presence_target = rich_presence_lookup("Island", num_bosses(), ISLAND_LOOKUP, fallback="the seven islands")
 
 rich_presence_conditional_display(in_game() == 0x0000,
     "🦜 Gettin' a crew together for an adventure in the seven islands"
@@ -260,12 +261,12 @@ rich_presence_conditional_display(in_game() == 0x0000,
 
 rich_presence_conditional_display(on_land() == 0 && num_keys() == num_bosses() && num_bosses() < 7,
     "⛵🌊 Sailin' the high seas | Lookin' for the key to {2} | 💰{0} 🗝️{1}",
-    rich_presence_health, rich_presence_keys, rich_presence_island
+    rich_presence_health, rich_presence_keys, rich_presence_target
 )
 
 rich_presence_conditional_display(on_land() == 0 && num_bosses() < 7,
     "⛵🌊 Sailin' the high seas | Headin' to port at {2} | 💰{0} 🗝️{1}",
-    rich_presence_health, rich_presence_keys, rich_presence_island
+    rich_presence_health, rich_presence_keys, rich_presence_target
 )
 
 rich_presence_conditional_display(on_land() == 0,
@@ -275,7 +276,7 @@ rich_presence_conditional_display(on_land() == 0,
 
 rich_presence_conditional_display(on_land() == 1 && map_id() == SHIP_KEY,
     "🏴‍☠️⚔️ Raidin' a Higemaru ship (☠️{3}) | Lookin' for the key to {2} | 💰{0} 🗝️{1}",
-    rich_presence_health, rich_presence_keys, rich_presence_island,
+    rich_presence_health, rich_presence_keys, rich_presence_target,
     rich_presence_value("Number", pirates_remaining())
 )
 
