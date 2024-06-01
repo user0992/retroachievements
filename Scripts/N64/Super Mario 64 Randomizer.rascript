@@ -5,6 +5,8 @@
 function if_else(p, t, f) { if (p) { return t } else return f }
 idfunc = (x) => x
 
+function vptr_to_addr(x) => (x & 0x00FFFFFF)
+
 // $1787C8: Current File [8 bit]
 //          1 = File A
 //          2 = File B
@@ -211,9 +213,9 @@ function pause_menu_type() => byte(0x17AA5B)
 
 // $17AD9C: Pointer to The Mario [32 bit]
 //          .. +0x0C = action [32 bit bitfield]
-function ptr_to_mario() => dword(0x17AD9C) & 0x00FFFFFF
+function ptr_to_mario() => vptr_to_addr(dword(0x17AD9C))
 function mario_action() => dword(ptr_to_mario() + 0x0C)
-function mario_held_obj() => dword(ptr_to_mario() + 0x7C) & 0x00FFFFFF
+function mario_held_obj() => vptr_to_addr(dword(ptr_to_mario() + 0x7C))
 
 function mario_y_pos() => float(ptr_to_mario() + 0x40)
 function mario_floor_height() => float(ptr_to_mario() + 0x70)
@@ -476,28 +478,51 @@ NonstopLookup = {
     1: " ♾️",
 }
 
+ClockLookup = {
+    TTC_SLOW: "🕒🐢",
+    TTC_FAST: "🕘🐇",
+    TTC_RAND: "🕕🔀",
+    TTC_STOP: "🕛⏸️",
+}
+
+rp_loc = rich_presence_lookup("Map", map_id(), MapLookup, fallback="in the Mushroom Kingdom")
+rp_stars = rich_presence_value("Number", star_count())
+rp_seed = rich_presence_value("Number", seed())
+rp_set_seed = rich_presence_lookup("SetSeed", is_set_seed(), SetSeedLookup, fallback="")
+rp_preset = rich_presence_lookup("Preset", settings(), PRESETS, fallback="Default")
+rp_settings = rich_presence_value("Number", settings())
+rp_gdemon = rich_presence_lookup("GreenDemon", is_green_demon(), GreenDemonLookup, fallback="")
+rp_nonstop = rich_presence_lookup("NonStop", is_nonstop(), NonstopLookup, fallback="")
+rp_ttc_clock = rich_presence_lookup("Clock", ttc_clock_state(), ClockLookup, fallback=ClockLookup[TTC_STOP])
+
 rich_presence_conditional_display(!in_game(),
     "🔀 Setting up a New Randomizer 🎲"
 )
 
+rich_presence_conditional_display(map_id() == MAP_TTC && any_of(PRESETS, (x) => settings() == x),
+    "Mario is {0} {5} | ⭐{1} | 🌱{2}{3} | {4} Preset",
+    rp_loc, rp_stars, rp_seed, rp_set_seed,
+    rp_preset,
+    rp_ttc_clock
+)
+
+rich_presence_conditional_display(map_id() == MAP_TTC,
+    "Mario is {0} {7} | ⭐{1} | 🌱{2}{3} | 🎲{4}{5}{6}",
+    rp_loc, rp_stars, rp_seed, rp_set_seed,
+    rp_settings, rp_gdemon, rp_nonstop,
+    rp_ttc_clock
+)
+
 rich_presence_conditional_display(any_of(PRESETS, (x) => settings() == x),
     "Mario is {0} | ⭐{1} | 🌱{2}{3} | {4} Preset",
-    rich_presence_lookup("Map", map_id(), MapLookup, fallback="in the Mushroom Kingdom"),
-    rich_presence_value("Number", star_count()),
-    rich_presence_value("Number", seed()),
-    rich_presence_lookup("SetSeed", is_set_seed(), SetSeedLookup, fallback=""),
-    rich_presence_lookup("Preset", settings(), PRESETS, fallback="Default")
+    rp_loc, rp_stars, rp_seed, rp_set_seed,
+    rp_preset
 )
 
 rich_presence_display(
     "Mario is {0} | ⭐{1} | 🌱{2}{3} | 🎲{4}{5}{6}",
-    rich_presence_lookup("Map", map_id(), MapLookup, fallback="in the Mushroom Kingdom"),
-    rich_presence_value("Number", star_count()),
-    rich_presence_value("Number", seed()),
-    rich_presence_lookup("SetSeed", is_set_seed(), SetSeedLookup, fallback=""),
-    rich_presence_value("Number", settings()),
-    rich_presence_lookup("GreenDemon", is_green_demon(), GreenDemonLookup, fallback=""),
-    rich_presence_lookup("NonStop", is_nonstop(), NonstopLookup, fallback="")
+    rp_loc, rp_stars, rp_seed, rp_set_seed,
+    rp_settings, rp_gdemon, rp_nonstop
 )
 
 // check for collecting any star (or key)
@@ -507,7 +532,7 @@ function collect_a_star() =>
     prev(ptr_to_last_interacted_obj()) != ptr_to_last_interacted_obj() &&
 
     // type is star (obj->oInteractType == INTERACT_STAR_OR_KEY)
-    dword((ptr_to_last_interacted_obj() & 0x00FFFFFF) + 0x130) == 0x00001000
+    dword(vptr_to_addr(ptr_to_last_interacted_obj()) + 0x130) == 0x00001000
 )
 
 // alias for readability
@@ -517,7 +542,7 @@ collect_a_key = collect_a_star
 function collect_star(i) => (collect_a_star() && last_star_number() == i)
 
 // check for collecting the grand star
-function collect_grand_star() => (collect_a_star() && dword((ptr_to_last_interacted_obj() & 0x00FFFFFF) + 0x190) == 0x00000800)
+function collect_grand_star() => (collect_a_star() && dword(vptr_to_addr(ptr_to_last_interacted_obj()) + 0x190) == 0x00000800)
 
 // new random seed started (leave the file select on a file that doesn't exist)
 function new_file_created() => (prev(map_id()) < MAP_MIN && map_id() >= MAP_MIN && file_exists(current_save_game()) == 0)
@@ -762,7 +787,7 @@ achievement(
 
 achievement(
     title="A Randomizer in my Randomizer",
-    description="Collect the TTC 100 coin star while the clock is set to random (6:00)",
+    description="Collect 100 coins in Tick Tock Clock while the clock is set to random (6:00)",
     points=10,
     trigger=(
         // randomize all required
@@ -771,8 +796,8 @@ achievement(
         // in TTC with random clock state
         map_id() == MAP_TTC && ttc_clock_state() == TTC_RAND &&
 
-        // trigger on collecting the 100 coin star
-        trigger_when(collect_star(7))
+        // trigger on collecting 100 coins
+        trigger_when(coins() >= 100)
     )
 )
 
