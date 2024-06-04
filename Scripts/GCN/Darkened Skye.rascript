@@ -114,13 +114,12 @@ function ground_object() => dword_be(0x19A888)
 function camera_lock() => dword_be(0x19ACD0)
 
 // $19ADBC: Level Number [32 bit BE], separated into main and part
-function level_number() => dword_be(0x19ADBC)
-
 // $19ADBC: Level Number - Main [16 bit BE]
-function level_number_main() => word_be(0x19ADBC)
-
 // $19ADBE: Level Number - Part [16 bit BE]
-//          00,00 = Intro Cutscene
+function level_number() => dword_be(0x19ADBC)
+function level_number_main() => word_be(0x19ADBC)
+function level_number_part() => word_be(0x19ADBE)
+
 //          01,01 = Lynlora 1
 //          01,02 = Lynlora 1 Hut Cutscene
 //          01,03 = Lynlora 1 Post-Hut
@@ -175,7 +174,6 @@ function level_number_main() => word_be(0x19ADBC)
 //          10,01 = Necroth's Realm
 //          10,02 = The Dark Prism
 //          10,03 = Necroth's Lair
-function level_number_part() => word_be(0x19ADBE)
 
 // $19B6D4: Cutscene Active? [32 bit BE]
 //          0 = no, 1 = yes
@@ -271,7 +269,7 @@ function get_skull(level, i) => get_object_param(SKULL_INDICES[level][i])
 //          .. +44 = Y Delta [Float BE]
 //          .. +48 = Z Delta [Float BE]
 //          .. +84 = Model Name [ASCII Text] (outfit info)
-function skye_pointer() => word_be(0x1D5530) & 0xFFFFFF
+function skye_ptr() => word_be(0x1D5530) & 0xFFFFFF
 
 // $365160: Prepared Spell Table (128 bytes x # of spells)
 //          Struct for each spell, indexed based on the spell menu:
@@ -511,7 +509,7 @@ STAGE_CLEARS = [
     {
         "src": 0x00080003, 
         "dst": 0x00090001, 
-        "title": "<Completing Warlord's Palace>", 
+        "title": "Harmonious Living", 
         "desc": "Bring together the five birds of harmony and leave Zen'jai",
     },
     {
@@ -521,62 +519,62 @@ STAGE_CLEARS = [
         "desc": "Trade your fruitcake for entry into the Zogle Gem Mines",
     },
     {
-        "src": 0x00090005, 
-        "dst": 0x000A0001, 
-        "title": "<Lynlora -> Stoneheath>", 
+        "src": 0x00090004, 
+        "dst": 0x00090005, 
+        "title": "Delighted", 
+        "desc": "Exchange a bag full of rare gemstones for the green prism",
+    },
+    {
+        "src": 0x000a0002, 
+        "dst": 0x000b0001, 
+        "title": "", 
+        "desc": "Wake the Stoneheath golems and free Gwenella's horse in Stoneheath Circles",
+    },
+    // {
+    //     "src": 0x000b0002, 
+    //     "dst": 0x000b0003, 
+    //     "title": "<Goblin Lab -> Goblin Lair>", 
+    //     "desc": "",
+    // },
+    {
+        "src": 0x000b0004, 
+        "dst": 0x000c0001, 
+        "title": "Trust Me and We Will Escape From the City", 
+        "desc": "Execute a flawless prison escape from the Goblin Lair",
+    },
+    {
+        "src": 0x000c0001, 
+        "dst": 0x000d0001, 
+        "title": "Gwenella's Return", 
         "desc": "",
     },
     {
-        "src": 0x000A0002, 
-        "dst": 0x000B0001, 
-        "title": "<Stoneheath -> Goblin Prison>", 
-        "desc": "",
-    },
-    { // TODO: is this one needed?
-        "src": 0x000B0002, 
-        "dst": 0x000B0003, 
-        "title": "<Goblin Lab -> Goblin Lair>", 
-        "desc": "",
-    },
-    {
-        "src": 0x000B0004, 
-        "dst": 0x000C0001, 
-        "title": "<Goblin Lair -> Bone Lands>", 
-        "desc": "",
-    },
-    {
-        "src": 0x000C0001, 
-        "dst": 0x000D0001, 
-        "title": "<Bone Lands -> Lynlora>", 
-        "desc": "",
-    },
-    {
-        "src": 0x000D0004, 
-        "dst": 0x000D0005, 
+        "src": 0x000d0004, 
+        "dst": 0x000d0005, 
         "title": "<Lynlora -> Twell Country>", 
         "desc": "",
     },
     {
-        "src": 0x000D0005, 
-        "dst": 0x000D0006, 
+        "src": 0x000d0005, 
+        "dst": 0x000d0006, 
         "title": "<Complete Twell Country>", 
         "desc": "",
     },
     {
-        "src": 0x000E0001, 
-        "dst": 0x000E0002, 
+        "src": 0x000e0001, 
+        "dst": 0x000e0002, 
         "title": "<Gargoyle Cemetery -> Catacombs 1>", 
         "desc": "",
     },
     {
-        "src": 0x000E0003, 
-        "dst": 0x000E0004, 
+        "src": 0x000e0003, 
+        "dst": 0x000e0004, 
         "title": "<Gargoyle Catacombs 2 -> Cemetery>", 
         "desc": "",
     },
     {
-        "src": 0x000E0006, 
-        "dst": 0x000F0001, 
+        "src": 0x000e0006, 
+        "dst": 0x000f0001, 
         "title": "<Gargoyle Catacombs 4 (Vampire) -> Cathedral Library>", 
         "desc": "",
     },
@@ -628,6 +626,7 @@ for data in STAGE_CLEARS
         title=data["title"],
         description=data["desc"],
         points=5,
+        type="progression",
         trigger=(
             // prevents firing from loading a saved game
             unpaused() &&
@@ -642,6 +641,7 @@ achievement(
     title="Heart of the Rainbow",
     description="Defeat Necroth in his lair and restore the power of the rainbow",
     points=25,
+    type="win_condition",
     trigger=(
         // was in Necroth's lair
         prior(level_number()) == 0x00100003 &&
@@ -672,9 +672,10 @@ for riddle in RIDDLES
     )
 }
 
+SQUELK_HEALTH_MIN = 50
 achievement(
     title="Never Pay for Squelk Insurance",
-    description="Collect and turn in a full bag of gems in the Zogle Gem Mines without your squelk's health dropping below 50%",
+    description=format("Collect and turn in a full bag of gems in the Zogle Gem Mines without your squelk's health dropping below {0}%", SQUELK_HEALTH_MIN),
     points=10,
     trigger=(
         // in the correct level
@@ -688,7 +689,7 @@ achievement(
         trigger_when(cutscene_playing(0x09, 0x2c)) &&
 
         // reset if health ever drops below 50%
-        never(current_health() < 50.0) &&
+        never(current_health() < SQUELK_HEALTH_MIN) &&
 
         // reset if the player loads a save game
         never(loading_file()) &&
