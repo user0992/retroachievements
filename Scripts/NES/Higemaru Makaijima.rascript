@@ -297,7 +297,22 @@ function check_flag(flag, island) => (
 // (x=4, y=0) final treasure door
 // (x=5, y=1) Baido's treasure cutscene
 function location(island, x, y) => on_land() == 1 && map_id() == island && screen_x() == x && screen_y() == y && screen_scrolling() == 0
-function win_game() => location(FINALE, 5, 1) && prev(screen_x()) == 4 && prev(screen_y()) == 0 && item_baidos_tear() == 1
+function win_game() => (
+    // on land
+    on_land() == 1 &&
+
+    // on the finale map
+    map_id() == FINALE &&
+
+    // new screen is the finale
+    screen_x() == 5 && screen_y() == 1 &&
+
+    // previous screen was the door
+    prev(screen_x()) == 4 && prev(screen_y()) == 0 &&
+
+    // player has baido's tear
+    item_baidos_tear() == 1
+)
 
 for island in ISLANDS
 {
