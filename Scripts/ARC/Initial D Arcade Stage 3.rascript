@@ -797,11 +797,11 @@ rp_bunta_stars = rich_presence_value("_Number", bunta_level(map()), "VALUE")
 rp_bunta_total = rich_presence_value("_Number", bunta_total(), "VALUE")
 
 rich_presence_conditional_display(is_racing() != 0 && mode() == MODE_STORY,
-    "📖 Chapter {8}: vs {9} ({6}{7}m) | 🚩 {0} {1}{2}{3} | 🚗 {4} ({5})",
+    "📖 Chapter {8}: vs {9}{10} ({6}{7}m) | 🚩 {0} {1}{2}{3} | 🚗 {4} ({5})",
     rp_course, rp_dir, rp_weather, rp_time,
     rp_player_car, rp_player_short,
     rp_adv_sign, rp_adv,
-    rp_chapter, rp_rival
+    rp_chapter, rp_rival, rp_racer_level
 )
 
 rich_presence_conditional_display(is_racing() != 0 && mode() == MODE_TIME && is_race_complete() != 0,
