@@ -112,13 +112,13 @@ DeckLookup = {
 }
 
 rich_presence_conditional_display(game_state() == STATE_PLAYING,
-    "{0} is escaping deck {1} of the Titenic | ❤️{2}/87, {3} {4} | {5} points",
+    "{0} is escaping deck {1} of the Titenic | ❤️{2}%, {3} {4} | {5} points",
     rich_presence_lookup("Char", player_char(), CharLookup, fallback="Jack"),
     rich_presence_lookup("Deck", level(), DeckLookup, fallback="1"),
-    rich_presence_value("Number", health()),
-    rich_presence_value("Number", lives()),
+    rich_presence_value("_Number", 100.0 * health() / 87.0, "VALUE"),
+    rich_presence_value("_Number", lives(), "VALUE"),
     rich_presence_lookup("Life", lives(), {1: "Life"}, fallback="Lives"),
-    rich_presence_value("Number", score())
+    rich_presence_value("_Number", score(), "VALUE")
 )
 
 rich_presence_conditional_display(level() == 5 && !now_playing(),
