@@ -1,0 +1,404 @@
+                       ---------------------------- 
+                              PAR CODE GUIDE
+                              Drakkhen SNES 
+                       ----------------------------
+
+
+VERSION 1 BY IVAN FERREL
+04/03/2002
+IvanFerrel@hotmail.com
+
+--------
+Contents
+--------
+1 Disclaimer
+2 PAR Codes
+3 Legal stuff
+4 Thanks
+
+------------
+1 Disclaimer
+------------
+I'm not responsible for what happens if any use the codes 
+and cause damage to your game of course if used the way discribe
+here nothing bad happens.  
+
+-----------
+2 PAR Codes
+-----------
+
+Notes:
+*The level code not always work,so use if you want to.
+*Replace the XX,whit the digit you want(From the table)
+*You can change a Weapon to a Weapon,and Armor to Armor,also in the
+items you can change a item to item,staff to staff,a ring to ring.
+*you can't change item-staff or weapon-armor.
+*Change the item 4th digit to 1,2 or 3,so you can modify player2,3,4 items,armor or Weapons.
+*4281 is the number to press in the Haaggkha castle.
+
+Example: this is the code for Player 1
+-7ea052 XX and you want to modify player 2 weapons-Armor
+change the code to
+-7ea152 XX and now you have a code for player 2,change the 4th number to 
+2 for player 3 
+-7ea252 XX Player 3 and change the 4th number to
+3 for player 4
+-7ea352 XX use this same tactic for players 2,3,4 items code. 
+
+
+Example: you have a dagger in the first position and want a Dragon Sword+3
+use the code:
+7ea052 e3=Dragon Sword+3
+-now give the Dragon Sword+3 to another character and turn off the code.
+-if you want that the 1st player keep the Dragon Sword+3 turn off the code. 
+
+Weapon-Armors:
+
+Player 1          
+7ea052 XX
+7ea054 XX
+7ea056 XX
+7ea058 XX
+7ea05a XX
+7ea05c XX
+7ea05e XX
+7ea060 XX
+
+Items
+7ea062 XX
+7ea064 XX
+7ea066 XX
+7ea068 XX
+7ea06a XX
+7ea06c XX
+7ea06e XX
+7ea070 XX
+
+Armor digits:
+00=Light Helmet
+01=Light Helmet+1
+02=Light Helmet+2
+03=Light Helmet+3
+04=Power Helmet
+05=Power Helmet+1
+06=Power Helmet+2
+07=Power Helmet+3
+08=Heavy Helmet
+09=Heavy Helmet+1
+0a=Heavy Helmet+2
+0b=Heavy Helmet+3
+0c=Hyper Helmet
+0d=Hyper Helmet+1
+0e=Hyper Helmet+2
+0f=Hyper Helmet+3
+10=Dragon Helmet
+11=Dragon Helmet+1
+12=Dragon Helmet+2
+13=Dragon Helmet+3
+20=Leather
+21=Leather+1
+22=Leather+2
+23=Leather+3
+24=Leather Plate
+25=Leather Plate+1
+26=Leather Plate+2
+27=Leather PLate+3
+28=Medium Cuirass
+29=Medium Cuirass+1
+2a=Medium Cuirass+2
+2b=Medium Cuirass+3
+2c=Light Cuirass
+2d=Light Cuirass+1
+2e=Light Cuirass+2
+2f=Light Cuirass+3
+30=Heavy Cuirass
+31=Heavy Cuirass+1
+32=Heavy Cuirass+2
+33=Heavy Cuirass+3
+34=Power Cuirass
+35=Power Cuirass+1
+36=Power Cuirass+2
+37=Power Cuirass+3
+38=Hyper Cuirass
+39=Hyper Cuirass+1
+3a=Hyper Cuirass+2
+3b=Hyper Cuirass+3
+3c=Dragon Cuirass
+3d=Dragon Cuirass+1
+3e=Dragon Cuirass+2
+3f=Dragon Cuirass+3
+40=Light Greave
+41=Light Greave+1
+42=Light Greave+2
+43=Light Greave+3
+44=Medium Greave
+45=Medium Greave+1
+46=Medium Greave+2
+47=Medium Greave+3
+48=Heavy Greave
+49=Heavy Greave+1
+4a=Heavy Greave+2
+4b=Heavy Greave+3
+4c=Power Greave
+4d=Power Greave+1
+4e=Power Greave+2
+4f=Power Greave+3
+50=Hyper Greave
+51=Hyper Greave+1
+52=Hyper Greave+2
+53=Hyper Greave+3
+54=Dragon Greave
+55=Dragon Greave+1
+56=Dragon Greave+2
+57=Dragon Greave+3
+60=Shoes
+61=Shoes+1
+62=Shoes+2
+63=Shoes+3
+64=Boots
+65=Boots+1
+66=Boots+2
+67=Boots+3
+80=Light Robe
+81=Light Robe+1
+82=Light Robe+2
+83=Light Robe+3
+84=Medium Robe
+85=Medium Robe+1
+86=Medium Robe+2
+87=Medium Robe+3
+88=Heavy Robe
+89=Heavy Robe+1
+8a=Heavy Robe+2
+8b=Heavy Robe+3
+8c=Light Coat
+8d=Light Coat+1
+8e=Light Coat+2
+8f=Light Coat+3
+90=Medium Coat
+91=Medium Coat+1
+92=Medium Coat+2
+93=Medium Coat+3
+94=Heavy Coat
+95=Heavy Coat+1
+96=Heavy Coat+2
+97=Heavy Coat+3
+a0=Buckler
+a1=Buckler+1
+a2=Buckler+2
+a3=Buckler+3
+a4=Light Buckler
+a5=Light Buckler+1
+a6=Light Buckler+2
+a7=Light Buckler+3
+a8=Medium Buckler
+a9=Medium Buckler+1
+aa=Medium Buckler+2
+ab=Medium Buckler+3
+ac=Heavy Buckler
+ad=Heavy Buckler+1
+ae=Heavy Buckler+2
+af=Heavy Buckler+3
+c0=Light Shield
+c1=Light Shield+1
+c2=Light Shield+2
+c3=Light Shield+3
+c4=Heavy Shield
+c5=Heavy Shield+1
+c6=Heavy Shield+2
+c7=Heavy Shield+3
+c8=Power Shield
+c9=Power Shield+1
+ca=Power Shield+2
+cb=Power Shield+3
+cc=Hyper Shield
+cd=Hyper Shield+1
+ce=Hyper Shield+2
+cf=Hyper Shield+3
+d0=Dragon Shield
+d1=Dragon Shield+1
+d2=Dragon Shield+2
+d3=Dragon Shield+3
+e0=Chain Mail
+e1=Chain Mail+1
+e2=Chain Mail+2
+e3=Chain Mail+3
+e4=Shirt
+e5=Shirt+1
+e6=Shirt+2
+e7=Shirt+3
+e8=Jacket
+e9=Jacket+1
+ea=Jacket+2
+eb=Jacket+3
+
+
+Weapon Digits:
+00=Dagger
+01=Dagger+1
+02=Dagger+2
+03=Dagger+3
+20=Short Sword
+21=Short Sword+1
+22=Short Sword+2
+23=Short Sword+3
+40=Long Sword
+41=Long Sword+1
+42=Long Sword+2
+43=Long Sword+3
+60=Bludgeon
+61=Bludgeon+1
+62=Bludgeon+2
+63=Bludgeon+3
+80=Rod
+81=Rod+1
+82=Rod+2
+83=Rod+3
+a0=Bow-Arrow
+a1=Bow-Arrow+1
+a2=Bow-Arrow+2
+a3=Bow-Arrow+3
+c0=saber
+c1=Saber+1
+c2=Saber+2
+c3=saber+3
+e0=Dragon Sword
+e1=Dragon Sword+1
+e2=Dragon Sword+2
+e3=Dragon Sword+3
+
+Item Digits
+Torch-Key:
+00=torch
+20=Key
+
+Staff-Staff
+00=Ghost Staff
+08=Earth Staff
+10=Air Staff
+18=Life Staff
+20=Magic Staff
+28=Thiefi's Staff
+30=Lucky Staff
+38=Word Staff
+
+Ring-Ring
+08=War Ring
+10=Wind Ring
+18=Flash Ring
+20=Sage's Ring
+28=Force Ring
+30=Star Ring
+38=Defense Ring
+
+Item-Item
+00=Empty Phial
+08=Water
+11=Phial (MP)X2
+12=Phial (MP)X3
+13=Phial (MP)X4
+14=Phial (MP)X5
+15=Phial (MP)X6
+17=Phial (MP)X7
+18=Water
+19=Heart
+
+
+Money
+
+7ea01b ff=Max Money
+7ea01c e0=Max Money
+7ea01d f5=Max Money
+7ea01e 05=Max Money
+
+Player 1
+
+7ea015 ff=255 Power
+7ea016 ff=255 Agility
+7ea017 ff=255 Intelligence
+7ea018 ff=255 Physique
+7ea019 ff=255 Knowledge
+7ea01a ff=255 Fortune
+7ea01f ff=255 defense
+7ea028 ff=255 HP
+7ea029 ff=255 Maximum Health Point
+7ea02a ff=255 MP
+7ea02b ff=255 Maximum Magic Point
+7ea020 ff=Max exp
+7ea021 e0=Max exp
+7ea022 f5=Max exp
+7ea023 05=Max exp
+7ea02c ff=255 Level Player 1
+
+Player 2
+
+7ea115 ff=255 Power
+7ea116 ff=255 Agility
+7ea117 ff=255 Intelligence
+7ea118 ff=255 Physique
+7ea119 ff=255 Knowledge
+7ea11a ff=255 Fortune
+7ea11f ff=255 defense
+7ea128 ff=255 HP
+7ea129 ff=255 Maximum Health Point
+7ea12a ff=255 MP
+7ea12b ff=255 Maximum Magic Point
+7ea120 ff=Max exp
+7ea121 e0=Max exp
+7ea122 f5=Max exp
+7ea123 05=Max exp
+7ea12c ff=255 Level Player 2
+
+Player 3
+
+7ea215 ff=255 Power
+7ea216 ff=255 Agility
+7ea217 ff=255 Intelligence
+7ea218 ff=255 Physique
+7ea219 ff=255 Knowledge
+7ea21a ff=255 Fortune
+7ea21f ff=255 defense
+7ea228 ff=255 HP
+7ea229 ff=255 Maximum Health Point
+7ea22a ff=255 MP
+7ea22b ff=255 Maximum Magic Point
+7ea220 ff=Max exp
+7ea221 e0=Max exp
+7ea222 f5=Max exp
+7ea223 05=Max exp
+7ea22c ff=255 Level Player 3
+
+Player 4
+
+7ea315 ff=255 Power
+7ea316 ff=255 Agility
+7ea317 ff=255 Intelligence
+7ea318 ff=255 Physique
+7ea319 ff=255 Knowledge
+7ea31a ff=255 Fortune
+7ea31f ff=255 defense
+7ea328 ff=255 HP
+7ea329 ff=255 Maximum Health Point
+7ea32a ff=255 MP
+7ea32b ff=255 Maximum Magic Point
+7ea320 ff=Max exp
+7ea321 e0=Max exp
+7ea322 f5=Max exp
+7ea323 05=Max exp
+7ea32c ff=255 Level Player 4
+-------------
+3 LEGAL STUFF
+-------------
+Drakkhen is property of Kemco/Infogrames
+This PAR Code guide is (c) IVAN FERREL
+ 
+--------
+4 Thanks
+--------
+Gamefaqs the best site for game information
+Kemco/Infogrames
+Myself for making the PAR codes IVAN FERREL
+Restore Page
+
+This website uses cookies to enhance user experience and to analyze performance and traffic on our website. We also share information about your use of our site with our social media, advertising and analytics partners.Privacy Policy
+Do Not Sell My Personal Information Accept Cookies
