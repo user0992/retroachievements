@@ -1,6 +1,14 @@
 // Darkened Skye
 // #ID = 25437
 
+// HELPERS
+NULL = 0
+function if_else(p, t, f) { if (p) { return t } else return f }
+idfunc = (x) => x
+ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+
+function ptr(addr) => dword_be(addr) & 0x1FFFFFFF
+
 // $16D97C: Menu Popup Visible [32 bit BE]
 //          0 = No, 1 = Yes
 function menu_popup_visible() => dword_be(0x16D97C)
@@ -60,7 +68,7 @@ function unpaused() => pause_menu_tab() == 0
 function loading_file() => prev(pause_menu_tab()) == 5 && pause_menu_tab() == 0
 
 // $16F10C: Number of Held Items [32 bit BE]
-function item_count() => dword_be(0x16F10C)
+function num_items() => dword_be(0x16F10C)
 
 // $16F11C: Pointer to Held Item Table [32 bit BE]
 //          .. Held Item Table (36 bytes x # of items)
@@ -75,6 +83,7 @@ function item_count() => dword_be(0x16F10C)
 //          .. +24 = Current Item Count [32 bit BE]
 //          .. +28 = Max Item Count [32 bit BE], 0 if unlimited
 PTR_TO_ITEM_TABLE = 0x16F11C
+function item_table() => ptr(PTR_TO_ITEM_TABLE)
 function item_table() => 0x37C640 // tbyte_be(PTR_TO_ITEM_TABLE + 1)
 
 function item_struct(i) => i * 36 + item_table()
@@ -82,21 +91,37 @@ function item_id(i) => dword_be(tbyte_be(item_struct(i) + 9))
 function item_count(i) => dword_be(item_struct(i) + 24)
 
 function holding_item(x) => has_selected_item() && item_id(selected_item_index()) == x
-function current_item_used() => has_selected_item() && item_count(selected_item_index()) < prev(item_count(selected_item_index()))
+
+// largest number of item slots to check
+MAX_ITEM_COUNT = 24
 
 // list of item lookups
-ITEM_GEMSTONES = 0x8038CBB1
-ITEM_LIFE_POT = 0
-ITEM_MANA_POT = 0
+ITEM_GEMSTONES = 0x8038cbb1
+ITEM_LIFE_POT = 0x8038d931
+ITEM_MANA_POT = 0x8038e087
+ITEM_FISH = 0x8038c8bb
+
+ITEM_WOOD_TOYS = [
+    0x8038daeb, // toy boat
+    0x8038dbba, // wooden doll
+    0x8038db72, // toy wagon
+    0x8038db34, // toy monster
+]
+
+// $17DDA8: Diminish Timer (seconds) [Float BE]
+//          - stays at ~6, when cast Diminish, resets to 0 and counts up
+//          - once timer reaches 5, starts regrowing up to ~6 again
+//          - if cannot grow (low ceiling), timer stays under 5
+function diminish_timer() => float_be(0x17DDA8)
 
 // $17F128: Number of Available Spells [32 bit BE]
-function spell_count() => dword_be(0x17F128)
+function num_spells() => dword_be(0x17F128)
 
 // $17F13C: Total Number of Skittles® [32 bit BE]
-function skittles_count() => dword_be(0x17F13C)
+function num_skittles() => dword_be(0x17F13C)
 
 // $17F150: Unallocated Skittles® [32 bit BE]
-function skittles_unallocated() => dword_be(0x17F150)
+function num_skittles_unallocated() => dword_be(0x17F150)
 
 // $19A810: Actual Current Health [Float BE]
 //          Max = 100.0
@@ -119,6 +144,9 @@ function camera_lock() => dword_be(0x19ACD0)
 function level_number() => dword_be(0x19ADBC)
 function level_number_main() => word_be(0x19ADBC)
 function level_number_part() => word_be(0x19ADBE)
+
+
+function STAGE(main, part) => main * 0x10000 + part
 
 //          01,01 = Lynlora 1
 //          01,02 = Lynlora 1 Hut Cutscene
@@ -203,6 +231,8 @@ function cutscene_playing(a, b, c=0xFFFFFFFF) =>
     cutscene_id_sub() == c
 )
 
+function cutscene_playing_from_params(x) => cutscene_playing(x[0], x[1], x[2])
+
 function cutscene_ended(a, b, c=0xFFFFFFFF) =>
 (
     prev(_cutscene_active()) == 1 &&
@@ -252,10 +282,10 @@ function get_object_ptr(i) => tbyte_be(i * 4 + 1 + tbyte_be(OBJECT_TABLE_POINTER
 function get_object_param(i) => dword_be(get_object_ptr(i) + 148)
 
 SKULL_INDICES = {
-    0x000e0001: [26, 25, 24, 23, 22],
-    0x000e0002: [13, 12, 11, 10,  9],
-    0x000e0003: [ 9, 10, 11, 12, 13],
-    0x000e0005: [11, 10,  9,  8,  7],
+    STAGE(0x0e, 0x01): [26, 25, 24, 23, 22],
+    STAGE(0x0e, 0x02): [13, 12, 11, 10,  9],
+    STAGE(0x0e, 0x03): [ 9, 10, 11, 12, 13],
+    STAGE(0x0e, 0x05): [11, 10,  9,  8,  7],
 }
 function get_skull(level, i) => get_object_param(SKULL_INDICES[level][i])
 
@@ -311,6 +341,30 @@ SPELL_TABLE = 0x365160
 function current_spell() => dword_be(prepared_spell_index() * 128 + SPELL_TABLE)
 function is_current_spell(i) => has_prepared_spell() && current_spell() == i
 
+SPELL_TRUE_SIGHT = 0x00
+SPELL_AWAKEN_STONE = 0x01
+SPELL_DIMINISH = 0x02
+SPELL_PRISMATIC_PULSE = 0x03
+SPELL_FIREWALK = 0x04
+SPELL_LIGHTNING = 0x05
+SPELL_STRENGTH_SAP = 0x06
+SPELL_PYRO_PULSE = 0x07
+SPELL_WIND_GLIDE = 0x08
+SPELL_SHADOW_VISION = 0x09
+SPELL_POLAR_PULSE = 0x0a
+SPELL_CLEANSE_EVIL = 0x0b
+SPELL_AFFLICTION = 0x0c
+SPELL_MADNESS = 0x0d
+SPELL_CREATE_WIZARD = 0x0e
+SPELL_HEART_OF_THE_RAINBOW = 0x0f
+SPELL_IMPEDE = 0x10
+SPELL_MAGNIFY_MAGIC = 0x11
+SPELL_PSYCHIC_BLAST = 0x12
+SPELL_SPELL_SHIELD = 0x13
+SPELL_RING_OF_RIME = 0x14
+SPELL_UNIVERSAL_SMITE = 0x15
+SPELL_VEIL = 0x16
+
 // $365D80: Skittles® Lookup Table - N x 12-byte structs
 //          Size of table located at 0x0017f13c
 //          
@@ -323,291 +377,393 @@ function skittle_charge(i) => float_be(i * 12 + SKITTLES_TABLE + 4)
 function skittle_spell(i) => dword_be(i * 12 + SKITTLES_TABLE + 8)
 
 MapLookup = {
-    0x00010001: "Lynlora",
-    0x00010002: "Lynlora",
-    0x00010003: "Lynlora",
-    0x00020001: "Ogmire Archipelago",
-    0x00030001: "Tikniki Swamp",
-    0x00040001: "Ogmire City",
-    0x00040002: "Ogmire Dungeons",
-    0x00040003: "Ogmire Prison Tower",
-    0x00050001: "Lynlora",
-    0x00050002: "Lynlora",
-    0x00050003: "Lynlora",
-    0x00050004: "the Pirates' Sky Camp",
-    0x00050005: "Lynlora",
-    0x00050006: "Lynlora",
-    0x00060001: "Zen'jai Hills",
-    0x00060002: "Zen'jai Hills",
-    0x00070001: "the Dragon Village",
-    0x00070002: "the Dragon Village",
-    0x00070003: "the Dragon Village",
-    0x00070004: "the Dragon Village",
-    0x00080001: "the Warlord's Palace",
-    0x00080002: "the Warlord's Palace",
-    0x00080003: "the Warlord's Palace",
-    0x00090001: "Lynlora",
-    0x00090002: "Lynlora",
-    0x00090003: "Lynlora ",
-    0x00090004: "the Zogle Gem Mines",
-    0x00090005: "Lynlora",
-    0x000a0001: "the Stoneheath Circles",
-    0x000a0002: "the Stoneheath Circles",
-    0x000b0001: "the Goblin Prison",
-    0x000b0002: "the Goblin Laboratory",
-    0x000b0003: "the Goblin Lair",
-    0x000b0004: "the Goblin Workshop",
-    0x000b0005: "the Goblin Workshop",
-    0x000c0001: "the Bone Lands",
-    0x000d0001: "Lynlora",
-    0x000d0002: "Lynlora",
-    0x000d0003: "Lynlora",
-    0x000d0004: "Twell Country",
-    0x000d0005: "Twell Country",
-    0x000d0006: "Lynlora",
-    0x000e0001: "the Gargoyle Cemetery",
-    0x000e0002: "the Gargoyle Catacombs",
-    0x000e0003: "the Gargoyle Catacombs",
-    0x000e0004: "the Gargoyle Cemetery",
-    0x000e0005: "the Gargoyle Catacombs",
-    0x000e0006: "the Gargoyle Catacombs",
-    0x000f0001: "the Cathedral Library",
-    0x000f0002: "the Cathedral",
-    0x000f0003: "the Bell Tower",
-    0x00100001: "Necroth's Realm",
-    0x00100002: "the Dark Prism",
-    0x00100003: "Necroth's Lair",
+    STAGE(0x01, 0x01): "Lynlora",
+    STAGE(0x01, 0x02): "Lynlora",
+    STAGE(0x01, 0x03): "Lynlora",
+    STAGE(0x02, 0x01): "Ogmire Archipelago",
+    STAGE(0x03, 0x01): "Tikniki Swamp",
+    STAGE(0x04, 0x01): "Ogmire City",
+    STAGE(0x04, 0x02): "Ogmire Dungeons",
+    STAGE(0x04, 0x03): "Ogmire Prison Tower",
+    STAGE(0x05, 0x01): "Lynlora",
+    STAGE(0x05, 0x02): "Lynlora",
+    STAGE(0x05, 0x03): "Lynlora",
+    STAGE(0x05, 0x04): "the Pirates' Sky Camp",
+    STAGE(0x05, 0x05): "Lynlora",
+    STAGE(0x05, 0x06): "Lynlora",
+    STAGE(0x06, 0x01): "Zen'jai Hills",
+    STAGE(0x06, 0x02): "Zen'jai Hills",
+    STAGE(0x07, 0x01): "the Dragon Village",
+    STAGE(0x07, 0x02): "the Dragon Village",
+    STAGE(0x07, 0x03): "the Dragon Village",
+    STAGE(0x07, 0x04): "the Dragon Village",
+    STAGE(0x08, 0x01): "the Warlord's Palace",
+    STAGE(0x08, 0x02): "the Warlord's Palace",
+    STAGE(0x08, 0x03): "the Warlord's Palace",
+    STAGE(0x09, 0x01): "Lynlora",
+    STAGE(0x09, 0x02): "Lynlora",
+    STAGE(0x09, 0x03): "Lynlora",
+    STAGE(0x09, 0x04): "the Zogle Gem Mines",
+    STAGE(0x09, 0x05): "Lynlora",
+    STAGE(0x0a, 0x01): "the Stoneheath Circles",
+    STAGE(0x0a, 0x02): "the Stoneheath Circles",
+    STAGE(0x0b, 0x01): "the Goblin Prison",
+    STAGE(0x0b, 0x02): "the Goblin Laboratory",
+    STAGE(0x0b, 0x03): "the Goblin Lair",
+    STAGE(0x0b, 0x04): "the Goblin Workshop",
+    STAGE(0x0b, 0x05): "the Goblin Workshop",
+    STAGE(0x0c, 0x01): "the Bone Lands",
+    STAGE(0x0d, 0x01): "Lynlora",
+    STAGE(0x0d, 0x02): "Lynlora",
+    STAGE(0x0d, 0x03): "Lynlora",
+    STAGE(0x0d, 0x04): "Twell Country",
+    STAGE(0x0d, 0x05): "Twell Country",
+    STAGE(0x0d, 0x06): "Lynlora",
+    STAGE(0x0e, 0x01): "the Gargoyle Cemetery",
+    STAGE(0x0e, 0x02): "the Gargoyle Catacombs",
+    STAGE(0x0e, 0x03): "the Gargoyle Catacombs",
+    STAGE(0x0e, 0x04): "the Gargoyle Cemetery",
+    STAGE(0x0e, 0x05): "the Gargoyle Catacombs",
+    STAGE(0x0e, 0x06): "the Gargoyle Catacombs",
+    STAGE(0x0f, 0x01): "the Cathedral Library",
+    STAGE(0x0f, 0x02): "the Cathedral",
+    STAGE(0x0f, 0x03): "the Bell Tower",
+    STAGE(0x10, 0x01): "Necroth's Realm",
+    STAGE(0x10, 0x02): "the Dark Prism",
+    STAGE(0x10, 0x03): "Necroth's Lair",
 }
 
 SPELL_SLOTS = [2, 3, 3, 2, 4, 6, 2, 3, 6, 2, 4, 5, 5, 3, 6, 6, 2, 4, 4, 4, 5, 3, 4]
 SpellLookup = {
-    0x0: "True Sight", // 2
-    0x1: "Awaken Stone", // 3
-    0x2: "Diminish", // 3
-    0x3: "Prismatic Pulse", // 2
-    0x4: "Firewalk", // 4
-    0x5: "Lightning", // 6
-    0x6: "Strength Sap", // 2
-    0x7: "Pyro Pulse", // 3
-    0x8: "Wind Glide", // 6
-    0x9: "Shadow Vision", // 2
-    0xa: "Polar Pulse", // 4
-    0xb: "Cleanse Evil", // 5
-    0xc: "Affliction", // 5
-    0xd: "Madness", // 3
-    0xe: "Create Wizard", // 6
-    0xf: "Heart of the Rainbow", // 6
-    0x10: "Impede", // 2
-    0x11: "Magnify Magic", // 4
-    0x12: "Psychic Blast", // 4
-    0x13: "Spell Shield", // 4
-    0x14: "Ring of Rime", // 5
-    0x15: "Universal Smite", // 3
-    0x16: "Veil", // 4
+    SPELL_TRUE_SIGHT: "True Sight", // 2
+    SPELL_AWAKEN_STONE: "Awaken Stone", // 3
+    SPELL_DIMINISH: "Diminish", // 3
+    SPELL_PRISMATIC_PULSE: "Prismatic Pulse", // 2
+    SPELL_FIREWALK: "Firewalk", // 4
+    SPELL_LIGHTNING: "Lightning", // 6
+    SPELL_STRENGTH_SAP: "Strength Sap", // 2
+    SPELL_PYRO_PULSE: "Pyro Pulse", // 3
+    SPELL_WIND_GLIDE: "Wind Glide", // 6
+    SPELL_SHADOW_VISION: "Shadow Vision", // 2
+    SPELL_POLAR_PULSE: "Polar Pulse", // 4
+    SPELL_CLEANSE_EVIL: "Cleanse Evil", // 5
+    SPELL_AFFLICTION: "Affliction", // 5
+    SPELL_MADNESS: "Madness", // 3
+    SPELL_CREATE_WIZARD: "Create Wizard", // 6
+    SPELL_HEART_OF_THE_RAINBOW: "Heart of the Rainbow", // 6
+    SPELL_IMPEDE: "Impede", // 2
+    SPELL_MAGNIFY_MAGIC: "Magnify Magic", // 4
+    SPELL_PSYCHIC_BLAST: "Psychic Blast", // 4
+    SPELL_SPELL_SHIELD: "Spell Shield", // 4
+    SPELL_RING_OF_RIME: "Ring of Rime", // 5
+    SPELL_UNIVERSAL_SMITE: "Universal Smite", // 3
+    SPELL_VEIL: "Veil", // 4
 }
 
 function cast_spell(spell)
 {
     // should only need to check the charge of the first slotted Skittles®
     charge = skittle_charge(dword_be(prepared_spell_index() * 128 + SPELL_TABLE + 88))
-    return is_current_spell(spell) && charge < prev(charge)
+    return is_current_spell(spell) && prepared_spell_index() == prev(prepared_spell_index()) && charge < prev(charge)
 }
 
 function cast_any_spell()
 {
     // should only need to check the charge of the first slotted Skittles®
     charge = skittle_charge(dword_be(prepared_spell_index() * 128 + SPELL_TABLE + 88))
-    return has_prepared_spell() && charge < prev(charge)
+    return has_prepared_spell() && prepared_spell_index() == prev(prepared_spell_index()) && charge < prev(charge)
 }
 
-rich_presence_conditional_display(level_number() == 0x00090004 && holding_item(ITEM_GEMSTONES),
+// return true if the item id is held and the predicate is true
+// @param pred: func(i) for additional check for that 
+function check_inventory(id, pred=((x) => always_true()))
+{
+    trigger = always_false()
+    for i in range(0, MAX_ITEM_COUNT-1)
+    {
+        trigger = trigger || (i < num_items() && item_id(i) == id && pred(i))
+    }
+    return trigger
+}
+
+// FIXME: does not work due to some of the timings of these values changing
+function used_item(id) => (
+    (
+        // either the item count goes down
+        (prev(has_selected_item()) && prev(item_id(selected_item_index())) == id &&
+            prev(item_count(selected_item_index())) > 1 && 
+            item_count(selected_item_index()) < prev(item_count(selected_item_index())) && 
+            holding_item(id)) ||
+
+        // or the item is no longer present in the inventory
+        (prev(has_selected_item()) && prev(item_id(selected_item_index())) == id &&
+            prev(item_count(selected_item_index())) == 1 && num_items() == prev(num_items()) - 1 && !holding_item(id))
+    )
+)
+
+rp_hp = rich_presence_value("Number", current_health())
+rp_map = rich_presence_lookup("Map", level_number(), MapLookup, fallback="the Five Lands")
+
+rich_presence_conditional_display(level_number() == STAGE(0x09, 0x04) && holding_item(ITEM_GEMSTONES),
     "Skye is collecting rare gemstones in the Zogle Gem Mines | ❤️{0}% | 💎{1}%",
-    rich_presence_value("Number", current_health()),
+    rp_hp,
     rich_presence_value("Number", item_count(selected_item_index()) * 2)
 )
 
 rich_presence_conditional_display(prepared_spell_index() != 0xFFFFFFFF,
     "Skye is collecting Skittles® in {0} | ❤️{1}% | 🪄{2}",
-    rich_presence_lookup("Map", level_number(), MapLookup, fallback="the Five Lands"),
-    rich_presence_value("Number", current_health()),
+    rp_map, rp_hp,
     rich_presence_lookup("Spell", current_spell(), SpellLookup, fallback="<Unknown>")
 )
 
 rich_presence_display(
     "Skye is collecting Skittles® in {0} | ❤️{1}%",
-    rich_presence_lookup("Map", level_number(), MapLookup, fallback="the Five Lands"),
-    rich_presence_value("Number", current_health())
+    rp_map, rp_hp
 )
 
 STAGE_CLEARS = [
     {
-        "src": 0x00010003,
-        "dst": 0x00020001,
+        "id": 442877,
+        "src": STAGE(0x01, 0x03),
+        "dst": STAGE(0x02, 0x01),
         "title": "The Adventure Begins", 
         "desc": "Use True Sight to find the way to leave Lynlora with the orange prism",
+        "pts": 5,
     },
     {
-        "src": 0x00020001, 
-        "dst": 0x00030001, 
+        "id": 442878,
+        "src": STAGE(0x02, 0x01), 
+        "dst": STAGE(0x03, 0x01), 
         "title": "The Keepers of the Rainbow", 
         "desc": "Find Merlin in Ogmire Archipelago and learn about the Keepers of the Rainbow",
+        "pts": 5,
     },
     {
-        "src": 0x00030001, 
-        "dst": 0x00040001, 
+        "id": 442879,
+        "src": STAGE(0x03, 0x01), 
+        "dst": STAGE(0x04, 0x01), 
         "title": "Getting out of Tikniki Swamp", 
         "desc": "Once you get used to the smell, it's actually quite lovely",
+        "pts": 10,
     },
     {
-        "src": 0x00040001, 
-        "dst": 0x00040002, 
+        "id": 442880,
+        "src": STAGE(0x04, 0x01), 
+        "dst": STAGE(0x04, 0x02), 
         "title": "The City Beyond the Sea", 
         "desc": "Search Ogmire City for clues to the whereabouts of the yellow prism",
+        "pts": 5,
     },
     {
-        "src": 0x00040002, 
-        "dst": 0x00040003, 
+        "id": 442881,
+        "src": STAGE(0x04, 0x02), 
+        "dst": STAGE(0x04, 0x03), 
         "title": "The Ogmire Jailbreak", 
         "desc": "Escape from the Ogmire Dungeons",
+        "pts": 5,
     },
     {
-        "src": 0x00040002, 
-        "dst": 0x00040003, 
+        "id": 442882,
+        "src": STAGE(0x04, 0x02), 
+        "dst": STAGE(0x04, 0x03), 
         "title": "Bloodsquall's Quick Escape", 
         "desc": "Help Bloodsquall escape the Prison Tower with the yellow prism in-hand",
+        "pts": 10,
     },
     {
-        "src": 0x00050003, 
-        "dst": 0x00050004, 
+        "id": 442883,
+        "src": STAGE(0x05, 0x03), 
+        "dst": STAGE(0x05, 0x04), 
         "title": "One Toot on This Whistle...", 
         "desc": "Get whisked away to the Pirates' Sky Camp",
+        "pts": 5,
     },
     {
-        "src": 0x00050004, 
-        "dst": 0x00050005, 
+        "id": 442884,
+        "src": STAGE(0x05, 0x04), 
+        "dst": STAGE(0x05, 0x05), 
         "title": "Crafting a MacGuffin", 
         "desc": "Reach Yancey's ship in the sky and ask about the green prism",
+        "pts": 10,
     },
     {
-        "src": 0x00060002, 
-        "dst": 0x00070001, 
+        "id": 442885,
+        "src": STAGE(0x06, 0x02), 
+        "dst": STAGE(0x07, 0x01), 
         "title": "The Hills Have Zen'jais", 
         "desc": "Escape the Zen'jai Hills with Dorian",
+        "pts": 5,
     },
     {
-        "src": 0x00070004, 
-        "dst": 0x00080001, 
+        "id": 442886,
+        "src": STAGE(0x07, 0x04), 
+        "dst": STAGE(0x08, 0x01), 
         "title": "How to Train Your Dragon", 
         "desc": "Hitch a ride on Black Heart's back-- destination: the dark warlord's palace",
+        "pts": 10,
     },
     {
-        "src": 0x00080002, 
-        "dst": 0x00080003, 
+        "id": 442887,
+        "src": STAGE(0x08, 0x02), 
+        "dst": STAGE(0x08, 0x03), 
         "title": "Some Assembly Required", 
         "desc": "Assemble the pieces of General Quang's secret weapon",
+        "pts": 10,
     },
     {
-        "src": 0x00080003, 
-        "dst": 0x00090001, 
+        "id": 442888,
+        "src": STAGE(0x08, 0x03), 
+        "dst": STAGE(0x09, 0x01), 
         "title": "Harmonious Living", 
         "desc": "Bring together the five birds of harmony and leave Zen'jai",
+        "pts": 10,
     },
     {
-        "src": 0x00090003, 
-        "dst": 0x00090004, 
+        "id": 442889,
+        "src": STAGE(0x09, 0x03), 
+        "dst": STAGE(0x09, 0x04), 
         "title": "Fruitcake Millionaire", 
         "desc": "Trade your fruitcake for entry into the Zogle Gem Mines",
+        "pts": 5,
     },
     {
-        "src": 0x00090004, 
-        "dst": 0x00090005, 
+        "id": 442890,
+        "src": STAGE(0x09, 0x04), 
+        "dst": STAGE(0x09, 0x05), 
         "title": "Delighted", 
         "desc": "Exchange a bag full of rare gemstones for the green prism",
+        "pts": 5,
     },
     {
-        "src": 0x000a0002, 
-        "dst": 0x000b0001, 
-        "title": "", 
+        "id": 442891,
+        "src": STAGE(0x0a, 0x02), 
+        "dst": STAGE(0x0b, 0x01), 
+        "title": "Triple Cherries at the Stoneheath Slot Machine", 
         "desc": "Wake the Stoneheath golems and free Gwenella's horse in Stoneheath Circles",
+        "pts": 10,
     },
-    // {
-    //     "src": 0x000b0002, 
-    //     "dst": 0x000b0003, 
-    //     "title": "<Goblin Lab -> Goblin Lair>", 
-    //     "desc": "",
-    // },
     {
-        "src": 0x000b0004, 
-        "dst": 0x000c0001, 
+        "id": 442892,
+        "src": STAGE(0x0b, 0x02), 
+        "dst": STAGE(0x0b, 0x03), 
+        "title": "Do You Think Love Can Bloom Even in a Goblin Lair?", 
+        "desc": "Sneak through the goblin dungeons up into their secret lair",
+        "pts": 5,
+    },
+    {
+        "id": 442893,
+        "src": STAGE(0x0b, 0x04), 
+        "dst": STAGE(0x0c, 0x01), 
         "title": "Trust Me and We Will Escape From the City", 
         "desc": "Execute a flawless prison escape from the Goblin Lair",
+        "pts": 10,
     },
     {
-        "src": 0x000c0001, 
-        "dst": 0x000d0001, 
+        "id": 442894,
+        "src": STAGE(0x0c, 0x01), 
+        "dst": STAGE(0x0d, 0x01), 
         "title": "Gwenella's Return", 
-        "desc": "",
+        "desc": "Play Frankenskye and revive Gwenella by assembling her possessions",
+        "pts": 10,
     },
     {
-        "src": 0x000d0004, 
-        "dst": 0x000d0005, 
-        "title": "<Lynlora -> Twell Country>", 
-        "desc": "",
+        "id": 442900,
+        "src": STAGE(0x0d, 0x04), 
+        "dst": STAGE(0x0d, 0x05), 
+        "title": "Come Sail Away", 
+        "desc": "Enter Twell Country in search of the green prism",
+        "pts": 5,
     },
     {
-        "src": 0x000d0005, 
-        "dst": 0x000d0006, 
-        "title": "<Complete Twell Country>", 
-        "desc": "",
+        "id": 442895,
+        "src": STAGE(0x0d, 0x05), 
+        "dst": STAGE(0x0d, 0x06), 
+        "title": "Honey, I Shrunk the Protagonist", 
+        "desc": "Slay the Manta-krynn and recover the five elixirs",
+        "pts": 5,
     },
     {
-        "src": 0x000e0001, 
-        "dst": 0x000e0002, 
-        "title": "<Gargoyle Cemetery -> Catacombs 1>", 
-        "desc": "",
+        "id": 442896,
+        "src": STAGE(0x0e, 0x01), 
+        "dst": STAGE(0x0e, 0x02), 
+        "title": "Stan's Kozy Krypts: Everybody's Just Dying to Get In!", 
+        "desc": "Draak doesn't seem to be in the graveyard. Head down into the crypts",
+        "pts": 5,
     },
     {
-        "src": 0x000e0003, 
-        "dst": 0x000e0004, 
-        "title": "<Gargoyle Catacombs 2 -> Cemetery>", 
-        "desc": "",
+        "id": 442901,
+        "src": STAGE(0x0e, 0x03), 
+        "dst": STAGE(0x0e, 0x04), 
+        "title": "Straight Outta Crypt-town", 
+        "desc": "Oops, wrong crypt! Head back to the graveyard so you can find the right one",
+        "pts": 10,
     },
     {
-        "src": 0x000e0006, 
-        "dst": 0x000f0001, 
-        "title": "<Gargoyle Catacombs 4 (Vampire) -> Cathedral Library>", 
-        "desc": "",
+        "id": 442897,
+        "src": STAGE(0x0e, 0x06), 
+        "dst": STAGE(0x0f, 0x01), 
+        "title": "It's Not That He Sucks Blood... He Just Sucks", 
+        "desc": "Defeat the whiny vampyre (ugh) and make your way to the great cathedral",
+        "pts": 10,
+    },
+    {
+        "id": 442902,
+        "src": STAGE(0x0f, 0x02), 
+        "dst": STAGE(0x0f, 0x03), 
+        "title": "Schism", 
+        "desc": "Fight the mysterious villain in the cathedral, and win-- duh!",
+        "pts": 10,
+    },
+    {
+        "id": 442898,
+        "src": STAGE(0x0f, 0x03), 
+        "dst": STAGE(0x10, 0x01), 
+        "title": "Carillon, My Wayward Son", 
+        "desc": "Climb the Bell Tower. That's where gargoyles usually hang out, right?",
+        "pts": 5,
+    },
+    {
+        "id": 442903,
+        "src": STAGE(0x10, 0x02), 
+        "dst": STAGE(0x10, 0x03), 
+        "title": "A Happy Family Reunion", 
+        "desc": "Use the Heart of the Rainbow to gain access to Necroth's lair for the final showdown",
+        "pts": 10,
     },
 ]
 
 RIDDLES = [
     {
-        "level": 0x000e0001,
+        "id": 442909,
+        "level": STAGE(0x0e, 0x01),
         "title": "The Gargoyles' Riddle #1 - Skulls in the Graveyard", 
         "desc": "I am an odd number. Take away a letter and I become even.",
         "answer": ["S", "E", "V", "E", "N"],
     },
     {
-        "level": 0x000e0002,
+        "id": 442910,
+        "level": STAGE(0x0e, 0x02),
         "title": "The Gargoyles' Riddle #2 - Skulls in the Grey Tunnels", 
         "desc": "I have two hands, but cannot clap.",
         "answer": ["C", "L", "O", "C", "K"],
     },
     {
-        "level": 0x000e0003,
+        "id": 442911,
+        "level": STAGE(0x0e, 0x03),
         "title": "The Gargoyles' Riddle #3 - Skulls at the Top of the Stairs", 
         "desc": "What word becomes shorter by adding two letters?",
         "answer": ["S", "H", "O", "R", "T"],
     },
     {
-        "level": 0x000e0005,
-        "title": "The Gargoyles' Riddle #4 - Skulls in the Alien Halls", 
+        "id": 442912,
+        "level": STAGE(0x0e, 0x05),
+        "title": "The Gargoyles' Riddle #4 - Skulls in the Crystal Halls", 
         "desc": "I have a great many keys, but I open no locks.",
         "answer": ["P", "I", "A", "N", "O"],
     },
 ]
 
-achievement(
+achievement(id=442876,
     title="I Thought This Game Was About Skittles®",
     description="Watch the intro cutscene to learn the lore",
     points=0,
@@ -615,17 +771,17 @@ achievement(
         // watching the intro cutscene
         level_number() == 0 && loaded_movie() == 0x80159824 &&
 
-        // reached the last frame of the movie
-        movie_timer() >= 6355
+        // reached the title card
+        movie_timer() >= 6100
     )
 )
 
 for data in STAGE_CLEARS
 {
-    achievement(
+    achievement(id=data["id"],
         title=data["title"],
         description=data["desc"],
-        points=5,
+        points=data["pts"],
         type="progression",
         trigger=(
             // prevents firing from loading a saved game
@@ -637,17 +793,78 @@ for data in STAGE_CLEARS
     )
 }
 
-achievement(
+achievement(id=442899,
     title="Heart of the Rainbow",
     description="Defeat Necroth in his lair and restore the power of the rainbow",
     points=25,
     type="win_condition",
     trigger=(
         // was in Necroth's lair
-        prior(level_number()) == 0x00100003 &&
+        prior(level_number()) == STAGE(0x10, 0x03) &&
 
         // now watching the outro cutscene
         level_number() == 0 && loaded_movie() == 0x801597b8
+    )
+)
+
+CUTSCENE_TRIGGERS = [
+    {
+        "id": 442904,
+        "title": "RSVP (Ruthless Slayer Vanquished Permanently) in Lynlora",
+        "desc": "Get invited to Stumpy's party (don't forget to bring a funny gift)",
+        "params": [0x01, 0x09, -1],
+        "pts": 3,
+    },
+    {
+        "id": 442905,
+        "title": "A Marketing Decision",
+        "desc": "Even horrifying lake monsters can't get enough of that delicious Skittles® flavor",
+        "params": [0x02, 0x0b, -1],
+        "pts": 1,
+    },
+    {
+        "id": 442906,
+        "title": "So That's Where All the Unsold Copies Went",
+        "desc": "If you can believe it, video games used to come out on these ancient circles called \"CDs\"",
+        "params": [0x03, 0x20, -1],
+        "pts": 2,
+    },
+    {
+        "id": 442907,
+        "title": "Build-a-Wizard Workshop",
+        "desc": "Try bringing along a few friends to meet your estranged father",
+        "params": [0x10, 0x12, -1],
+        "pts": 3,
+    },
+]
+
+for a in CUTSCENE_TRIGGERS
+{
+    achievement(id=a["id"],
+        title=a["title"],
+        description=a["desc"],
+        points=a["pts"],
+        trigger=cutscene_playing_from_params(a["params"])
+    )
+}
+
+GADGET_PITCHES = [
+    [0x05, 0x0c, -1], 
+    [0x05, 0x0d, -1], 
+    [0x05, 0x0b, -1], 
+    [0x09, 0x12, -1],
+]
+achievement(id=442908,
+    title="But Wait, There's More!",
+    description="Listen to all of the gadget salesman's sales pitches. It seems like every time you visit, he has something new!",
+    type="missable",
+    points=3,
+    trigger=(
+        // check that we've heard all of the gadget pitches in one visit
+        measured(tally(length(GADGET_PITCHES), array_map(GADGET_PITCHES, (x) => once(cutscene_playing_from_params(x))))) &&
+
+        // reset any time the level number changes
+        never(prev(level_number()) != level_number())
     )
 )
 
@@ -664,22 +881,24 @@ for riddle in RIDDLES
     for i in range(0, 4)
         solution = solution && get_skull(riddle["level"], i) == LETTER_TO_NUM[riddle["answer"][i]]
 
-    achievement(
+    achievement(id=riddle["id"],
         title=riddle["title"],
         description=("\"" + riddle["desc"] + "\""),
+        type="missable",
         points=5,
         trigger=(level_number() == riddle["level"] && trigger_when(solution))
     )
 }
 
 SQUELK_HEALTH_MIN = 50
-achievement(
+achievement(id=442913,
     title="Never Pay for Squelk Insurance",
     description=format("Collect and turn in a full bag of gems in the Zogle Gem Mines without your squelk's health dropping below {0}%", SQUELK_HEALTH_MIN),
+    type="missable",
     points=10,
     trigger=(
         // in the correct level
-        level_number() == 0x00090004 &&
+        level_number() == STAGE(0x09, 0x04) &&
 
         // trigger on watching the cutscene at the start of stage
         // (cutscene replays on death/failure)
@@ -695,50 +914,86 @@ achievement(
         never(loading_file()) &&
 
         // reset if leave the stage somehow
-        never(level_number() != 0x00090004)
+        never(level_number() != STAGE(0x09, 0x04))
     )
 )
 
-achievement(
-    title="[TODO] A Slow Thaw",
-    description="Defeat Ice Heart without using the Pyro Pulse spell",
-    points=10,
+achievement(id=442920,
+    title="While Supplies Last",
+    description="Collect the toy seller's whole line of Wood Wizard products",
+    type="missable",
+    points=1,
     trigger=(
-        // in the correct level
-        level_number() == 0x00070001 &&
+        measured(tally_of(
+            // for all item slots
+            range(0, MAX_ITEM_COUNT-1), length(ITEM_WOOD_TOYS),
 
-        // checkpoint hit for starting the boss fight
-        once(boss_fight_starting()) &&
+            // add a hit if this slot is occupied by this item
+            (i) => once(num_items() > i && any_of(ITEM_WOOD_TOYS, (x) => item_id(i) == x))
+        )) &&
 
-        // trigger when boss dies
-        trigger_when(cutscene_playing(0x07, 0x05)) &&
+        // reset if the number if items in the inventory changes
+        never(num_items() != prev(num_items())) &&
 
-        // never cast Pyro Pulse
-        never(cast_spell(0x07)) &&
-
-        // reset if the health bar goes away
-        never(!boss_health_bar_shown())
+        // reset any time the level number changes
+        never(prev(level_number()) != level_number())
     )
 )
 
-achievement(
-    title="A Slow Burn",
-    description="Defeat Fire Heart without taking damage",
-    points=10,
-    trigger=(
-        // in the correct level
-        level_number() == 0x00070003 &&
+SPELL_ACHIEVEMENTS = [
+    {
+        "id": 442914,
+        "spell": SPELL_MAGNIFY_MAGIC, 
+        "title": "More Bang for Your Buck", 
+        "why": "to power up your attacks", 
+        "points": 2 
+    },
+    { 
+        "id": 442915,
+        "spell": SPELL_WIND_GLIDE, 
+        "title": "I'm Walking on Sunshine", 
+        "why": "and defy gravity", 
+        "points": 2 
+    },
+    { 
+        "id": 442916,
+        "spell": SPELL_DIMINISH, 
+        "title": "Short People Got Nobody", 
+        "why": "to get a fresh perspective", 
+        "points": 1 
+    },
+]
 
-        // checkpoint hit for starting the boss fight
-        once(boss_fight_starting()) &&
-
-        // trigger when boss dies
-        trigger_when(cutscene_playing(0x07, 0x1B, 0x00)) &&
-
-        // reset if we lose health
-        never(lose_health()) &&
-
-        // reset if the health bar goes away
-        never(!boss_health_bar_shown())
+for a in SPELL_ACHIEVEMENTS
+{
+    achievement(id=a["id"],
+        title=a["title"],
+        description=format("Cast the {0} spell {1}", SpellLookup[a["spell"]], a["why"]),
+        points=a["points"],
+        trigger=cast_spell(a["spell"])
     )
+}
+
+DIMINISH_SECONDS = 15
+achievement(id=442917,
+    title="I Don't Wanna Grow Up",
+    description=format("Stubbornly refuse to let the {0} spell wear off for {1} seconds", SpellLookup[SPELL_DIMINISH], DIMINISH_SECONDS),
+    points=3,
+    // count the number of frames that the diminish timer holds in place waiting for Skye to be able to grow
+    trigger=repeated(DIMINISH_SECONDS * 60, diminish_timer() > 4.75 && diminish_timer() <= 5 && unpaused() && never(diminish_timer() > 5))
+)
+
+achievement(id=442918,
+    title="Lvl 99 Fishing",
+    description="Every good JRPG has a fishing minigame. Collect 3 fish",
+    type="missable",
+    points=10,
+    trigger=check_inventory(ITEM_FISH, (i) => measured(item_count(i) == 3, when=item_id(i) == ITEM_FISH))
+)
+
+achievement(id=442919,
+    title="Full of Skittles® Juice",
+    description="Collect and hold 10 life potions at the same time",
+    points=10,
+    trigger=check_inventory(ITEM_LIFE_POT, (i) => measured(item_count(i) == 10, when=item_id(i) == ITEM_LIFE_POT))
 )
