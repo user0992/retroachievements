@@ -84,6 +84,12 @@ function score() => tbyte(0x000758)
 // $075C: Lives Remaining [8 bit]
 function lives() => byte(0x00075C)
 
+// $075D: Total Nuts Collected [16 bit]
+//        0-200 = no ending
+//        201-400 = sunset "bad" ending
+//        401+ = sunset "good" ending
+function nuts_total() => word(0x00075D)
+
 // $0761: Pointer to Tar-chan [16 bit]
 //        
 //        +0x05 | Player Pose/State [8 bit]
@@ -313,6 +319,21 @@ STAGES = [
 	},
 ]
 
+ENDINGS = [
+	{
+		"title": "Nut Collector",
+		"ending": "sunset ending",
+		"points": 10,
+		"nuts": 201,
+	},
+	{
+		"title": "Nuts about Nuts",
+		"ending": "good sunset ending",
+		"points": 25,
+		"nuts": 400,
+	},
+]
+
 // --- RICH PRESENCE -------------------------------------------------------------------
 
 STAGE_LOOKUP = {}
@@ -503,9 +524,9 @@ achievement(id=448244,
 
 JUNGLE_NUTS = 90
 achievement(id=448242,
-	title="Nuts about Nuts",
+	title="No Nut Left Behind",
 	description=format("In one life, collect all {0} acorns in stage 1", JUNGLE_NUTS),
-	points=10,
+	points=5,
 	trigger=measured(nuts_collected() >= JUNGLE_NUTS, when=current_stage() == STAGE_JUNGLE && is_boss() == 0)
 )
 
@@ -525,6 +546,18 @@ achievement(
 	)
 )
 */
+
+ach_id = 449211
+for ach in ENDINGS
+{
+	achievement(id=ach_id,
+		title=ach["title"],
+		description=format("Collect {0} or more nuts to see the {1}", ach["nuts"], ach["ending"]),
+		points=ach["points"],
+		trigger=win_the_game() && nuts_total() >= ach["nuts"]
+	)
+	ach_id = ach_id + 1
+}
 
 achievement(id=312607,
 	title="[VOID]",
