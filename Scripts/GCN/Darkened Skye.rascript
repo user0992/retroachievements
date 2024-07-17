@@ -1,13 +1,16 @@
 // Darkened Skye
 // #ID = 25437
 
-// HELPERS
+// --- HELPERS -------------------------------------------------------------------
+
 NULL = 0
 function if_else(p, t, f) { if (p) { return t } else return f }
 idfunc = (x) => x
 ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 
 function ptr(addr) => dword_be(addr) & 0x1FFFFFFF
+
+// --- MEMORY -------------------------------------------------------------------
 
 // $16D97C: Menu Popup Visible [32 bit BE]
 //          0 = No, 1 = Yes
@@ -171,6 +174,7 @@ function STAGE(main, part) => main * 0x10000 + part
 //          08,01 = Warlord's Palace Intro Cutscene
 //          08,02 = Warlord's Palace 1, Assembling Swordsman
 //          08,03 = Warlord's Palace 2
+//          08,04 = Warlord's Palace Exit Cutscene
 //          09,01 = Lynlora 3
 //          09,02 = Lynlora 3 Hut Cutscene
 //          09,03 = Lynlora 3 Trade Quest
@@ -376,89 +380,7 @@ function skittle_color(i) => dword_be(i * 12 + SKITTLES_TABLE + 0)
 function skittle_charge(i) => float_be(i * 12 + SKITTLES_TABLE + 4)
 function skittle_spell(i) => dword_be(i * 12 + SKITTLES_TABLE + 8)
 
-MapLookup = {
-    STAGE(0x01, 0x01): "Lynlora",
-    STAGE(0x01, 0x02): "Lynlora",
-    STAGE(0x01, 0x03): "Lynlora",
-    STAGE(0x02, 0x01): "Ogmire Archipelago",
-    STAGE(0x03, 0x01): "Tikniki Swamp",
-    STAGE(0x04, 0x01): "Ogmire City",
-    STAGE(0x04, 0x02): "Ogmire Dungeons",
-    STAGE(0x04, 0x03): "Ogmire Prison Tower",
-    STAGE(0x05, 0x01): "Lynlora",
-    STAGE(0x05, 0x02): "Lynlora",
-    STAGE(0x05, 0x03): "Lynlora",
-    STAGE(0x05, 0x04): "the Pirates' Sky Camp",
-    STAGE(0x05, 0x05): "Lynlora",
-    STAGE(0x05, 0x06): "Lynlora",
-    STAGE(0x06, 0x01): "Zen'jai Hills",
-    STAGE(0x06, 0x02): "Zen'jai Hills",
-    STAGE(0x07, 0x01): "the Dragon Village",
-    STAGE(0x07, 0x02): "the Dragon Village",
-    STAGE(0x07, 0x03): "the Dragon Village",
-    STAGE(0x07, 0x04): "the Dragon Village",
-    STAGE(0x08, 0x01): "the Warlord's Palace",
-    STAGE(0x08, 0x02): "the Warlord's Palace",
-    STAGE(0x08, 0x03): "the Warlord's Palace",
-    STAGE(0x09, 0x01): "Lynlora",
-    STAGE(0x09, 0x02): "Lynlora",
-    STAGE(0x09, 0x03): "Lynlora",
-    STAGE(0x09, 0x04): "the Zogle Gem Mines",
-    STAGE(0x09, 0x05): "Lynlora",
-    STAGE(0x0a, 0x01): "the Stoneheath Circles",
-    STAGE(0x0a, 0x02): "the Stoneheath Circles",
-    STAGE(0x0b, 0x01): "the Goblin Prison",
-    STAGE(0x0b, 0x02): "the Goblin Laboratory",
-    STAGE(0x0b, 0x03): "the Goblin Lair",
-    STAGE(0x0b, 0x04): "the Goblin Workshop",
-    STAGE(0x0b, 0x05): "the Goblin Workshop",
-    STAGE(0x0c, 0x01): "the Bone Lands",
-    STAGE(0x0d, 0x01): "Lynlora",
-    STAGE(0x0d, 0x02): "Lynlora",
-    STAGE(0x0d, 0x03): "Lynlora",
-    STAGE(0x0d, 0x04): "Twell Country",
-    STAGE(0x0d, 0x05): "Twell Country",
-    STAGE(0x0d, 0x06): "Lynlora",
-    STAGE(0x0e, 0x01): "the Gargoyle Cemetery",
-    STAGE(0x0e, 0x02): "the Gargoyle Catacombs",
-    STAGE(0x0e, 0x03): "the Gargoyle Catacombs",
-    STAGE(0x0e, 0x04): "the Gargoyle Cemetery",
-    STAGE(0x0e, 0x05): "the Gargoyle Catacombs",
-    STAGE(0x0e, 0x06): "the Gargoyle Catacombs",
-    STAGE(0x0f, 0x01): "the Cathedral Library",
-    STAGE(0x0f, 0x02): "the Cathedral",
-    STAGE(0x0f, 0x03): "the Bell Tower",
-    STAGE(0x10, 0x01): "Necroth's Realm",
-    STAGE(0x10, 0x02): "the Dark Prism",
-    STAGE(0x10, 0x03): "Necroth's Lair",
-}
-
-SPELL_SLOTS = [2, 3, 3, 2, 4, 6, 2, 3, 6, 2, 4, 5, 5, 3, 6, 6, 2, 4, 4, 4, 5, 3, 4]
-SpellLookup = {
-    SPELL_TRUE_SIGHT: "True Sight", // 2
-    SPELL_AWAKEN_STONE: "Awaken Stone", // 3
-    SPELL_DIMINISH: "Diminish", // 3
-    SPELL_PRISMATIC_PULSE: "Prismatic Pulse", // 2
-    SPELL_FIREWALK: "Firewalk", // 4
-    SPELL_LIGHTNING: "Lightning", // 6
-    SPELL_STRENGTH_SAP: "Strength Sap", // 2
-    SPELL_PYRO_PULSE: "Pyro Pulse", // 3
-    SPELL_WIND_GLIDE: "Wind Glide", // 6
-    SPELL_SHADOW_VISION: "Shadow Vision", // 2
-    SPELL_POLAR_PULSE: "Polar Pulse", // 4
-    SPELL_CLEANSE_EVIL: "Cleanse Evil", // 5
-    SPELL_AFFLICTION: "Affliction", // 5
-    SPELL_MADNESS: "Madness", // 3
-    SPELL_CREATE_WIZARD: "Create Wizard", // 6
-    SPELL_HEART_OF_THE_RAINBOW: "Heart of the Rainbow", // 6
-    SPELL_IMPEDE: "Impede", // 2
-    SPELL_MAGNIFY_MAGIC: "Magnify Magic", // 4
-    SPELL_PSYCHIC_BLAST: "Psychic Blast", // 4
-    SPELL_SPELL_SHIELD: "Spell Shield", // 4
-    SPELL_RING_OF_RIME: "Ring of Rime", // 5
-    SPELL_UNIVERSAL_SMITE: "Universal Smite", // 3
-    SPELL_VEIL: "Veil", // 4
-}
+// --- AUX FUNCTIONS  -------------------------------------------------------------------
 
 function cast_spell(spell)
 {
@@ -501,25 +423,7 @@ function used_item(id) => (
     )
 )
 
-rp_hp = rich_presence_value("Number", current_health())
-rp_map = rich_presence_lookup("Map", level_number(), MapLookup, fallback="the Five Lands")
-
-rich_presence_conditional_display(level_number() == STAGE(0x09, 0x04) && holding_item(ITEM_GEMSTONES),
-    "Skye is collecting rare gemstones in the Zogle Gem Mines | ❤️{0}% | 💎{1}%",
-    rp_hp,
-    rich_presence_value("Number", item_count(selected_item_index()) * 2)
-)
-
-rich_presence_conditional_display(prepared_spell_index() != 0xFFFFFFFF,
-    "Skye is collecting Skittles® in {0} | ❤️{1}% | 🪄{2}",
-    rp_map, rp_hp,
-    rich_presence_lookup("Spell", current_spell(), SpellLookup, fallback="<Unknown>")
-)
-
-rich_presence_display(
-    "Skye is collecting Skittles® in {0} | ❤️{1}%",
-    rp_map, rp_hp
-)
+// --- MAIN DATA -------------------------------------------------------------------
 
 STAGE_CLEARS = [
     {
@@ -612,7 +516,7 @@ STAGE_CLEARS = [
     },
     {
         "id": 442888,
-        "src": STAGE(0x08, 0x03), 
+        "src": STAGE(0x08, 0x04), 
         "dst": STAGE(0x09, 0x01), 
         "title": "Harmonious Living", 
         "desc": "Bring together the five birds of harmony and leave Zen'jai",
@@ -652,7 +556,7 @@ STAGE_CLEARS = [
     },
     {
         "id": 442893,
-        "src": STAGE(0x0b, 0x04), 
+        "src": STAGE(0x0b, 0x05), 
         "dst": STAGE(0x0c, 0x01), 
         "title": "Trust Me and We Will Escape From the City", 
         "desc": "Execute a flawless prison escape from the Goblin Lair",
@@ -763,6 +667,177 @@ RIDDLES = [
     },
 ]
 
+CUTSCENE_TRIGGERS = [
+    {
+        "id": 442904,
+        "title": "RSVP (Ruthless Slayer Vanquished Permanently) in Lynlora",
+        "desc": "Get invited to Stumpy's party (don't forget to bring a funny gift)",
+        "params": [0x01, 0x09, -1],
+        "pts": 3,
+    },
+    {
+        "id": 442905,
+        "title": "A Marketing Decision",
+        "desc": "Even horrifying lake monsters can't get enough of that delicious Skittles® flavor",
+        "params": [0x02, 0x0b, -1],
+        "pts": 1,
+    },
+    {
+        "id": 442906,
+        "title": "So That's Where All the Unsold Copies Went",
+        "desc": "If you can believe it, video games used to come out on these ancient circles called \"CDs\"",
+        "params": [0x03, 0x20, -1],
+        "pts": 2,
+    },
+    {
+        "id": 442907,
+        "title": "Build-a-Wizard Workshop",
+        "desc": "Try bringing along a few friends to meet your estranged father",
+        "params": [0x10, 0x12, -1],
+        "pts": 3,
+    },
+]
+
+GADGET_PITCHES = [
+    [0x05, 0x0c, -1], 
+    [0x05, 0x0d, -1], 
+    [0x05, 0x0b, -1], 
+    [0x09, 0x12, -1],
+]
+
+SPELL_ACHIEVEMENTS = [
+    {
+        "id": 442914,
+        "spell": SPELL_MAGNIFY_MAGIC, 
+        "title": "More Bang for Your Buck", 
+        "why": "to power up your attacks", 
+        "points": 2 
+    },
+    { 
+        "id": 442915,
+        "spell": SPELL_WIND_GLIDE, 
+        "title": "I'm Walking on Sunshine", 
+        "why": "and defy gravity", 
+        "points": 2 
+    },
+    { 
+        "id": 442916,
+        "spell": SPELL_DIMINISH, 
+        "title": "Short People Got Nobody", 
+        "why": "to get a fresh perspective", 
+        "points": 1 
+    },
+]
+
+// --- RICH PRESENCE -------------------------------------------------------------------
+
+MapLookup = {
+    STAGE(0x01, 0x01): "Lynlora",
+    STAGE(0x01, 0x02): "Lynlora",
+    STAGE(0x01, 0x03): "Lynlora",
+    STAGE(0x02, 0x01): "Ogmire Archipelago",
+    STAGE(0x03, 0x01): "Tikniki Swamp",
+    STAGE(0x04, 0x01): "Ogmire City",
+    STAGE(0x04, 0x02): "Ogmire Dungeons",
+    STAGE(0x04, 0x03): "Ogmire Prison Tower",
+    STAGE(0x05, 0x01): "Lynlora",
+    STAGE(0x05, 0x02): "Lynlora",
+    STAGE(0x05, 0x03): "Lynlora",
+    STAGE(0x05, 0x04): "the Pirates' Sky Camp",
+    STAGE(0x05, 0x05): "Lynlora",
+    STAGE(0x05, 0x06): "Lynlora",
+    STAGE(0x06, 0x01): "Zen'jai Hills",
+    STAGE(0x06, 0x02): "Zen'jai Hills",
+    STAGE(0x07, 0x01): "the Dragon Village",
+    STAGE(0x07, 0x02): "the Dragon Village",
+    STAGE(0x07, 0x03): "the Dragon Village",
+    STAGE(0x07, 0x04): "the Dragon Village",
+    STAGE(0x08, 0x01): "the Warlord's Palace",
+    STAGE(0x08, 0x02): "the Warlord's Palace",
+    STAGE(0x08, 0x03): "the Warlord's Palace",
+    STAGE(0x08, 0x04): "the Warlord's Palace",
+    STAGE(0x09, 0x01): "Lynlora",
+    STAGE(0x09, 0x02): "Lynlora",
+    STAGE(0x09, 0x03): "Lynlora",
+    STAGE(0x09, 0x04): "the Zogle Gem Mines",
+    STAGE(0x09, 0x05): "Lynlora",
+    STAGE(0x0a, 0x01): "the Stoneheath Circles",
+    STAGE(0x0a, 0x02): "the Stoneheath Circles",
+    STAGE(0x0b, 0x01): "the Goblin Prison",
+    STAGE(0x0b, 0x02): "the Goblin Laboratory",
+    STAGE(0x0b, 0x03): "the Goblin Lair",
+    STAGE(0x0b, 0x04): "the Goblin Workshop",
+    STAGE(0x0b, 0x05): "the Goblin Workshop",
+    STAGE(0x0c, 0x01): "the Bone Lands",
+    STAGE(0x0d, 0x01): "Lynlora",
+    STAGE(0x0d, 0x02): "Lynlora",
+    STAGE(0x0d, 0x03): "Lynlora",
+    STAGE(0x0d, 0x04): "Twell Country",
+    STAGE(0x0d, 0x05): "Twell Country",
+    STAGE(0x0d, 0x06): "Lynlora",
+    STAGE(0x0e, 0x01): "the Gargoyle Cemetery",
+    STAGE(0x0e, 0x02): "the Gargoyle Catacombs",
+    STAGE(0x0e, 0x03): "the Gargoyle Catacombs",
+    STAGE(0x0e, 0x04): "the Gargoyle Cemetery",
+    STAGE(0x0e, 0x05): "the Gargoyle Catacombs",
+    STAGE(0x0e, 0x06): "the Gargoyle Catacombs",
+    STAGE(0x0f, 0x01): "the Cathedral Library",
+    STAGE(0x0f, 0x02): "the Cathedral",
+    STAGE(0x0f, 0x03): "the Bell Tower",
+    STAGE(0x10, 0x01): "Necroth's Realm",
+    STAGE(0x10, 0x02): "the Dark Prism",
+    STAGE(0x10, 0x03): "Necroth's Lair",
+}
+
+SPELL_SLOTS = [2, 3, 3, 2, 4, 6, 2, 3, 6, 2, 4, 5, 5, 3, 6, 6, 2, 4, 4, 4, 5, 3, 4]
+SpellLookup = {
+    SPELL_TRUE_SIGHT: "True Sight", // 2
+    SPELL_AWAKEN_STONE: "Awaken Stone", // 3
+    SPELL_DIMINISH: "Diminish", // 3
+    SPELL_PRISMATIC_PULSE: "Prismatic Pulse", // 2
+    SPELL_FIREWALK: "Firewalk", // 4
+    SPELL_LIGHTNING: "Lightning", // 6
+    SPELL_STRENGTH_SAP: "Strength Sap", // 2
+    SPELL_PYRO_PULSE: "Pyro Pulse", // 3
+    SPELL_WIND_GLIDE: "Wind Glide", // 6
+    SPELL_SHADOW_VISION: "Shadow Vision", // 2
+    SPELL_POLAR_PULSE: "Polar Pulse", // 4
+    SPELL_CLEANSE_EVIL: "Cleanse Evil", // 5
+    SPELL_AFFLICTION: "Affliction", // 5
+    SPELL_MADNESS: "Madness", // 3
+    SPELL_CREATE_WIZARD: "Create Wizard", // 6
+    SPELL_HEART_OF_THE_RAINBOW: "Heart of the Rainbow", // 6
+    SPELL_IMPEDE: "Impede", // 2
+    SPELL_MAGNIFY_MAGIC: "Magnify Magic", // 4
+    SPELL_PSYCHIC_BLAST: "Psychic Blast", // 4
+    SPELL_SPELL_SHIELD: "Spell Shield", // 4
+    SPELL_RING_OF_RIME: "Ring of Rime", // 5
+    SPELL_UNIVERSAL_SMITE: "Universal Smite", // 3
+    SPELL_VEIL: "Veil", // 4
+}
+
+rp_hp = rich_presence_value("Number", current_health())
+rp_map = rich_presence_lookup("Map", level_number(), MapLookup, fallback="the Five Lands")
+
+rich_presence_conditional_display(level_number() == STAGE(0x09, 0x04) && holding_item(ITEM_GEMSTONES),
+    "Skye is collecting rare gemstones in the Zogle Gem Mines | ❤️{0}% | 💎{1}%",
+    rp_hp,
+    rich_presence_value("Number", item_count(selected_item_index()) * 2)
+)
+
+rich_presence_conditional_display(prepared_spell_index() != 0xFFFFFFFF,
+    "Skye is collecting Skittles® in {0} | ❤️{1}% | 🪄{2}",
+    rp_map, rp_hp,
+    rich_presence_lookup("Spell", current_spell(), SpellLookup, fallback="<Unknown>")
+)
+
+rich_presence_display(
+    "Skye is collecting Skittles® in {0} | ❤️{1}%",
+    rp_map, rp_hp
+)
+
+// --- ACHIEVEMENTS -------------------------------------------------------------------
+
 achievement(id=442876,
     title="I Thought This Game Was About Skittles®",
     description="Watch the intro cutscene to learn the lore",
@@ -807,37 +882,6 @@ achievement(id=442899,
     )
 )
 
-CUTSCENE_TRIGGERS = [
-    {
-        "id": 442904,
-        "title": "RSVP (Ruthless Slayer Vanquished Permanently) in Lynlora",
-        "desc": "Get invited to Stumpy's party (don't forget to bring a funny gift)",
-        "params": [0x01, 0x09, -1],
-        "pts": 3,
-    },
-    {
-        "id": 442905,
-        "title": "A Marketing Decision",
-        "desc": "Even horrifying lake monsters can't get enough of that delicious Skittles® flavor",
-        "params": [0x02, 0x0b, -1],
-        "pts": 1,
-    },
-    {
-        "id": 442906,
-        "title": "So That's Where All the Unsold Copies Went",
-        "desc": "If you can believe it, video games used to come out on these ancient circles called \"CDs\"",
-        "params": [0x03, 0x20, -1],
-        "pts": 2,
-    },
-    {
-        "id": 442907,
-        "title": "Build-a-Wizard Workshop",
-        "desc": "Try bringing along a few friends to meet your estranged father",
-        "params": [0x10, 0x12, -1],
-        "pts": 3,
-    },
-]
-
 for a in CUTSCENE_TRIGGERS
 {
     achievement(id=a["id"],
@@ -848,12 +892,6 @@ for a in CUTSCENE_TRIGGERS
     )
 }
 
-GADGET_PITCHES = [
-    [0x05, 0x0c, -1], 
-    [0x05, 0x0d, -1], 
-    [0x05, 0x0b, -1], 
-    [0x09, 0x12, -1],
-]
 achievement(id=442908,
     title="But Wait, There's More!",
     description="Listen to all of the gadget salesman's sales pitches. It seems like every time you visit, he has something new!",
@@ -939,30 +977,6 @@ achievement(id=442920,
         never(prev(level_number()) != level_number())
     )
 )
-
-SPELL_ACHIEVEMENTS = [
-    {
-        "id": 442914,
-        "spell": SPELL_MAGNIFY_MAGIC, 
-        "title": "More Bang for Your Buck", 
-        "why": "to power up your attacks", 
-        "points": 2 
-    },
-    { 
-        "id": 442915,
-        "spell": SPELL_WIND_GLIDE, 
-        "title": "I'm Walking on Sunshine", 
-        "why": "and defy gravity", 
-        "points": 2 
-    },
-    { 
-        "id": 442916,
-        "spell": SPELL_DIMINISH, 
-        "title": "Short People Got Nobody", 
-        "why": "to get a fresh perspective", 
-        "points": 1 
-    },
-]
 
 for a in SPELL_ACHIEVEMENTS
 {
