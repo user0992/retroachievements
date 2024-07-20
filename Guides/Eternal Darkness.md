@@ -159,9 +159,9 @@ These achievements can all be earned between chapters, when control returns to A
 _As Alex Rovias, find and read all three letters of Maximillian Rovias' journal_
 </pre></big>
 
-- [ ] DIARY PAGE #1 is sitting on the back of the toilet in the master bathroom
-- [ ] DIARY PAGE #2 is in the upstairs bathroom
-- [ ] DIARY PAGE #3 is in the _Damage Field_ in the barricaded servant's quarters
+- [ ] JOURNAL OF M. ROIVAS, P1 is sitting on the back of the toilet in the master bathroom
+- [ ] JOURNAL OF M. ROIVAS, P2 is in the upstairs bathroom
+- [ ] JOURNAL OF M. ROIVAS, CLOSING NOTES is in the _Damage Field_ in the barricaded servant's quarters
 
     
 <img align="left" width="72" height="72" src="https://media.retroachievements.org/Badge/493264.png">
