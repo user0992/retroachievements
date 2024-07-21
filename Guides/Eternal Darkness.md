@@ -215,6 +215,16 @@ _Playing as Alex in Roivas Manor, find all 9 doors with a spirit knocking_
 
 Where the heck do all of these spirits keep coming from? Just walk around. You'll get them all. A few of the doors have spirits knocking on both sides. Once you have access to the whole house, just walk around methodically, systematically checking doors. There's no art to this one.
 
+    
+<img align="left" width="72" height="72" src="https://media.retroachievements.org/Badge/508589.png">
+
+<big><pre>
+[Safe and Sound (2)](https://retroachievements.org/achievement/449736)
+_Crack open the RetroAchievements safe_
+</pre></big>
+
+After "Chapter 10: A Legacy of Darkness", go to the basement and find the **pickaxe** between the barrels on the left. Take it upstairs and break into the walled off servants' quarters. Once you get the stethoscope, take it back to the basement to open the safe. The combination is 59-81-46.
+
 
 ### Chapter 1: The Chosen One
 <a name="ch1"></a>
