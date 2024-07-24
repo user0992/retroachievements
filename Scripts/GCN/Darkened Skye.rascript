@@ -468,8 +468,8 @@ STAGE_CLEARS = [
     },
     {
         "id": 442882,
-        "src": STAGE(0x04, 0x02), 
-        "dst": STAGE(0x04, 0x03), 
+        "src": STAGE(0x04, 0x03), 
+        "dst": STAGE(0x05, 0x01), 
         "title": "Bloodsquall's Quick Escape", 
         "desc": "Help Bloodsquall escape the Prison Tower with the yellow prism in-hand",
         "pts": 10,
