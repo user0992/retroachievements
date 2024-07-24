@@ -374,7 +374,7 @@ achievement(id=448949,
 	trigger=current_area() == 0x03 && trigger_when(prev(current_sub_area()) == 0x00 && current_sub_area() == 0x04)
 )
 
-// --- ACHIEVEMENTS -------------------------------------------------------------------
+// --- LEADERBOARDS -------------------------------------------------------------------
 
 leaderboard(id=108755,
 	title="Subcon Speedrun",
