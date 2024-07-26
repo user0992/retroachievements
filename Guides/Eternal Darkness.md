@@ -609,11 +609,12 @@ This one isn't too bad. Understanding the structure of this chapter does a lot t
 1. get the Tome of Eternal Darkness and the emerald
 2. go to the bell tower to get the old tower key
 3. go to the old tower to find Anthony and get the ruby
-4. go to the basement to fight the horror and get the sapphire
-5. head down into the catacombs to find the hidden shrine (proof of heresy)
-6. take proof back to the custodian in the bell tower
-7. take knife back down to the catacombs
-8. finish stage
+4. get the music from the tower library and the 5-point circle from the organ
+5. go to the basement to fight the horror and get the sapphire
+6. head down into the catacombs to find the hidden shrine (proof of heresy)
+7. take proof back to the custodian in the bell tower
+8. take knife back down to the catacombs
+9. finish stage
 
 There are a few techniques to help with combat in Paul Luther's chapter and chapters going forward. First, your two new favorite spells are _Enchant Item_ and _Damage Field_. Use _Enchant Item_ to make your weapon strong against whoever you're fighting. Use _Damage Field_ to put a wall between you and enemies. It doesn't have to be a large field; 3-point _Damage Field_ can be quite effective. Just focus on using it to stun and hurt enemies, and stand behind it (while still doing damage of your own on top of it).
 
