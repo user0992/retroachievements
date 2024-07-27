@@ -14,11 +14,10 @@ function vptr_to_addr(x) => (x & 0x00FFFFFF)
 //          4 = File D
 function current_file() => byte(0x1787C8)
 
-SAVE_GAME_OFFSETS = 0x0411E0 // backed up by 0x40 to account for 1 indexing
-function save_game(i) => SAVE_GAME_OFFSETS + 0x40 * i
-function current_save_game() => save_game(current_file())
-
 // $041220: File A - Save Game [64 bytes]
+SAVE_GAME_OFFSETS = 0x041220
+function save_game(i) => SAVE_GAME_OFFSETS + 0x40 * (i - 1)
+function current_save_game() => save_game(current_file())
 //          +0 = Lost cap location? (seems unused)
 //          +4 = Seed [32 bit] (0-99999)
 function seed() => dword(current_save_game() + 4)
