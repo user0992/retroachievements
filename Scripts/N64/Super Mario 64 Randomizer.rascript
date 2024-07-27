@@ -526,23 +526,33 @@ rich_presence_display(
 )
 
 // check for collecting any star (or key)
-function collect_a_star() =>
+function collect_a_key() =>
 (
     // an interaction just occurred
     prev(ptr_to_last_interacted_obj()) != ptr_to_last_interacted_obj() &&
 
     // type is star (obj->oInteractType == INTERACT_STAR_OR_KEY)
-    dword(vptr_to_addr(ptr_to_last_interacted_obj()) + 0x130) == 0x00001000
+    prev(dword(vptr_to_addr(ptr_to_last_interacted_obj()) + 0x130)) == 0x00001000
 )
 
-// alias for readability
-collect_a_key = collect_a_star
+// collecting a star has a few other possible ways to detect
+function collect_a_star() =>
+(
+    // checking the interacted object should be sufficient, honestly
+    collect_a_key() || 
+    
+    // if the last star collected info changes, we got a star
+    prev(last_star_number()) != last_star_number() || prev(last_star_stage()) != last_star_stage() ||
+
+    // if Mario does the star collect animation (only works if not nonstop mode)
+    (mario_action() & 0x1FE) == 0x102
+)
 
 // check for collecting a specific star
-function collect_star(i) => (collect_a_star() && last_star_number() == i)
+function collect_star(num) => (collect_a_star() && last_star_number() == num)
 
 // check for collecting the grand star
-function collect_grand_star() => (collect_a_star() && dword(vptr_to_addr(ptr_to_last_interacted_obj()) + 0x190) == 0x00000800)
+function collect_grand_star() => (collect_a_key() && dword(vptr_to_addr(ptr_to_last_interacted_obj()) + 0x190) == 0x00000800)
 
 // new random seed started (leave the file select on a file that doesn't exist)
 function new_file_created() => (prev(map_id()) < MAP_MIN && map_id() >= MAP_MIN && file_exists(current_save_game()) == 0)
@@ -755,7 +765,7 @@ achievement(
     points=10,
     trigger=(
         // add a hit for each of the stars
-        measured(tally_of(range(1,7), 7, x => collect_star(x)),
+        measured(tally_of(range(1,7), 7, x => collect_star(x) && last_star_stage() == stage_id()),
             when=in_game() && minimum_completion_settings() && is_nonstop() != 0) &&
 
         // reset if you ever leave the level
