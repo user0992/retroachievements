@@ -486,11 +486,11 @@ ClockLookup = {
 }
 
 rp_loc = rich_presence_lookup("Map", map_id(), MapLookup, fallback="in the Mushroom Kingdom")
-rp_stars = rich_presence_value("Number", star_count())
-rp_seed = rich_presence_value("Number", seed())
+rp_stars = rich_presence_value("Number_", star_count(), "VALUE")
+rp_seed = rich_presence_value("Number_", seed(), "VALUE")
 rp_set_seed = rich_presence_lookup("SetSeed", is_set_seed(), SetSeedLookup, fallback="")
 rp_preset = rich_presence_lookup("Preset", settings(), PRESETS, fallback="Default")
-rp_settings = rich_presence_value("Number", settings())
+rp_settings = rich_presence_value("Number_", settings(), "VALUE")
 rp_gdemon = rich_presence_lookup("GreenDemon", is_green_demon(), GreenDemonLookup, fallback="")
 rp_nonstop = rich_presence_lookup("NonStop", is_nonstop(), NonstopLookup, fallback="")
 rp_ttc_clock = rich_presence_lookup("Clock", ttc_clock_state(), ClockLookup, fallback=ClockLookup[TTC_STOP])
