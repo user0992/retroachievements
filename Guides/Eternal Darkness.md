@@ -216,6 +216,7 @@ _Playing as Alex in Roivas Manor, find all 9 doors with a spirit knocking_
 Where the heck do all of these spirits keep coming from? Just walk around. You'll get them all. A few of the doors have spirits knocking on both sides. Once you have access to the whole house, just walk around methodically, systematically checking doors. There's no art to this one.
 
     
+<a name="ach-safe"></a>
 <img align="left" width="72" height="72" src="https://media.retroachievements.org/Badge/508589.png">
 
 <big><pre>
@@ -596,6 +597,8 @@ Upon collecting the runes in this level, you now have all but one rune, which is
 _Complete Chapter 7_
 </pre></big>
 
+Start this chapter by casting _Dispell Magick_ on the barrier over the stained glass window at the end of the second floor hallway to reveal a balcony with a page from the Tome of Eternal Darkness.
+
     
 <img align="left" width="72" height="72" src="https://media.retroachievements.org/Badge/494519.png">
 
@@ -654,6 +657,8 @@ _Do not collect the Two-Handed Sword in Anthony's chapter. In Paul's chapter, de
 |**Location**|The Forbidden City, Persia|
 |**Date**|1460 AD|
 
+Start this chapter by playing the piano in the dining room.
+
     
 <img align="left" width="72" height="72" src="https://media.retroachievements.org/Badge/493255.png">
 
@@ -695,6 +700,8 @@ After using the _Reveal Invisible_ spell to reveal the bridge to reach the "Forg
 |**Character**|Peter Jacob|
 |**Location**|Oublié Cathedral, Amiens, France|
 |**Date**|1916 AD|
+
+Start this chapter by surveying the "crumbling" by the painting in the corner of the hidden study immediately after completing the previous chapter.
 
     
 <img align="left" width="72" height="72" src="https://media.retroachievements.org/Badge/493256.png">
@@ -767,6 +774,8 @@ This fight is one of the parts of the game that differs significantly depending 
 |**Location**|The Roivas Mansion, Rhode Island 🡒 Ehn'gha|
 |**Date**|1952 AD|
 
+To start this chapter, go back into the library and see the ghost servant. Examine the ghost servant to get the basement key. Unlock the basement door and head down to use the Lucky Penny on the breaker box. Trip the breaker and the lights will come on in the upstairs bathroom. Head up to that room and examine the medicine cabinet on the wall to find the next chapter page.
+
     
 <img align="left" width="72" height="72" src="https://media.retroachievements.org/Badge/493257.png">
 
@@ -808,6 +817,8 @@ The vampire is easy to kill, and with careful planning, can even be caught befor
 |**Character**|Michael Edwards|
 |**Location**|The Forbidden City|
 |**Date**|1991 AD|
+
+To start this chapter, head down to the basement and examine the boxes on the left wall to find the pickaxe. Use the pickaxe on the blocked upstairs wall to access the old servants' quarters. Get the stethoscope from the middle of the room, and use it to [unlock the safe in the basement](#ach-safe) and collect the chapter page (among other items).
 
     
 <img align="left" width="72" height="72" src="https://media.retroachievements.org/Badge/493258.png">
@@ -856,6 +867,8 @@ Later, in a small hallway, you will find 3 bas-relief sculptures on the wall, co
 |**Character**|Alex Roivas|
 |**Location**|The Roivas Mansion, Rhode Island 🡒 Ehn'gha|
 |**Date**|2000 AD|
+
+Gain access to Ehn'gha by adjusting the mirrors in the observatory (_finally this room gets some use_) to open the locked vault in the basement. This will give Alex a ladder down into the ancient city. You have a long chapter ahead of you!
 
     
 <img align="left" width="72" height="72" src="https://media.retroachievements.org/Badge/493259.png">
