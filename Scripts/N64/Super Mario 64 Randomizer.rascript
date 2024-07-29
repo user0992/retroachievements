@@ -219,6 +219,7 @@ function mario_held_obj() => vptr_to_addr(dword(ptr_to_mario() + 0x7C))
 function mario_y_pos() => float(ptr_to_mario() + 0x40)
 function mario_floor_height() => float(ptr_to_mario() + 0x70)
 
+// https://github.com/arthurtilly/SM64Randomizer/blob/randomizer/include/sm64.h#L239
 ACT_GROUP_CUTSCENE    = 0x00000100
 ACT_GROUP_SUBMERGED   = 0x000000C0
 ACT_FLYING            = 0x10880899
@@ -551,7 +552,15 @@ function collect_a_star() =>
 function collect_star(num) => (collect_a_star() && last_star_number() == num)
 
 // check for collecting the grand star
-function collect_grand_star() => (collect_a_key() && dword(vptr_to_addr(ptr_to_last_interacted_obj()) + 0x190) == 0x00000800)
+// https://github.com/arthurtilly/SM64Randomizer/blob/271db474a4d878b22bc7822de4333de8a409c29a/src/game/interaction.h#L46
+function collect_grand_star() => 
+(
+    // either we identify the end of the game by the star we collected
+    (collect_a_key() && dword(vptr_to_addr(ptr_to_last_interacted_obj()) + 0x190) == 0x00000800) || 
+
+    // or by Mario's grand star animation
+    mario_action() == 0x1909
+)
 
 // new random seed started (leave the file select on a file that doesn't exist)
 function new_file_created() => (prev(map_id()) < MAP_MIN && map_id() >= MAP_MIN && file_exists(current_save_game()) == 0)
