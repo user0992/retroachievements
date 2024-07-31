@@ -525,8 +525,8 @@ rich_presence_display(
     rp_settings, rp_gdemon, rp_nonstop
 )
 
-// check for collecting any star (or key)
-function collect_a_key() =>
+// 
+function interacted_key() =>
 (
     // an interaction just occurred
     prev(ptr_to_last_interacted_obj()) != ptr_to_last_interacted_obj() &&
@@ -535,17 +535,17 @@ function collect_a_key() =>
     prev(dword(vptr_to_addr(ptr_to_last_interacted_obj()) + 0x130)) == 0x00001000
 )
 
+// check for collecting any star (or key)
+function collect_a_key() => interacted_key() || (mario_action() & 0x1FE) == 0x102
+
 // collecting a star has a few other possible ways to detect
 function collect_a_star() =>
 (
-    // checking the interacted object should be sufficient, honestly
-    collect_a_key() || 
-    
     // if the last star collected info changes, we got a star
     prev(last_star_number()) != last_star_number() || prev(last_star_stage()) != last_star_stage() ||
 
-    // if Mario does the star collect animation (only works if not nonstop mode)
-    (mario_action() & 0x1FE) == 0x102
+    // checking the interacted object should be sufficient, honestly
+    collect_a_key()
 )
 
 // check for collecting a specific star
@@ -556,7 +556,7 @@ function collect_star(num) => (collect_a_star() && last_star_number() == num)
 function collect_grand_star() => 
 (
     // either we identify the end of the game by the star we collected
-    (collect_a_key() && dword(vptr_to_addr(ptr_to_last_interacted_obj()) + 0x190) == 0x00000800) || 
+    (interacted_key() && dword(vptr_to_addr(ptr_to_last_interacted_obj()) + 0x190) == 0x00000800) || 
 
     // or by Mario's grand star animation
     mario_action() == 0x1909
