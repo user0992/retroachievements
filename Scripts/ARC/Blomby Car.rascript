@@ -203,7 +203,7 @@ for track in range(0,3)
     )
 }
 
-if (false) // DISABLED
+/*
 achievement(
     title="Super Blomby Dakart",
     description="Complete all four legs of the Paris-Dakar rally on Hard difficulty or higher",
@@ -222,6 +222,7 @@ achievement(
         never(game_state() == STATE_BONVOIAGE)
     )
 )
+*/
 
 achievement(
     title="From Paris to Dakar, One-Way Non-Stop (1CC)",
