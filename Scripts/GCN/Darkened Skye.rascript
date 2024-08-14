@@ -8,7 +8,9 @@ function if_else(p, t, f) { if (p) { return t } else return f }
 idfunc = (x) => x
 ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 
-function ptr(addr) => dword_be(addr) & 0x1FFFFFFF
+// function ptr(addr) => dword_be(addr) & 0x1FFFFFFF
+function ptr(addr) => dword_be(addr) + 0x80000000
+// function ptr(addr) => tbyte_be(addr+1) // NOT IDEAL
 
 // --- MEMORY -------------------------------------------------------------------
 
@@ -18,7 +20,6 @@ function menu_popup_visible() => dword_be(0x16D97C)
 
 // $16D984: Pointer to Popup Text [32 bit BE]
 //          0x8013d248 = Loading confirmation
-LOADING_CONFIRMATION = 0x8013d248
 function menu_popup_text() => dword_be(0x16D984)
 
 // $1D5630: Loading screen active [32 bit BE]
@@ -76,15 +77,15 @@ function num_items() => dword_be(0x16F10C)
 // $16F11C: Pointer to Held Item Table [32 bit BE]
 //          .. Held Item Table (36 bytes x # of items)
 //          .. Struct for each item, indexed based on the item menu:
-//          .. +8 = Pointer to table of metadata [32 bit BE] (20 byte entries)
-//          .... +0 = Internal Identifier pointer [32 bit BE] -> ASCII Text
-//          .... +4 = Display Name pointer [32 bit BE] -> ASCII Text
-//          .... +8 = Item Description pointer [32 bit BE] -> ASCII Text
-//          .... +12 = Flags?
-//          .... +16 = Icon Index [32 bit BE], 0xffffffff if not loaded
-//          .. +12 = Flags?
-//          .. +24 = Current Item Count [32 bit BE]
-//          .. +28 = Max Item Count [32 bit BE], 0 if unlimited
+//          .. +08 | Pointer to table of metadata [32 bit BE] (20 byte entries)
+//          .. .. +00 | Internal Identifier pointer [32 bit BE] -> ASCII Text
+//          .. .. +04 | Display Name pointer [32 bit BE] -> ASCII Text
+//          .. .. +08 | Item Description pointer [32 bit BE] -> ASCII Text
+//          .. .. +12 | Flags?
+//          .. .. +16 | Icon Index [32 bit BE], 0xffffffff if not loaded
+//          .. +12 | Flags?
+//          .. +24 | Current Item Count [32 bit BE]
+//          .. +28 | Max Item Count [32 bit BE], 0 if unlimited
 PTR_TO_ITEM_TABLE = 0x16F11C
 function item_table() => ptr(PTR_TO_ITEM_TABLE)
 function item_table() => 0x37C640 // tbyte_be(PTR_TO_ITEM_TABLE + 1)
@@ -282,7 +283,7 @@ function item_menu_cursor_position() => dword_be(0x1D547C)
 //          3: indices 9->13
 //          4: indices 11->7
 OBJECT_TABLE_POINTER = 0x19A8C8
-function get_object_ptr(i) => tbyte_be(i * 4 + 1 + tbyte_be(OBJECT_TABLE_POINTER + 1))
+function get_object_ptr(i) => ptr(i * 4 + ptr(OBJECT_TABLE_POINTER))
 function get_object_param(i) => dword_be(get_object_ptr(i) + 148)
 
 SKULL_INDICES = {
@@ -303,7 +304,7 @@ function get_skull(level, i) => get_object_param(SKULL_INDICES[level][i])
 //          .. +44 = Y Delta [Float BE]
 //          .. +48 = Z Delta [Float BE]
 //          .. +84 = Model Name [ASCII Text] (outfit info)
-function skye_ptr() => word_be(0x1D5530) & 0xFFFFFF
+function skye_ptr() => ptr(0x1D5530)
 
 // $365160: Prepared Spell Table (128 bytes x # of spells)
 //          Struct for each spell, indexed based on the spell menu:
