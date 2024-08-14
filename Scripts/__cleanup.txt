@@ -1,0 +1,2 @@
+achievement\(\n    title = "(.+)", points = (\d+), (.+)\n    description = "(.+)",\n    id = (\d+), badge = "(\d+)", .+\n    trigger = 
+achievement(id=$5, badge="$6",\n    title="$1",\n    description="$4",\n    points=$2,\n    $3\n    trigger=
