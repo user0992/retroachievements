@@ -45,7 +45,7 @@ function alive() => bit0(0x0004C2)
 function respawn_area() => byte(0x0004E7)
 function respawn_sub_area() => byte(0x0004E8)
 function respawn_page() => byte(0x0004E9)
-function respawn() => tbyte_be(0x0004E7)
+function respawn_location() => tbyte_be(0x0004E7)
 
 // $04ED: Life Count [8 bit]
 //        displays value -1
@@ -152,7 +152,7 @@ function damageless() => (
 	once(prev(music()) == MUSIC_CHARSELECT && music() != MUSIC_CHARSELECT) &&
 
 	// reset if respawn position is updated while you've taken hits
-	never(respawn() != prev(respawn()) && hits() < 1)
+	never(respawn_location() != prev(respawn_location()) && hits() < 1)
 )
 
 function new_game() => once(prev(music()) == MUSIC_CHARSELECT && music() != MUSIC_CHARSELECT && current_area() == 0x00)
