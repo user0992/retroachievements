@@ -155,6 +155,16 @@ function damageless() => (
 	never(respawn_location() != prev(respawn_location()) && hits() < 1)
 )
 
+function damageless_since_last_respawn() => (
+	tally(1,
+		// +1 by default
+		once(always_true()),
+
+		// -1 if player takes damage, remove -1 when respawn
+		deduct(once(hits() < 1 && never(alive() > prev(alive()))))
+	)
+)
+
 function new_game() => once(prev(music()) == MUSIC_CHARSELECT && music() != MUSIC_CHARSELECT && current_area() == 0x00)
 
 function win_the_game() => prev(music()) != MUSIC_END && music() == MUSIC_END
@@ -346,7 +356,7 @@ if (stage["area"] != 0x07) // this stage has a gimmick that makes it incompatibl
 			prev(current_area()) == stage["area"] && damageless() &&
 
 			// challenge ends when the stage is completed
-			trigger_when(prev(location()) == stage["last"] && complete_level)
+			trigger_when(prev(location()) == stage["last"] && complete_level && damageless_since_last_respawn())
 		)
 	)
 	ach_id = ach_id + 1
