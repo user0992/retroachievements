@@ -376,7 +376,7 @@ STAGES = [
 
 POINTS_THRESHOLDS = [
 	{"p":  100000, "d":   "100,000", "title": "How Do You Build a Snowman?", "value": 3},
-	{"p":  500000, "d":   "500,000", "title": "Dropping Out of Snowman Engineering School", "value": 10},
+	{"p":  500000, "d":   "500,000", "title": "Studying Snowman Engineering", "value": 10},
 	{"p": 1250000, "d": "1,250,000", "title": "A Good Snowman Is Hard To Build", "value": 25},
 ]
 
