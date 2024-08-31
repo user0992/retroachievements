@@ -577,7 +577,11 @@ achievement(
 		prev(enemies_remaining()) > 0 && enemies_remaining() == 0 && snowballs_rolled() == 1 &&
 
 		// pauselock if a green potion is used this round
-		disable_when(once(p1_power_grn() == 1),
+		disable_when(p1_power_grn() == 1,
+			until=prev(floor_id()) != floor_id() || demo_play() == 1 || p1_lives() == 0) &&
+
+		// pauselock if this is a boss floor
+		disable_when(boss1_hp() + boss2_hp() != 0,
 			until=prev(floor_id()) != floor_id() || demo_play() == 1 || p1_lives() == 0)
 	)
 )
