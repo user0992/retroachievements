@@ -332,11 +332,12 @@ STAGES = [
 		"challenge_desc": "Defeat To-Chan and Ka-Chan without ever leaving the floor",
 		"challenge_pts": 5,
 
-		"challenge_start": timer2() == 7080,
+		"challenge_start": timer2() > 6900 && p1_y_position() <= 0x0e00,
 		"challenge_reset": (
-			never(repeated(BOSS3_PAUSELOCK_FRAMES, 
-				p1_y_position() > BOSS3_LOWEST_PLATFORM && never(p1_y_position() < BOSS3_LOWEST_PLATFORM)
-			))
+			never(p1_y_position() > BOSS3_LOWEST_PLATFORM)
+		//	never(repeated(BOSS3_PAUSELOCK_FRAMES, // this checks if the player climbed onto a platform
+		//		p1_y_position() >= BOSS3_LOWEST_PLATFORM && never(p1_y_position() < BOSS3_LOWEST_PLATFORM)
+		//	))
 		),
 		"challenge_trigger": boss_dead(boss1_hp()) && boss_dead(boss2_hp())
 	},
