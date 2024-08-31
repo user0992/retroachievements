@@ -921,7 +921,7 @@ for c in ConqueredRivals
 
             (
                 // watching the "X Conquered" screen for the correct amount of time
-                repeated(72, game_state() == STATE_CONQUERED) || 
+                repeated(72, game_state() == STATE_CONQUERED && never(game_state() != STATE_CONQUERED)) || 
 
                 // or the "X Conquered" screen has been dismissed
                 (prev(game_state()) == STATE_CONQUERED && game_state() != STATE_CONQUERED)
@@ -1134,6 +1134,7 @@ achievement(
     trigger=(map() == COURSE_IROHAZAKA && map_dir() == DIRECTION_NORMAL && num_tires_grounded() < 2)
 )
 
+/*
 achievement(
     title="Blind Attack!!",
     description="Watch a rival turn off their headlights in your rear view mirror",
@@ -1144,11 +1145,15 @@ achievement(
 
         // if you can see your rear view mirror
         view_mode() == VIEW_FIRST &&
+        
+        // this should only be possible at night
+        map_time() == TIME_NIGHT &&
 
         // rival turned off their headlights
         prev(rival_headlights_disabled()) == 0 && rival_headlights_disabled() == 1
     )
 )
+*/
 
 achievement(
     title="Take It For a Test Drive",
@@ -1159,6 +1164,7 @@ achievement(
 
 // --- LEADERBOARDS -------------------------------------------------------------------
 
+lb_id = 113795
 for c in COURSES
 for d in range(0,1)
 {
@@ -1172,7 +1178,7 @@ for d in range(0,1)
         cdesc = cdesc + " in the snow"
     }
 
-    leaderboard(
+    leaderboard(id=lb_id,
         title=format("{0} - {1} Specialist", cname, dname),
         description=format("Clear {0} {1} as quickly as possible in any conditions", cdesc, dname),
 
@@ -1184,4 +1190,5 @@ for d in range(0,1)
         format="MILLISECS",
         lower_is_better=true
     )
+    lb_id = lb_id + 1
 }
