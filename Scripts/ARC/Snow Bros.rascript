@@ -317,7 +317,7 @@ STAGES = [
 		"challenge_pts": 10,
 
 		"challenge_start": timer1() == 7080,
-		"challenge_reset": never(timer1() > BOSS2_CYCLE1_END),
+		"challenge_reset": never(timer1() < BOSS2_CYCLE1_END),
 		"challenge_trigger": boss_dead(boss1_hp())
 	},
 	{
@@ -350,7 +350,7 @@ STAGES = [
 
 		"challenge_title": "I'm Just Getting Warmed Up",
 		"challenge_desc": format("Defeat the Big Nose Golems pushing no more than {0} snowballs", BOSS4_MAX_SNOWBALLS),
-		"challenge_pts": 5,
+		"challenge_pts": 10,
 
 		"challenge_start": timer2() == 21240,
 		"challenge_reset": never(tally_of(range(1,3), BOSS4_MAX_SNOWBALLS+1, (x) => snowballs_rolled() >= prev(snowballs_rolled()) + x)),
@@ -616,11 +616,11 @@ leaderboard(
 	title="How To Build a Snowman",
 	description="Earn the highest score possible",
 
-	start=prev(demo_play()) == 0 && demo_play() == 1,
+	start=p1_score() > 0 && ((prev(p1_lives()) > 0 && p1_lives() == 0) || win_the_game()),
 	cancel=!correct_settings(),
 	submit=always_true(),
 
-	value=prev(p1_score()),
+	value=p1_score(),
 	format="VALUE",
-	lower_is_better=true
+	lower_is_better=false
 )
