@@ -7,6 +7,17 @@ function if_else(p, t, f) { if (p) { return t } else return f }
 idfunc = (x) => x
 ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 
+function zfill(num, c)
+{
+	result = format("{0}", num)
+	for i in range(0, 10)
+	{
+		if (length(result) >= c) return result
+		result = format("0{0}", result)
+	}
+	return result
+}
+
 // should be (x & 0x01FFFFFF), but this will optimize better
 function vptr(x) => dword(x) & 0x01FFFFFF
 // function vptr(x) => dword(x) + 0xF4000000
@@ -17,8 +28,6 @@ function vptr(x) => dword(x) & 0x01FFFFFF
 //          0x00000003 = X Conquered
 function game_state() => dword(0x2F4B94)
 
-STATE_CONQUERED = 3
-
 // $2F4DE0: Race Complete [32 bit]
 //          1 when race ends, 0 otherwise
 function is_race_complete() => dword(0x2F4DE0)
@@ -28,10 +37,6 @@ function is_race_complete() => dword(0x2F4DE0)
 //          1 = Time Attack
 //          2 = The Bunta Challenge!!
 function mode() => dword(0x31C99C)
-
-MODE_STORY = 0
-MODE_TIME = 1
-MODE_BUNTA = 2
 
 // $31C9A0: Map [32 bit]
 //          0 = Myogi
@@ -45,34 +50,9 @@ MODE_BUNTA = 2
 //          8 = Akina (Snow)
 function map() => dword(0x31C9A0)
 
-COURSE_MYOGI = 0
-COURSE_USUI = 1
-COURSE_AKAGI = 2
-COURSE_AKINA = 3
-COURSE_HAPPOGAHARA = 4
-COURSE_IROHAZAKA = 5
-COURSE_SHOMARU = 6
-COURSE_TSUCHISAKA = 7
-COURSE_AKINA_SNOW = 8
-
-COURSES = [
-    COURSE_MYOGI,
-    COURSE_USUI,
-    COURSE_AKAGI,
-    COURSE_AKINA,
-    COURSE_IROHAZAKA,
-    COURSE_AKINA_SNOW,
-    COURSE_HAPPOGAHARA,
-    COURSE_SHOMARU,
-    COURSE_TSUCHISAKA,
-]
-
 // $31C9A4: Map Time [32 bit]
 //          0 = Day, 1 = Night
 function map_time() => dword(0x31C9A4)
-
-TIME_DAY = 0
-TIME_NIGHT = 1
 
 // $31C9A8: Map Direction [32 bit]
 //          [00] 0 = Anti, 1 = Clockwise
@@ -85,10 +65,6 @@ TIME_NIGHT = 1
 //          [07] 0 = Outbound, 1 = Inbound
 //          [08] 0 = Downhill, 1 = Uphill
 function map_dir() => dword(0x31C9A8)
-
-DIRECTION_ANY = -1
-DIRECTION_NORMAL = 0
-DIRECTION_ALT = 1
 
 // $31C9AC: Car [32 bit]
 //          0x00 = AE86 (Toyota / Trueno GT-APEX)
@@ -183,24 +159,9 @@ function rival_car() => dword(0x31C9B0)
 //          0x1d = Tak (Project D) ??
 function chapter() => dword(0x31C9B4)
 
-ConqueredRivals = {
-    COURSE_MYOGI: 3,
-    COURSE_USUI: 3,
-    COURSE_AKAGI: 3,
-    // COURSE_AKINA: 6,
-    COURSE_IROHAZAKA: 3,
-    // COURSE_AKINA_SNOW: 1,
-    COURSE_HAPPOGAHARA: 3,
-    COURSE_SHOMARU: 3,
-    COURSE_TSUCHISAKA: 6,
-}
-
 // $31C9BC: Map Weather [32 bit]
 //          0 = Dry, 1 = Wet
 function map_weather() => dword(0x31C9BC)
-
-WEATHER_DRY = 0
-WEATHER_WET = 1
 
 // $31C9C8: License Name [5 x 32 bit]
 //          0xa2-0xbb = A-Z
@@ -229,9 +190,6 @@ function car_color() => dword(0x31C9DC)
 //          0 = Automatic, 1 = Manual
 function transmission() => dword(0x31C9E0)
 
-TRANS_AUTO = 0
-TRANS_MANUAL = 1
-
 // $31C9E4: Total License Points [32 bit]
 function total_license_points() => dword(0x31C9E4)
 
@@ -239,10 +197,10 @@ function total_license_points() => dword(0x31C9E4)
 function license_name_length() => dword(0x31C9E8)
 
 // $31CA10: Defeated Opponents [31 bytes]
-//          bit4 = defeated
+//          upper4 is a counter of times won against this racer (max 2?)
 //          lower4 is a counter of times lost to this racer in this session
 DEFEATED_OPPONENTS_TABLE = 0x31CA10
-function has_defeated(i) => bit4(DEFEATED_OPPONENTS_TABLE + i)
+function has_defeated(i) => high4(DEFEATED_OPPONENTS_TABLE + i) / high4(DEFEATED_OPPONENTS_TABLE + i)
 function rival_losses(i) => low4(DEFEATED_OPPONENTS_TABLE + i)
 
 function required_wins() => sum_of(range(0,29), has_defeated)
@@ -276,15 +234,6 @@ function plays_until_next_inspection() => dword(0x31CE10)
 // $31CE34: Menu Timer [32 bit]
 function menu_timer() => dword(0x31CE34)
 
-// $31CE39: Flags [8 bit]
-//          bit6 = Unlocked Tak @ Tsuchisaka
-//          bit7 = Unlocked Bunta @ Akina
-function flags() => byte(0x31CE39)
-
-// $31CE3B: Flags [8 bit]
-//          bit3 = Unlocked K.T. @ Tsuchisaka
-function flags() => byte(0x31CE3B)
-
 // $31CE3C: BGM [8 bit]
 //          0 = On, 1 = Off, 2 = Fix
 function bgm() => byte(0x31CE3C)
@@ -292,10 +241,6 @@ function bgm() => byte(0x31CE3C)
 // $31CE3E: Navigation Display [8 bit]
 //          0 = On, 1 = Off, 2 = Paper Cup
 function navigation_display() => byte(0x31CE3E)
-
-NAV_ON = 0
-NAV_OFF = 1
-NAV_CUP = 2
 
 // $31CE3F: Steering Control [8 bit]
 //          0 = Loose, 8 = Stiff (4 = default)
@@ -344,8 +289,6 @@ function paper_cup_L() => dword(paper_cup_ptr() + 0x0C)
 function paper_cup_R() => dword(paper_cup_ptr() + 0x10)
 
 function view_mode() => dword(race_data_ptr() + 0x414)
-VIEW_FIRST = 0
-VIEW_THIRD = 1
 
 function race_info_ptr() => vptr(race_data_ptr() + 0x41C)
 function race_time_raw() => dword(race_info_ptr() + 0x08)
@@ -387,11 +330,6 @@ function front_tire_2_not_grounded() => dword(0x900B20)
 function back_tire_1_not_grounded() => dword(0x90102C)
 function back_tire_2_not_grounded() => dword(0x901030)
 
-function num_tires_grounded() => 4 - (
-    front_tire_1_not_grounded() + front_tire_2_not_grounded() + 
-    back_tire_1_not_grounded() + back_tire_2_not_grounded()
-)
-
 // $900D98: Front Tire Info [Float]
 // $9012A8: Back Tire Info [Float]
 //          Counts down by 0.01 from 0.19 when going over jump
@@ -420,8 +358,6 @@ function ditches() => dword(0x9012F8)
 ADVANTAGE_ADDR = 0x901650
 function advantage() => float(ADVANTAGE_ADDR)
 function advantage_sign() => bit7(ADVANTAGE_ADDR+3)
-
-ONE_CAR_LENGTH = 4.2 // meters
 
 // $91FB10: Analysis - Accel Percentage (0-1) [Float]
 // $91FB14: Analysis - Brake Percentage (0-1) [Float]
@@ -463,16 +399,9 @@ function is_hitting_wall() => dword(0xAA975C)
 function race_outcome_music_loaded() => dword_be(0xBFF94C) == 0x6f756e64
 function race_outcome() => dword_be(0xBFF958)
 
-OUTCOME_WIN = 0x57494e2e
-OUTCOME_LOSE = 0x4c4f5345
-OUTCOME_TIMEUP = 0x54494d45
-
 // $1F98CC0: Race Results - Win/Lose [32 bit]
 //           0 = Win, 1 = Lose
 function results_winner() => dword(0x1F98CC0)
-
-RESULT_WIN = 0
-RESULT_LOSE = 1
 
 // $1F98CC4: Race Results - Section/Lap Count [32 bit]
 function results_segment_count() => dword(0x1F98CC4)
@@ -522,7 +451,135 @@ function race_results_ptr() => vptr(RACE_RESULTS_PTR)
 
 function tuning_display() => dword(race_results_ptr() + 0x010)
 
-// --- ACHIEVEMENT HELPERS ----------------------------------------------------
+// --- MAIN DATA -------------------------------------------------------------------
+
+STATE_CONQUERED = 3
+
+MODE_STORY = 0
+MODE_TIME = 1
+MODE_BUNTA = 2
+
+COURSE_MYOGI = 0
+COURSE_USUI = 1
+COURSE_AKAGI = 2
+COURSE_AKINA = 3
+COURSE_HAPPOGAHARA = 4
+COURSE_IROHAZAKA = 5
+COURSE_SHOMARU = 6
+COURSE_TSUCHISAKA = 7
+COURSE_AKINA_SNOW = 8
+
+COURSES = [
+    COURSE_MYOGI,
+    COURSE_USUI,
+    COURSE_AKAGI,
+    COURSE_AKINA,
+    COURSE_IROHAZAKA,
+    COURSE_AKINA_SNOW,
+    COURSE_HAPPOGAHARA,
+    COURSE_SHOMARU,
+    COURSE_TSUCHISAKA,
+]
+
+TIME_DAY = 0
+TIME_NIGHT = 1
+
+DIRECTION_ANY = -1
+DIRECTION_NORMAL = 0
+DIRECTION_ALT = 1
+
+WEATHER_DRY = 0
+WEATHER_WET = 1
+
+TRANS_AUTO = 0
+TRANS_MANUAL = 1
+
+NAV_ON = 0
+NAV_OFF = 1
+NAV_CUP = 2
+
+VIEW_FIRST = 0
+VIEW_THIRD = 1
+
+ONE_CAR_LENGTH = 4.2 // meters
+
+OUTCOME_WIN = 0x57494e2e
+OUTCOME_LOSE = 0x4c4f5345
+OUTCOME_TIMEUP = 0x54494d45
+
+RESULT_WIN = 0
+RESULT_LOSE = 1
+
+RIVAL_ACHIEVEMENTS = [
+    {"id": 0x00, "points": 2, "course": COURSE_MYOGI, "title": "Lonely Driver"},
+    {"id": 0x01, "points": 2, "course": COURSE_MYOGI, "title": "Speedy Speed Boy"},
+    {"id": 0x02, "points": 3, "course": COURSE_MYOGI, "title": "Downhill Specialist"},
+    {"id": 0x03, "points": 3, "course": COURSE_USUI, "title": "The Downhill Kamikaze"},
+    {"id": 0x04, "points": 3, "course": COURSE_USUI, "title": "Seven Star Leader"},
+    {"id": 0x05, "points": 4, "course": COURSE_USUI, "title": "Stacked Two from Impact Blue"},
+    {"id": 0x06, "points": 4, "course": COURSE_AKAGI, "title": "Extreme-Ultra-Super-Late-Braking"},
+    {"id": 0x07, "points": 4, "course": COURSE_AKAGI, "title": "Rain Condition Specialist"},
+    {"id": 0x08, "points": 5, "course": COURSE_AKAGI, "title": "KANSEI DORIFTU"},
+    {"id": 0x09, "points": 4, "course": COURSE_AKINA, "title": "Star of the SpeedStars"},
+    {"id": 0x0a, "points": 4, "course": COURSE_AKINA, "title": "Black Lightning"},
+    {"id": 0x0b, "points": 4, "course": COURSE_AKINA, "title": "Race Circuit Superiority"},
+    {"id": 0x0c, "points": 5, "course": COURSE_AKINA, "title": "The White Comet"},
+    {"id": 0x0d, "points": 5, "course": COURSE_AKINA, "title": "The Ghost of Akina"},
+    {"id": 0x0e, "points": 5, "course": COURSE_IROHAZAKA, "title": "Hunting the Hawk"},
+    {"id": 0x0f, "points": 5, "course": COURSE_IROHAZAKA, "title": "The Emperor of Daiya River"},
+    {"id": 0x10, "points": 5, "course": COURSE_IROHAZAKA, "title": "The Go-Kart Prodigy"},
+    {"id": 0x11, "points": 10, "course": COURSE_AKINA_SNOW, "title": "Glacial Drift"},
+    {"id": 0x12, "points": 5, "course": COURSE_HAPPOGAHARA, "title": "Rolling the Dice"},
+    {"id": 0x13, "points": 5, "course": COURSE_HAPPOGAHARA, "title": "Grin and Bear It"},
+    {"id": 0x14, "points": 5, "course": COURSE_HAPPOGAHARA, "title": "The Old Boys Club"},
+    {"id": 0x15, "points": 5, "course": COURSE_SHOMARU, "title": "Ope! Lemme Just Sneak Right Past Ya Here"},
+    {"id": 0x16, "points": 5, "course": COURSE_SHOMARU, "title": "Rally in the Valley"},
+    {"id": 0x17, "points": 5, "course": COURSE_SHOMARU, "title": "Thunder in Shomaru Pass"},
+    {"id": 0x18, "points": 5, "course": COURSE_TSUCHISAKA, "title": "Lovergirl"},
+    {"id": 0x19, "points": 5, "course": COURSE_TSUCHISAKA, "title": "Fastest Racing Theory"},
+    {"id": 0x1a, "points": 5, "course": COURSE_TSUCHISAKA, "title": "Dirty Deeds"},
+    {"id": 0x1b, "points": 5, "course": COURSE_TSUCHISAKA, "title": "Slicking the Track"},
+    {"id": 0x1c, "points": 10, "course": COURSE_TSUCHISAKA, "title": "The Rotary Brothers"},
+    {"id": 0x1d, "points": 10, "course": COURSE_TSUCHISAKA, "title": "The Fastest Team in Gunma"},
+    {"id": 0x1e, "points": 25, "course": COURSE_AKINA, "title": "Tofu Man Ascendant"},
+]
+
+ConqueredRivals = [
+    COURSE_MYOGI,
+    COURSE_USUI,
+    COURSE_AKAGI,
+    // COURSE_AKINA,
+    COURSE_IROHAZAKA,
+    // COURSE_AKINA_SNOW,
+    COURSE_HAPPOGAHARA,
+    COURSE_SHOMARU,
+    COURSE_TSUCHISAKA,
+]
+
+// for time trials
+function faster_than(min, sec, ms) => {
+    "trigger": (finishing_time_raw() <= ((min * 60 + sec) * 1000 + ms) * 6),
+    "display": format("{0}'{1}\"{2}", min, zfill(sec, 2), zfill(ms, 3)),
+}
+
+// best times -- https://idrankings.com/initiald/v3/rankings
+TARGET_TIMES = [
+    {"course": COURSE_MYOGI, "d": DIRECTION_ANY, "time": faster_than(2, 59, 500)}, // 2'59
+    {"course": COURSE_USUI, "d": DIRECTION_ANY, "time": faster_than(3, 00, 000)}, // 3'00
+    {"course": COURSE_AKAGI, "d": DIRECTION_NORMAL, "time": faster_than(2, 35, 000)}, // 2'35
+    {"course": COURSE_AKAGI, "d": DIRECTION_ALT, "time": faster_than(2, 40, 000)}, // 2'40
+    {"course": COURSE_AKINA, "d": DIRECTION_NORMAL, "time": faster_than(3, 16, 000)}, // 3'16
+    {"course": COURSE_AKINA, "d": DIRECTION_ALT, "time": faster_than(3, 25, 000)}, // 3'25
+    {"course": COURSE_IROHAZAKA, "d": DIRECTION_NORMAL, "time": faster_than(3, 15, 000)}, // 3'15
+    {"course": COURSE_IROHAZAKA, "d": DIRECTION_ALT, "time": faster_than(3, 25, 000)}, // 3'25
+    {"course": COURSE_AKINA_SNOW, "d": DIRECTION_NORMAL, "time": faster_than(3, 40, 000)}, // 3'40
+    {"course": COURSE_AKINA_SNOW, "d": DIRECTION_ALT, "time": faster_than(3, 50, 000)}, // 3'50
+    {"course": COURSE_HAPPOGAHARA, "d": DIRECTION_ANY, "time": faster_than(2, 39, 000)}, // 2'39
+    {"course": COURSE_SHOMARU, "d": DIRECTION_ANY, "time": faster_than(3, 22, 000)}, // 3'22
+    {"course": COURSE_TSUCHISAKA, "d": DIRECTION_ANY, "time": faster_than(2, 58, 000)}, // 2'58
+]
+
+// --- AUX FUNCTIONS  -------------------------------------------------------------------
 
 // returns true when the race is being setup
 function race_setup() => prev(is_racing()) == 0 && is_racing() != 0
@@ -545,6 +602,14 @@ function player_overtaken() => is_racing() != 0 && prev(advantage()) >= 0 && adv
 
 // returns true if a ditch has been used recently
 function used_ditch_recently(n) => once(is_using_ditch() == 1 && never(repeated(n, is_using_ditch() == 0 && never(is_using_ditch() == 1))))
+
+// check how many tires are grounded
+function num_tires_grounded() => 4 - (
+    front_tire_1_not_grounded() + front_tire_2_not_grounded() + 
+    back_tire_1_not_grounded() + back_tire_2_not_grounded()
+)
+
+// --- RICH PRESENCE -------------------------------------------------------------------
 
 CarLookup = {
     0x00: "Trueno GT-APEX",
@@ -784,7 +849,7 @@ rp_chapter = rich_presence_value("_Number", chapter()+1, "VALUE")
 rp_rival = rich_presence_lookup("Rival", chapter(), RivalLookup, fallback="Bunta")
 rp_rival_car = rich_presence_lookup("Car", rival_car(), CarLookup, fallback=CarLookup[0x00])
 rp_rival_short = rich_presence_lookup("CarShort", rival_car(), CarShortLookup, fallback=CarShortLookup[0x00])
-rp_story_perc = rich_presence_value("_Float1", 100.0 * story_wins() / 31.0, "FLOAT1")
+rp_story_wins = rich_presence_value("_Number", story_wins(), "VALUE")
 
 rp_racer_level = rich_presence_lookup("RacerLevel", story_loop(), RacerLevelLookup, fallback=" 🌟")
 rp_racer_level_num = rich_presence_value("_Number", story_loop(), "VALUE")
@@ -834,10 +899,10 @@ rich_presence_conditional_display(is_racing() != 0 && mode() == MODE_BUNTA,
 )
 
 rich_presence_conditional_display(license_name_length() != 0,
-    "Setting up | 🚗 {0} ({1}) | {2} pts | Story 🏆{3}%{4} | Bunta ✨{5}",
+    "Setting up | 🚗 {0} ({1}) | {2} pts | Story 🏆{3}/31{4} | Bunta ✨{5}",
     rp_player_car, rp_player_short,
     rp_license_pts,
-    rp_story_perc, rp_racer_level,
+    rp_story_wins, rp_racer_level,
     rp_bunta_total
 )
 
@@ -845,39 +910,7 @@ rich_presence_display(
     "Setting up for the next race!"
 )
 
-RIVAL_ACHIEVEMENTS = [
-    {"id": 0x00, "points": 2, "course": COURSE_MYOGI, "title": "Lonely Driver"},
-    {"id": 0x01, "points": 2, "course": COURSE_MYOGI, "title": "Speedy Speed Boy"},
-    {"id": 0x02, "points": 3, "course": COURSE_MYOGI, "title": "Downhill Specialist"},
-    {"id": 0x03, "points": 3, "course": COURSE_USUI, "title": "The Downhill Kamikaze"},
-    {"id": 0x04, "points": 3, "course": COURSE_USUI, "title": "Seven Star Leader"},
-    {"id": 0x05, "points": 4, "course": COURSE_USUI, "title": "Stacked Two from Impact Blue"},
-    {"id": 0x06, "points": 4, "course": COURSE_AKAGI, "title": "Extreme-Ultra-Super-Late-Braking"},
-    {"id": 0x07, "points": 4, "course": COURSE_AKAGI, "title": "Rain Condition Specialist"},
-    {"id": 0x08, "points": 5, "course": COURSE_AKAGI, "title": "KANSEI DORIFTU"},
-    {"id": 0x09, "points": 4, "course": COURSE_AKINA, "title": "Star of the SpeedStars"},
-    {"id": 0x0a, "points": 4, "course": COURSE_AKINA, "title": "Black Lightning"},
-    {"id": 0x0b, "points": 4, "course": COURSE_AKINA, "title": "Race Circuit Superiority"},
-    {"id": 0x0c, "points": 5, "course": COURSE_AKINA, "title": "The White Comet"},
-    {"id": 0x0d, "points": 5, "course": COURSE_AKINA, "title": "The Ghost of Akina"},
-    {"id": 0x0e, "points": 5, "course": COURSE_IROHAZAKA, "title": "Hunting the Hawk"},
-    {"id": 0x0f, "points": 5, "course": COURSE_IROHAZAKA, "title": "The Emperor of Daiya River"},
-    {"id": 0x10, "points": 5, "course": COURSE_IROHAZAKA, "title": "The Go-Kart Prodigy"},
-    {"id": 0x11, "points": 10, "course": COURSE_AKINA_SNOW, "title": "Glacial Drift"},
-    {"id": 0x12, "points": 5, "course": COURSE_HAPPOGAHARA, "title": "Rolling the Dice"},
-    {"id": 0x13, "points": 5, "course": COURSE_HAPPOGAHARA, "title": "Grin and Bear It"},
-    {"id": 0x14, "points": 5, "course": COURSE_HAPPOGAHARA, "title": "The Old Boys Club"},
-    {"id": 0x15, "points": 5, "course": COURSE_SHOMARU, "title": "Ope! Lemme Just Sneak Right Past Ya Here"},
-    {"id": 0x16, "points": 5, "course": COURSE_SHOMARU, "title": "Rally in the Valley"},
-    {"id": 0x17, "points": 5, "course": COURSE_SHOMARU, "title": "Thunder in Shomaru Pass"},
-    {"id": 0x18, "points": 5, "course": COURSE_TSUCHISAKA, "title": "Lovergirl"},
-    {"id": 0x19, "points": 5, "course": COURSE_TSUCHISAKA, "title": "Fastest Racing Theory"},
-    {"id": 0x1a, "points": 5, "course": COURSE_TSUCHISAKA, "title": "Dirty Deeds"},
-    {"id": 0x1b, "points": 5, "course": COURSE_TSUCHISAKA, "title": "Slicking the Track"},
-    {"id": 0x1c, "points": 10, "course": COURSE_TSUCHISAKA, "title": "The Rotary Brothers"},
-    {"id": 0x1d, "points": 10, "course": COURSE_TSUCHISAKA, "title": "The Fastest Team in Gunma"},
-    {"id": 0x1e, "points": 25, "course": COURSE_AKINA, "title": "Tofu Man Ascendant"},
-]
+// --- ACHIEVEMENTS -------------------------------------------------------------------
 
 for r in RIVAL_ACHIEVEMENTS
 {
@@ -940,34 +973,6 @@ achievement(
     type="win_condition",
     trigger=(prev(required_wins()) == 29 && required_wins() == 30)
 )
-
-// for time trials
-function faster_than(min, sec, ms)
-{
-    dsec = substring(format("00{0}", sec), -2, 2)
-    dms = substring(format("000{0}", ms), -3, 3)
-    return {
-        "trigger": (finishing_time_raw() <= ((min * 60 + sec) * 1000 + ms) * 6),
-        "display": format("{0}'{1}\"{2}", min, dsec, dms),
-    }
-}
-
-// best times -- https://idrankings.com/initiald/v3/rankings
-TARGET_TIMES = [
-    {"course": COURSE_MYOGI, "d": DIRECTION_ANY, "time": faster_than(2, 59, 500)}, // 2'59
-    {"course": COURSE_USUI, "d": DIRECTION_ANY, "time": faster_than(3, 00, 000)}, // 3'00
-    {"course": COURSE_AKAGI, "d": DIRECTION_NORMAL, "time": faster_than(2, 35, 000)}, // 2'35
-    {"course": COURSE_AKAGI, "d": DIRECTION_ALT, "time": faster_than(2, 40, 000)}, // 2'40
-    {"course": COURSE_AKINA, "d": DIRECTION_NORMAL, "time": faster_than(3, 16, 000)}, // 3'16
-    {"course": COURSE_AKINA, "d": DIRECTION_ALT, "time": faster_than(3, 25, 000)}, // 3'25
-    {"course": COURSE_IROHAZAKA, "d": DIRECTION_NORMAL, "time": faster_than(3, 15, 000)}, // 3'15
-    {"course": COURSE_IROHAZAKA, "d": DIRECTION_ALT, "time": faster_than(3, 25, 000)}, // 3'25
-    {"course": COURSE_AKINA_SNOW, "d": DIRECTION_NORMAL, "time": faster_than(3, 40, 000)}, // 3'40
-    {"course": COURSE_AKINA_SNOW, "d": DIRECTION_ALT, "time": faster_than(3, 50, 000)}, // 3'50
-    {"course": COURSE_HAPPOGAHARA, "d": DIRECTION_ANY, "time": faster_than(2, 39, 000)}, // 2'39
-    {"course": COURSE_SHOMARU, "d": DIRECTION_ANY, "time": faster_than(3, 22, 000)}, // 3'22
-    {"course": COURSE_TSUCHISAKA, "d": DIRECTION_ANY, "time": faster_than(2, 58, 000)}, // 2'58
-]
 
 for trial in TARGET_TIMES
 {
