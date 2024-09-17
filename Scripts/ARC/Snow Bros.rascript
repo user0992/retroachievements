@@ -7,6 +7,41 @@ NULL = 0
 function if_else(p, t, f) { if (p) { return t } else return f }
 idfunc = (x) => x
 ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+function bitx(i, addr) => bit(i % 8, addr + i / 8)
+
+function zfill(num, c)
+{
+	result = format("{0}", num)
+	for i in range(0, 10)
+	{
+		if (length(result) >= c) return result
+		result = format("0{0}", result)
+	}
+	return result
+}
+
+function commas(x)
+{
+	function comma_join(list)
+	{
+		res = ""
+		for i in range(0, length(list)-1)
+		{
+			if (i == length(list) - 1)
+				res = format("{0}", list[i]) + res
+			else res = "," + zfill(list[i], 3) + res
+		}
+		return res
+	}
+
+	parts = []
+	for i in range(1, 10)
+	{
+		if (x == 0) return comma_join(parts)
+		array_push(parts, x % 1000)
+		x = x / 1000
+	}
+}
 
 function build_score(addr)
 {
@@ -376,9 +411,9 @@ STAGES = [
 ]
 
 POINTS_THRESHOLDS = [
-	{"p":  100000, "d":   "100,000", "title": "How Do You Build a Snowman?", "value": 3},
-	{"p":  500000, "d":   "500,000", "title": "Studying Snowman Engineering", "value": 10},
-	{"p": 1250000, "d": "1,250,000", "title": "A Good Snowman Is Hard To Build", "value": 25},
+	{"p":  100000, "title": "How Do You Build a Snowman?", "value": 3},
+	{"p":  500000, "title": "Studying Snowman Engineering", "value": 10},
+	{"p": 1250000, "title": "A Good Snowman Is Hard To Build", "value": 25},
 ]
 
 // --- RICH PRESENCE -------------------------------------------------------------------
@@ -590,7 +625,7 @@ for x in POINTS_THRESHOLDS
 {
 	achievement(
 		title=x["title"],
-		description=format("Earn {0} points", x["d"]),
+		description=format("Earn {0} points", commas(x["p"])),
 		points=x["value"],
 		trigger=(
 			// in game, correct settings
