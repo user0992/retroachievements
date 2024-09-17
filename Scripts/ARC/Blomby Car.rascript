@@ -1,11 +1,14 @@
 // Blomby Car
 // #ID = 29732
 
-// HELPERS
+// --- HELPERS -------------------------------------------------------------------
+
 NULL = 0
 function if_else(p, t, f) { if (p) { return t } else return f }
 idfunc = (x) => x
 ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+
+// --- MEMORY -------------------------------------------------------------------
 
 // $2403: Game State [8 bit]
 //        0x0c = high score name entry
@@ -35,6 +38,58 @@ ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 function game_state() => byte(0x002403)
 function game_state_group() => high4(0x002403)
 
+// $2CC6: Current Speed [8 bit]
+//        max = 0x16 (22), 200km/h
+//        mult by 9.0909...
+function speed() => byte(0x002CC6)
+
+// $2CF2: Current Loaded Track [8 bit]
+//        works in demo play as well
+function loaded_track() => byte(0x002CF2)
+
+// $2EDF: Credits [8 bit]
+function credits() => byte(0x002EDF)
+
+// $2FA1: Crash Indicator [8 bit]
+//        0 = Driving
+//        3 = Crashing
+function crash() => byte(0x002FA1)
+
+// $3010: Clock Time (in tenths) [16 bit]
+function clock() => word(0x003010)
+
+// $301E: Score [32 bit]
+function score() => dword(0x00301E)
+
+// $30A3: Current Track [8 bit]
+//        0 = Madrid
+//        1 = Gibraltar
+//        2 = Tombouctou
+//        3 = Dakar
+function track() => byte(0x0030A3)
+
+// $30A6: Track #1 Clear Time [16 bit]
+// $30AA: Track #2 Clear Time [16 bit]
+// $30AE: Track #3 Clear Time [16 bit]
+// $30B2: Track #4 Clear Time [16 bit]
+function clear_time(i) => word(0x0030A6 + i * 4)
+
+// $30D6: Checkpoint Time Bonus [16 bit]
+function checkpoint_time() => word(0x0030D6)
+
+// $3111: Difficulty [8 bit] - set by dip switch
+//        0 = Normal
+//        1 = Easy
+//        2 = Hard
+//        3 = Hardest
+function difficulty() => byte(0x003111)
+
+// $5C42: Player Current Rank [8 bit]
+//        zero-indexed (0 = first, 1 = second, etc)
+function leaderboard_rank() => byte(0x005C42)
+
+// --- MAIN DATA -------------------------------------------------------------------
+
 STATE_BONVOIAGE = 0x18
 STATE_MAP = 0x1B
 STATE_COUNTDOWN = 0x1F
@@ -52,6 +107,43 @@ GROUP_RACE = 0x2
 GROUP_WINNER = 0x5
 GROUP_TITLE = 0xE
 
+TRACK_MADRID = 0
+TRACK_GIBRALTAR = 1
+TRACK_TOMBOUCTOU = 2
+TRACK_DAKAR = 3
+
+DIFF_EASY = 1
+DIFF_NORMAL = 0
+DIFF_HARD = 2
+DIFF_HARDEST = 3
+
+GOAL_TIMES = {
+    TRACK_MADRID: 1450,
+    TRACK_GIBRALTAR: 1300,
+    TRACK_TOMBOUCTOU: 1400,
+    TRACK_DAKAR: 1650,
+}
+
+CITIES = ["Paris", "Madrid", "Gibraltar", "Tombouctou", "Dakar"]
+LEGS = {}
+for i in range(0,3)
+    LEGS[i] = format("{0} to {1}", CITIES[i], CITIES[i+1])
+
+// --- AUX FUNCTIONS  -------------------------------------------------------------------
+
+// if crash state is 3, the car is crashing
+function is_crashing() => crash() == 3
+
+// converts 0-22 range to 0-200 km/h (in-game display)
+function speed_real() => speed() * 9.091
+
+// --- RICH PRESENCE -------------------------------------------------------------------
+
+CRASH_STATE = {
+    0: "",
+    3: "🔧",
+}
+
 EMOJI_STATE = {
     STATE_DEMO: "📽",
     0x1E: "🚥",
@@ -63,83 +155,12 @@ EMOJI_STATE = {
     STATE_RACE_OVER: "❌🚩",
 }
 
-// $2CC6: Current Speed [8 bit]
-//        max = 0x16 (22), 200km/h
-//        mult by 9.0909...
-function speed() => byte(0x002CC6)
-function speed_real() => speed() * 9.091
-
-// $2CF2: Current Loaded Track [8 bit]
-//        works in demo play as well
-function loaded_track() => byte(0x002CF2)
-
-// $2EDF: Credits [8 bit]
-function credits() => byte(0x002EDF)
-
-// $2FA1: Crash Indicator [8 bit]
-//        0 = Driving
-//        3 = Crashing
-function crash() => byte(0x002FA1)
-function is_crashing() => crash() == 3
-
-CRASH_STATE = {
-    0: "",
-    3: "🔧",
-}
-
-// $3010: Clock Time (in tenths) [16 bit]
-function clock() => word(0x003010)
-
-// $301E: Score [32 bit]
-function score() => dword(0x00301E)
-
-// $30A3: Current Track [8 bit]
-//        0 = Madrid
-//        1 = Gibraltar
-//        2 = Tombouctou
-//        3 = Dakar
-function track() => byte(0x0030A3)
-
-TRACK_MADRID = 0
-TRACK_GIBRALTAR = 1
-TRACK_TOMBOUCTOU = 2
-TRACK_DAKAR = 3
-
-// $30A6: Track #1 Clear Time [16 bit]
-// $30AA: Track #2 Clear Time [16 bit]
-// $30AE: Track #3 Clear Time [16 bit]
-// $30B2: Track #4 Clear Time [16 bit]
-function clear_time(i) => word(0x0030A6 + i * 4)
-
-CITIES = ["Paris", "Madrid", "Gibraltar", "Tombouctou", "Dakar"]
-LEGS = {}
-for i in range(0,3) { LEGS[i] = format("{0} to {1}", CITIES[i], CITIES[i+1]) }
-
-// $30D6: Checkpoint Time Bonus [16 bit]
-function checkpoint_time() => word(0x0030D6)
-
-// $3111: Difficulty [8 bit] - set by dip switch
-//        0 = Normal
-//        1 = Easy
-//        2 = Hard
-//        3 = Hardest
-function difficulty() => byte(0x003111)
-
-DIFF_EASY = 1
-DIFF_NORMAL = 0
-DIFF_HARD = 2
-DIFF_HARDEST = 3
-
 DIFFICULTY = {
     DIFF_EASY: "Easy",
     DIFF_NORMAL: "Normal",
     DIFF_HARD: "Hard",
     DIFF_HARDEST: "Hardest",
 }
-
-// $5C42: Player Current Rank [8 bit]
-//        zero-indexed (0 = first, 1 = second, etc)
-function leaderboard_rank() => byte(0x005C42)
 
 rp_state = rich_presence_lookup("State", game_state(), EMOJI_STATE, fallback="🚩")
 rp_crash = rich_presence_lookup("Crash", crash(), CRASH_STATE, fallback="")
@@ -191,6 +212,8 @@ ach_names = [
     "From Here to Timbuktu",
     "The Tsar of Dakar",
 ]
+
+// --- ACHIEVEMENTS -------------------------------------------------------------------
 
 for track in range(0,3)
 {
@@ -270,13 +293,6 @@ for track in range(0,3)
     )
 }
 
-GOAL_TIMES = {
-    TRACK_MADRID: 1450,
-    TRACK_GIBRALTAR: 1300,
-    TRACK_TOMBOUCTOU: 1400,
-    TRACK_DAKAR: 1650,
-}
-
 for track in range(0,3)
 {
     achievement(
@@ -296,6 +312,8 @@ for track in range(0,3)
         )
     )
 }
+
+// --- LEADERBOARDS -------------------------------------------------------------------
 
 //for diff in [DIFF_NORMAL, DIFF_HARD, DIFF_HARDEST]
 diff = DIFF_NORMAL
