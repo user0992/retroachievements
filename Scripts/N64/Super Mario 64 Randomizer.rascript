@@ -773,7 +773,7 @@ achievement(
     points=10,
     trigger=(
         // add a hit for each of the stars
-        measured(tally_of(range(1,7), 7, x => collect_star(x) && last_star_stage() == stage_id()),
+        measured(tally_of(range(1,7), 7, x => once(collect_star(x) && last_star_stage() == stage_id())),
             when=in_game() && minimum_completion_settings() && is_nonstop() != 0) &&
 
         // reset if you ever leave the level
