@@ -1,0 +1,417 @@
+// $3E5130: Flags [8 bit]
+//          bit2 = Shutter 7 (#1) opened
+//          bit5 = Shutter 4 closed (Spider)
+
+// $3E5131: Flags [8 bit]
+//          bit0 = Shutter 3 (#2) opened
+
+// $3E5132: Flags [8 bit]
+//          bit1 = Enter Sun Suite
+
+// $3E5133: Flags [8 bit]
+//          bit3 = Enter Guest Room 5
+//          bit5 = [Item] Audio password 2/2
+//          bit7 = Shutter 2 (#3) opened
+
+// $3E5135: Flags [8 bit]
+//          bit1 = Camera upgrade from Jonathan's room (Night Vision)
+//          bit6 = [Item] Shooter (air nozzle)
+
+// $3E5136: Flags [8 bit]
+//          bit7 = [Chip] Sun Suite Fruits @ Lounge
+
+// $3E5137: Flags [8 bit]
+//          bit7 = Staff Hall Area A dead end #2 (EC)
+
+// $3E5138: Flags [8 bit]
+//          bit4 = [Item] Shutter Key
+
+// $3E5139: Flags [8 bit]
+//          bit1 = Laboratory examine shoe
+//          bit5 = [Item] Manager's Office key
+
+// $3E513A: Flags [8 bit]
+//          bit1 = Hideaway brain machine broke
+//          bit4 = Manager's Office shot alien pre-fight
+//          bit5 = Corridor Air Shooter case
+//          bit6 = [Item] Video recording disc (Filming location unknown)
+//          bit7 = [Item] Video recording disc (Observatory restaurant)
+
+// $3E513C: Flags [8 bit]
+//          bit5 = [Chip] Security Room Locker
+
+// $3E513D: Flags [8 bit]
+//          bit7 = [Item] Handgun
+
+// $3E5140: Flags [8 bit]
+//          bit5 = Security Room - Check Holding Cell 1 (EC)
+//          bit6 = Security Room - Check Holding Cell 2
+//          bit7 = Security Room - Check Holding Cell 3
+
+// $3E5141: Flags [8 bit]
+//          bit2 = Security Room - Unlock Locker
+
+// $3E5144: Flags [8 bit]
+//          bit1 = Equipment Room middle-right Supply Unit shelf
+
+// $3E5145: Flags [8 bit]
+//          bit4 = [Chip] Equipment Room center Utility Unit shelf
+
+// $3E5148: Flags [8 bit]
+//          bit1 = [Chip] Break Room Table Mug
+//          bit4 = Break Room TV (Launcher)
+
+// $3E5149: Flags [8 bit]
+//          bit4 = [Cutscene] Exiting Security Room first time
+//          bit6 = [Item] Audio password 1/2
+
+// $3E514A: Flags [8 bit]
+//          bit0 = [Item] Allen's reference kit
+//          bit1 = Defeated Spider at Shutter 4
+//          bit3 = [Command] Sexy pose
+//          bit4 = [Command] Camera check
+//          bit5 = [Command] Jumpback
+//          bit6 = [Command] Jump
+
+// $3E514B: Flags [8 bit]
+//          bit0 = [Command] Microphone check
+//          bit1 = [Command] Category Game
+//          bit2 = [Command] Break time
+//          bit3 = [Command] Strafe
+//          bit4 = [Command] Spin the Gun
+//          bit5 = [Command] Taunt
+//          bit6 = [Command] Auto-fire
+//          bit7 = [Command] Zoom in
+
+// $3E514C: Flags [8 bit]
+//          bit0 = [Command] I'll leave it to you
+//          bit1 = [Command] She sells
+//          bit2 = [Command] Low kick
+//          bit3 = Manager's Office Keyword "Pictures beside box"
+
+// $3E514F: Flags [8 bit]
+//          bit5 = [Chip] Guest Room 1 Trunk
+
+// $3E5150: Flags [8 bit]
+//          bit0 = [Combat] Guest Room 1
+
+// $3E5152: Flags [8 bit]
+//          bit7 = Guest Room 2 - Safe opened
+
+// $3E5153: Flags [8 bit]
+//          bit1 = [Chip] Guest Room 2 Nightstand
+
+// $3E5154: Flags [8 bit]
+//          bit6 = [Item] Code note (Roman numerals)
+
+// $3E5156: Flags [8 bit]
+//          bit4 = [Chip] Guest Room 3 - Cigar Case
+//          bit5 = [Combat] Guest Room 3 Table (Optional)
+
+// $3E5157: Flags [8 bit]
+//          bit1 = Guest Room 3 - Meal @ Table (EC)
+
+// $3E5159: Flags [8 bit]
+//          bit5 = [Combat] Guest Room 3 Bedroom
+//          bit7 = [Chip] Guest Room 4 Bed
+
+// $3E515D: Flags [8 bit]
+//          bit2 = [Chip] Guest Room 5 - Bathrobe on Bed
+
+// $3E515E: Flags [8 bit]
+//          bit1 = Guest Room 5 - Shoot the bucket
+//          bit7 = Guest Room 5 - Shoot the extinguisher
+
+// $3E5160: Flags [8 bit]
+//          bit7 = [Combat] Guest Level Elevator Hall
+
+// $3E5161: Flags [8 bit]
+//          bit2 = Staff Hall Area A dead end #1 (EC)
+//          bit3 = Break Room Vending Machines Trash Can (Launcher Shell)
+
+// $3E5162: Flags [8 bit]
+//          bit0 = [Item] Machine gun
+
+// $3E5163: Flags [8 bit]
+//          bit1 = Break Room Galley Coffee Bag (EC)
+//          bit3 = Break Room Vending Machines (EC)
+//          bit4 = L Power panel in Receiving Port
+//          bit5 = R Power panel in Receiving Port
+//          bit7 = Outfit change (Armored Suit)
+
+// $3E5164: Flags [8 bit]
+//          bit6 = Ducts Area B (EC)
+
+// $3E5165: Flags [8 bit]
+//          bit0 = Ducts Area D (EC)
+
+// $3E5166: Flags [8 bit]
+//          bit3 = Elevator Hall Exit Two (EC)
+
+// $3E5167: Flags [8 bit]
+//          bit0 = [Item] Molotov cocktail
+
+// $3E5168: Flags [8 bit]
+//          bit3 = [Item] ID card (Security Level 1)
+//          bit7 = [Chip] Infirmary Case 5
+
+// $3E516B: Flags [8 bit]
+//          bit0 = [Combat] Infirmary Case 2
+//          bit3 = [Combat] Infirmary Case 4
+
+// $3E516C: Flags [8 bit]
+//          bit1 = [Chip] Restrooms - Men's Stalls #2
+
+// $3E516E: Flags [8 bit]
+//          bit2 = [Mirror] Restrooms Ladies' Washstands left
+//          bit3 = [Mirror] Restrooms Ladies' Washstands middle
+//          bit4 = [Mirror] Restrooms Ladies' Washstands right
+//          bit5 = [Mirror] Restrooms Men's Washstands left
+//          bit6 = [Mirror] Restrooms Men's Washstands middle
+//          bit7 = [Mirror] Restrooms Men's Washstands right
+
+// $3E5172: Flags [8 bit]
+//          bit1 = Staff Room - opened Jonathan's room
+//          bit6 = Staff Room - opened Gustav's room
+
+// $3E5173: Flags [8 bit]
+//          bit6 = [Item] Warehouse ID card
+
+// $3E5174: Flags [8 bit]
+//          bit3 = [Item] Restaurant Key
+//          bit5 = [Chip] Waiting Room Under Video Camera
+//          bit7 = [Combat] Staff Hall by Service Quarters
+
+// $3E5175: Flags [8 bit]
+//          bit2 = Waiting Room Under the Bench (EC)
+//          bit6 = [Chip] Staff Room Gustav's locker
+
+// $3E5176: Flags [8 bit]
+//          bit1 = Staff Room Jonathan's locker (EC)
+
+// $3E5178: Flags [8 bit]
+//          bit1 = Service Quarters Galley (EC)
+
+// $3E5179: Flags [8 bit]
+//          bit2 = [Item] Number note (4-4, 6-6, 2-0)
+//          bit3 = [Chip] Manager's Office Bed under pillow
+//          bit5 = Exhibit Room door unlocked
+
+// $3E517A: Flags [8 bit]
+//          bit1 = Manager's Office Open the safe
+//          bit7 = Warehouse Night Vision Simon Says
+
+// $3E517B: Flags [8 bit]
+//          bit0 = [Chip] Warehouse Area B-2
+//          bit6 = [Item] Scientific document
+
+// $3E517D: Flags [8 bit]
+//          bit2 = [Combat] Break Room Galley 3 Caterpillars
+//          bit3 = [Combat] Break Room TV
+
+// $3E517F: Flags [8 bit]
+//          bit5 = Manager's Office Shower Booth (Launcher)
+
+// $3E5181: Flags [8 bit]
+//          bit3 = [Item] DVD (Helen Johnson)
+
+// $3E5183: Flags [8 bit]
+//          bit3 = [Item] Employee ID (Jonathan)
+//          bit4 = [Item] Employee ID (Gustav)
+
+// $3E5184: Flags [8 bit]
+//          bit2 = Observatory Restaurant Section 1 (EC)
+//          bit3 = Observatory Restaurant VIP Seat 4 (EC)
+//          bit4 = Observatory Restaurant VIP Panel #1
+//          bit5 = Observatory Restaurant VIP Panel #2
+//          bit6 = [Chip] Observatory Restaurant VIP Seat 2
+//          bit7 = Observatory Restaurant Chandelier Panel #1
+
+// $3E5185: Flags [8 bit]
+//          bit0 = Observatory Restaurant Chandelier Panel #2
+//          bit1 = Observatory Restaurant Chandelier Panel #3
+//          bit6 = [Combat] Observatory Restaurant Section 2 (Launcher)
+
+// $3E5186: Flags [8 bit]
+//          bit4 = Observatory Restaurant Section 3+4 (EC)*
+//          bit6 = [Item] Elevator code (Senior staff section)
+
+// $3E5188: Flags [8 bit]
+//          bit5 = [Combat] Staff Room Lockers
+
+// $3E5189: Flags [8 bit]
+//          bit2 = Exhibit Room Bomb Answer #1
+//          bit3 = Exhibit Room Bomb Answer #2
+//          bit3 = Exhibit Room Bomb Answer #3
+//          bit5 = Exhibit Room Bomb Light #1 (0 in post-cutscene)
+//          bit6 = Exhibit Room Bomb Light #2 (0 in post-cutscene)
+//          bit7 = Exhibit Room Bomb Light #3 (0 in post-cutscene)
+
+// $3E518A: Flags [8 bit]
+//          bit1 = [Combat] Exhibit Room fights?
+//          bit3 = [Item] Allen's disc
+//          bit4 = [Item] Exhibit room key
+//          bit5 = [Item] Tanaka's note
+//          bit7 = [Combat] Manager's Office Humanoid Alien defeated
+
+// $3E5190: Flags [8 bit]
+//          bit3 = Laboratory Hatch 1
+//          bit4 = Laboratory Hatch 2
+//          bit7 = Laboratory Hatch 5 (EC)
+
+// $3E5194: Flags [8 bit]
+//          bit0 = Laboratory Experiment Rack 2 ejected
+
+// $3E5198: Flags [8 bit]
+//          bit0 = Guest Room 1 - Check Bed (EC)
+//          bit2 = Guest Room 3 - Under the Dresser (EC)
+//          bit3 = Guest Room 4 - Rations (EC)
+//          bit5 = Sun Suite - Beside the Toilet (EC)
+//          bit7 = Infirmary - Case 1 (EC)
+
+// $3E5199: Flags [8 bit]
+//          bit1 = Restrooms - Ladies' Stalls #2 (EC)
+
+// $3E519B: Flags [8 bit]
+//          bit5 = Shutter 5 (#4) opened
+//          bit6 = Shutter 6 (#5) opened
+
+// $3E519F: Flags [8 bit]
+//          bit3 = Staff Room Table - Eat Candy (#1 Orange)
+//          bit4 = Staff Room Table - Eat Candy (#2 Banana)
+//          bit5 = Staff Room Table - Eat Candy (#3 Watermelon)
+//          bit6 = Staff Room Table - Eat Candy (#4 Grape)
+
+// $3E51A1: Flags [8 bit]
+//          bit2 = [Mirror] Guest Room 2 Dresser
+//          bit6 = [Mirror] Guest Room 2 Bathroom
+
+// $3E51A2: Flags [8 bit]
+//          bit5 = [Mirror] Guest Room 3 Dresser
+
+// $3E51A3: Flags [8 bit]
+//          bit6 = [Mirror] Guest Room 4 Dresser
+
+// $3E51A5: Flags [8 bit]
+//          bit3 = [Mirror] Sun Suite 2nd Floor Washroom
+
+// $3E51A6: Flags [8 bit]
+//          bit5 = [Mirror] Guest Room 1 Dresser
+
+// $3E51A7: Flags [8 bit]
+//          bit2 = [Mirror] Guest Room 1 Bathroom
+
+// $3E51AB: Flags [8 bit]
+//          bit6 = [Item] Magnesium chip
+
+// $3E51AD: Flags [8 bit]
+//          bit4 = [Combat] Guest Room 2 Bedroom
+
+// $3E51AE: Flags [8 bit]
+//          bit6 = [Combat] Restrooms - Men's Stalls Closet
+//          bit7 = [Combat] Hall (Guest Floor) #1
+
+// $3E51B0: Flags [8 bit]
+//          bit5 = [Combat] Hall (Guest Floor) by Elevator Hall
+
+// $3E51CB: Flags [8 bit]
+//          bit4 = Staff Room Galley - Behind Dinnerware (EC)
+
+// $3E51D2: Flags [8 bit]
+//          bit5 = Security Room - ID Newspaper @ Table
+//          bit6 = Security Room - ID Magazine @ Table
+//          bit7 = Security Room - ID Notebook @ Desks
+
+// $3E51D3: Flags [8 bit]
+//          bit0 = Security Room - ID PC @ Desks
+//          bit1 = Security Room - ID Lockers @ Lockers
+//          bit2 = Security Room - ID Guard's note @ Lockers
+//          bit3 = Security Room - ID Dispenser @ Vending Machines
+//          bit4 = Security Room - ID Cup @ Table
+//          bit5 = Security Room - ID Report @ Table
+
+// $3E51E0: Flags [8 bit]
+//          bit3 = Guest Room 4 - ID Projector @ Table
+
+// $3E522B: Flags [8 bit]
+//          bit2 = [Scen] Why were you in the detaining cell?
+//          bit3 = [Scen] Why are you so cranky?
+//          bit4 = [Scen] Do you have any friends?
+//          bit5 = [Scen] Tell me about yourself.
+//          bit6 = [Scen] You've got great reflexes.
+//          bit7 = [Scen] When we get to earth...
+
+// $3E522C: Flags [8 bit]
+//          bit0 = [Scen] What is Paracelsus?
+//          bit1 = [Scen] The remnants of Paracelsus?
+//          bit2 = [Scen] You're strong.
+//          bit4 = [Scen] How are things on earth?
+//          bit5 = [Scen] How was earth?
+//          bit6 = [Scen] The power of words?
+
+// $3E522D: Flags [8 bit]
+//          bit0 = [Scen] Where am I?
+//          bit1 = [Scen] How far away are you?
+//          bit2 = [Scen] Are you close to me now?
+//          bit4 = [Scen] Who's Naomi?
+//          bit5 = [Scen] I wonder if Naomi's alive?
+//          bit6 = [Scen] Naomi isn't around...
+//          bit7 = [Scen] Naomi wasn't there...
+
+// $3E522E: Flags [8 bit]
+//          bit0 = [Scen] I wonder if Naomi is safe?
+//          bit1 = [Scen] Where is Naomi?
+//          bit2 = [Scen] It's about Naomi.
+//          bit4 = [Scen] What is JSL?
+//          bit5 = [Scen] About this hotel's structure.
+//          bit6 = [Scen] Is this hotel okay?
+//          bit7 = [Scen] Is it zero gravity?
+
+// $3E522F: Flags [8 bit]
+//          bit1 = [Scen] What are you looking for?
+//          bit2 = [Scen] What are they researching here?
+//          bit3 = [Scen] Tell me what you're looking for.
+//          bit4 = [Scen] You're looking for a green orb?
+//          bit5 = [Scen] What's a philosopher's stone.
+//          bit6 = [Scen] What's a fake stone?
+
+// $3E5230: Flags [8 bit]
+//          bit0 = [Scen] What was that monster?
+//          bit1 = [Scen] Humanoid alien?
+//          bit2 = [Scen] That alien earlier...
+//          bit3 = [Scen] That man in the restaurant...
+//          bit4 = [Scen] Why did Tanaka turn into a monster?
+//          bit5 = [Scen] The first lady was attacked by an alien.
+//          bit6 = [Scen] The monsters were made here?
+
+// $3E5231: Flags [8 bit]
+//          bit0 = [Scen] What is the Manager like?
+//          bit1 = [Scen] I wonder if the Manager is okay?
+//          bit2 = [Scen] The poor Manager...
+//          bit4 = [Scen] What do you think of Allen?
+//          bit5 = [Scen] Powers and Allen?
+//          bit6 = [Scen] That Allen...
+//          bit7 = [Scen] Allen was conducting research here?
+
+// $3E5232: Flags [8 bit]
+//          bit1 = [Scen] What do you think of Powers?
+//          bit2 = [Scen] What happened to Powers?
+//          bit3 = [Scen] Powers is Joseph?
+//          bit5 = [Scen] What's the relationship with Gino?
+//          bit6 = [Scen] Where is Gino?
+//          bit7 = [Scen] I wonder if Gino is okay?
+
+// $3E5233: Flags [8 bit]
+//          bit0 = [Scen] What happened to Gino?
+//          bit2 = [Scen] Who is Helen Johnson?
+//          bit3 = [Scen] Where is the announcer?
+//          bit4 = [Scen] The announcer was dead...
+//          bit6 = [Scen] What do you think of the PM?
+//          bit7 = [Scen] About the PM's entourage...
+
+// $3E5234: Flags [8 bit]
+//          bit0 = [Scen] I wonder if the PM and his people are OK?
+//          bit2 = [Scen] Is a rescue team coming?
+//          bit3 = [Scen] What do you think of that captain?
+//          bit4 = [Scen] What was that group?
+//          bit5 = [Scen] What should we do?
