@@ -5,6 +5,8 @@ function if_else(p, t, f) { if (p) { return t } else return f }
 id = (x) => x
 ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 function bitx(i, addr) => bit(i % 8, addr + i / 8)
+function plural(x) => rich_presence_lookup("_Plural", x, {1: ""}, fallback="s")
+function ptr(x) => dword(x)
 
 function zfill(num, c)
 {
