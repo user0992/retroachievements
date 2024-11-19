@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+		<title>RA Set Viewer</title>
+		<link rel="stylesheet" href="css/overview.css">
+	</head>
+	<body>
+		<div id="container">
+			<div id="asset-list">
+				<table>
+					<thead id="list-head">
+						<tr>
+							<td>Asset</td>
+						</tr>
+					</thead>
+					<tbody id="list-body">
+					</tbody>
+				</table>
+			</div>
+			<div id="asset-info">
+				<div id="info-container">
+					<h1 id="ui-instructions">(Drag files here to load feedback)</h1>
+					<div class="instructions">
+						<ol>
+							<li>Load the game into RALibRetro (or equivalent)</li>
+							<li>Check the <code>RACache/Data/</code> folder for the following files</li>
+							<ul>
+								<li><code>[gameid].json</code></li>
+								<ul>
+									<li>contains achievement set logic</li>
+								</ul>
+								<li><code>[gameid]-Notes.json</code></li>
+								<ul>
+									<li>code notes database</li>
+								</ul>
+							</ul>
+							<li>Drag any/all files to this window</li>
+						</ol>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script src="js/logic.js"></script>
+		<script src="js/achievements.js"></script>
+		<script src="js/feedback.js"></script>
+		<script src="js/overview.js"></script>
+	</body>
+</html>
