@@ -85,7 +85,7 @@ footer
 }
 
 #asset-list tbody tr.pass td.asset-name
-{ background-image: url("/img/approval-16.png"); }
+{ background-image: url("../img/approval-16.png"); }
 
 #asset-list tbody tr.fail
 {
@@ -93,10 +93,10 @@ footer
 }
 
 #asset-list tbody tr.fail td.asset-name
-{ background-image: url("/img/error-5-16.png"); }
+{ background-image: url("../img/error-5-16.png"); }
 
 #asset-list tbody tr.info td.asset-name
-{ background-image: url("/img/alert-16.png"); }
+{ background-image: url("../img/alert-16.png"); }
 
 #asset-list tbody tr:hover
 {
@@ -106,7 +106,7 @@ footer
 
 #asset-list tbody tr.selected
 {
-	background-image: url("/img/arrow-37-16.png");
+	background-image: url("../img/arrow-37-16.png");
 	background-repeat: no-repeat;
 	background-position: left 360px center;
 }
@@ -207,7 +207,7 @@ img.icon
 {
 	background-repeat: no-repeat;
 	background-position: right 5px center;
-	background-image: url("/img/alert-16.png");
+	background-image: url("../img/alert-16.png");
 }
 
 #info-container .data-table table thead td,
