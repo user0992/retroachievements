@@ -1,0 +1,80 @@
+{
+	"[RATools] Achievement Function": {
+		"prefix": "achievement",
+		"body": [
+			"achievement(",
+			"\ttitle=\"${1:title}\",",
+			"\tdescription=\"${2:description}\",",
+			"\ttype=\"progression|win_condition\",",
+			"\tpoints=${4:points},",
+			"\ttrigger=always_false()",
+			")",
+		],
+		"description": "Defines a new achievement with the specified title (string), description (string), points (integer), and trigger."
+	},
+
+	"[RATools] Rich Presence Value": {
+		"prefix": "rich_presence_value",
+		"body": [
+			"rich_presence_value(\"${1:name}\", ${2:expression}, \"${3:format}\")"
+		],
+		"description": "Rich presence Value"
+	},
+
+	"[RATools] Rich Presence Lookup": {
+		"prefix": "rich_presence_lookup",
+		"body": [
+			"rich_presence_lookup(\"${1:name}\", ${2:expression}, ${3:dict}, fallback=\"${4:default}\")"
+		],
+		"description": "Rich presence Lookup"
+	},
+
+	"[RATools] Rich Presence Macro": {
+		"prefix": "rich_presence_macro",
+		"body": [
+			"rich_presence_macro(\"${1:macro}\", ${2:expression})"
+		],
+		"description": "Rich presence Macro"
+	},
+
+	"[RATools] Rich Presence Conditional Display": {
+		"prefix": "rich_presence_conditional_display",
+		"body": [
+			"rich_presence_conditional_display(${1:condition},",
+			"\t\"${2:format_string}\",",
+			"\tparameters...",
+			")"
+		],
+		"description": "Defines a conditional rich presence display string. When executing the rich presence script, each condition is examined in order. If a condition is matched, that display string will be used. If no conditions are matched, the default display string will be used. You must still provide a default display string by calling rich_presence_display."
+	},
+
+	"[RATools] Rich Presence Display": {
+		"prefix": "rich_presence_display",
+		"body": [
+			"rich_presence_display(",
+			"\t\"${1:format_string}\"",
+			"\tparameters...",
+			")"
+		],
+		"description": "Defines the rich presence display string. Only one string may be defined per script. If this function is called multiple times, the last one will win."
+	},
+
+	"[RATools] Leaderboard Function": {
+		"prefix": "leaderboard",
+		"body": [
+			"leaderboard(",
+			"\ttitle=\"${1:title}\",",
+			"\tdescription=\"${2:description}\",",
+			"",
+			"\tstart=always_false(),",
+			"\tcancel=always_false(),",
+			"\tsubmit=always_false(),",
+			"",
+			"\tvalue=measured(0),",
+			"\tformat=\"VALUE\",",
+			"\tlower_is_better=false",
+			")"
+		],
+		"description": "Defines a leaderboard. title and description must be strings."
+	},
+}
