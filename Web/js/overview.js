@@ -214,9 +214,9 @@ function load_achievement(ach, row)
 	function make_issue_list_entry(issue)
 	{
 		let text = issue.type.desc;
-		if (issue.detail) text += " " + issue.detail;
 		for (const ref of issue.type.ref)
 			text += ` <sup>[<a href="${ref}">ref</a>]</sup>`;
+		if (issue.detail) text += " " + issue.detail;
 		return text;
 	}
 
@@ -425,7 +425,10 @@ function load_code_notes(json)
 	current.notes = [];
 	for (const obj of json)
 		current.notes.push(new CodeNote(obj.Address, obj.Note, obj.User));
+
 	current.assessment.notes = assess_code_notes(current.notes);
+	if (current.set) // update the achievement assessments because there are some code note verification checks
+		current.assessment.achievements = new Map(current.set.achievements.map(x => [x.id, assess_achievement(x)]));
 	rebuild_sidebar();
 }
 

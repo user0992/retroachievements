@@ -12,21 +12,21 @@ const ReqType = Object.freeze({
 });
 
 const ReqFlag = Object.freeze({
-	PAUSEIF:     { name: "PauseIf",      prefix: "P:", chain: false, hits: true, },
-	RESETIF:     { name: "ResetIf",      prefix: "R:", chain: false, hits: true, },
-	RESETNEXTIF: { name: "ResetNextIf",  prefix: "Z:", chain: true,  hits: true, },
+	PAUSEIF:     { name: "PauseIf",      prefix: "P:", chain: false, hits: true,  },
+	RESETIF:     { name: "ResetIf",      prefix: "R:", chain: false, hits: true,  },
+	RESETNEXTIF: { name: "ResetNextIf",  prefix: "Z:", chain: true,  hits: true,  },
 	ADDSOURCE:   { name: "AddSource",    prefix: "A:", chain: true,  hits: false, },
 	SUBSOURCE:   { name: "SubSource",    prefix: "B:", chain: true,  hits: false, },
-	ADDHITS:     { name: "AddHits",      prefix: "C:", chain: true,  hits: true, },
-	SUBHITS:     { name: "SubHits",      prefix: "D:", chain: true,  hits: true, },
+	ADDHITS:     { name: "AddHits",      prefix: "C:", chain: true,  hits: true,  },
+	SUBHITS:     { name: "SubHits",      prefix: "D:", chain: true,  hits: true,  },
 	ADDADDRESS:  { name: "AddAddress",   prefix: "I:", chain: true,  hits: false, },
-	ANDNEXT:     { name: "AndNext",      prefix: "N:", chain: true,  hits: true, },
-	ORNEXT:      { name: "OrNext",       prefix: "O:", chain: true,  hits: true, },
-	MEASURED:    { name: "Measured",     prefix: "M:", chain: false, hits: true, },
-	MEASUREDP:   { name: "Measured%",    prefix: "G:", chain: false, hits: true, },
-	MEASUREDIF:  { name: "MeasuredIf",   prefix: "Q:", chain: false, hits: true, },
-	TRIGGER:     { name: "Trigger",      prefix: "T:", chain: false, hits: true, },
-	REMEMBER:    { name: "Remember",     prefix: "K:", chain: false, hits: true, },
+	ANDNEXT:     { name: "AndNext",      prefix: "N:", chain: true,  hits: true,  },
+	ORNEXT:      { name: "OrNext",       prefix: "O:", chain: true,  hits: true,  },
+	MEASURED:    { name: "Measured",     prefix: "M:", chain: false, hits: true,  },
+	MEASUREDP:   { name: "Measured%",    prefix: "G:", chain: false, hits: true,  },
+	MEASUREDIF:  { name: "MeasuredIf",   prefix: "Q:", chain: false, hits: true,  },
+	TRIGGER:     { name: "Trigger",      prefix: "T:", chain: false, hits: true,  },
+	REMEMBER:    { name: "Remember",     prefix: "K:", chain: false, hits: true,  },
 });
 
 const MemSize = Object.freeze({
@@ -106,7 +106,13 @@ class ReqOperand
 			);
 		}
 		else if (match[8])
-			return new ReqOperand(null, ReqType.RECALL, null);
+			return new ReqOperand('', ReqType.RECALL, null);
+	}
+
+	toString()
+	{
+		if (this.type == ReqType.RECALL) return this.type.prefix;
+		return this.type && this.type.addr ? ('0x' + this.value.toString(16)) : this.value.toString();
 	}
 
 	toMarkdown(wReqType = ReqTypeWidth, wMemSize = MemSizeWidth, wValue = ValueWidth)

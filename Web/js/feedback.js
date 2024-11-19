@@ -81,12 +81,31 @@ const Feedback = Object.freeze({
 	// code errors
 	BAD_CHAIN: { severity: FeedbackSeverity.ERROR, desc: "The last requirement of a group cannot have a chaining flag.",
 		ref: [], },
+	MISSING_NOTE: { severity: FeedbackSeverity.WARN, desc: "All addresses used in achievement logic require a code note.",
+		ref: ["https://docs.retroachievements.org/guidelines/content/code-notes.html",], },
 	ONE_CONDITION: { severity: FeedbackSeverity.WARN, desc: "One-condition achievements are dangerous and should be avoided.",
 		ref: ["https://docs.retroachievements.org/developer-docs/tips-and-tricks.html#achievement-creation-tips",], },
+	MISSING_DELTA: { severity: FeedbackSeverity.WARN, desc: "Using Delta helps to control precisely when an achievement triggers. All achievements benefit from its use.",
+		ref: [
+			'https://docs.retroachievements.org/developer-docs/delta-values.html',
+			'https://docs.retroachievements.org/developer-docs/prior-values.html',
+		], },
+	STALE_ADDADDRESS: { severity: FeedbackSeverity.WARN, desc: "AddAddress should only ever use Mem. Stale references with AddAddress can be dangerous.",
+		ref: ['https://docs.retroachievements.org/developer-docs/hit-counts.html',], },
 	PAUSELOCK_NO_RESET: { severity: FeedbackSeverity.WARN, desc: "PauseLocks require a reset, either via ResetNextIf, or a ResetIf in another group.",
 		ref: ['https://docs.retroachievements.org/developer-docs/flags/pauseif.html#pauseif-with-hit-counts',], },
 	HIT_NO_RESET: { severity: FeedbackSeverity.WARN, desc: "Hit counts require a reset, either via ResetIf or ResetNextIf.",
 		ref: ['https://docs.retroachievements.org/developer-docs/hit-counts.html',], },
+	USELESS_ANDNEXT: { severity: FeedbackSeverity.WARN, desc: "Combining requirements with AND is the default behavior. Useless AndNext flags should be removed.",
+		ref: ['https://docs.retroachievements.org/developer-docs/flags/andnext-ornext.html',], },
+	UUO_RESET: { severity: FeedbackSeverity.WARN, desc: "ResetIf should only be used with achievements that have hitcounts.",
+		ref: ['https://docs.retroachievements.org/developer-docs/flags/resetif.html',], },
+	UUO_RNI: { severity: FeedbackSeverity.WARN, desc: "ResetNextIf should only be used with requirements that have hitcounts.",
+		ref: ['https://docs.retroachievements.org/developer-docs/flags/resetnextif.html',], },
+	UUO_PAUSE: { severity: FeedbackSeverity.WARN, desc: "PauseIf should only be used with requirements that have hitcounts.",
+		ref: ['https://docs.retroachievements.org/developer-docs/flags/pauseif.html',], },
+	RESET_HITCOUNT_1: { severity: FeedbackSeverity.WARN, desc: "A ResetIf or ResetNextIf with a hitcount of 1 does not require a hitcount. The hitcount can be safely removed.",
+		ref: ['https://docs.retroachievements.org/developer-docs/flags/resetif.html',], },
 });
 
 class Issue
@@ -172,8 +191,7 @@ function assess_logic(logic)
 	
 	// list of virtual addresses
 	res.virtual_addresses = new Set();
-	function _op2str(op) { return op.type && op.type.addr ? ('0x' + op.value.toString(16)) : op.value.toString(); }
-	function _req2str(req) { return _op2str(req.lhs) + (req.rhs ? '' : (cmp + _op2str(req.rhs))); }
+	function _req2str(req) { return req.lhs.toString() + (!req.rhs ? '' : (req.op + req.rhs.toString())); }
 	for (const [gi, g] of logic.groups.entries())
 	{
 		let prefix = '';
@@ -183,11 +201,38 @@ function assess_logic(logic)
 				prefix += _req2str(req) + ':';
 			else
 			{
-				if (req.lhs && req.lhs.type.addr) res.virtual_addresses.add(prefix + _op2str(req.lhs));
-				if (req.rhs && req.rhs.type.addr) res.virtual_addresses.add(prefix + _op2str(req.rhs));
+				if (req.lhs && req.lhs.type.addr) res.virtual_addresses.add(prefix + req.lhs.toString());
+				if (req.rhs && req.rhs.type.addr) res.virtual_addresses.add(prefix + req.rhs.toString());
 				prefix = '';
 			}
 		}
+	}
+
+	function has_note(addr)
+	{
+		for (const cn of current.notes || [])
+			if (cn.contains(addr)) return true;
+		return false;
+	}
+	
+	// skip this if notes aren't loaded
+	if (current.notes.length)
+	{
+		for (const [gi, g] of logic.groups.entries())
+			for (const [ri, req] of g.entries())
+			{
+				if (req.lhs && req.lhs.type.addr && !has_note(req.lhs.value))
+					res.add(new Issue(Feedback.MISSING_NOTE, req));
+				if (req.rhs && req.rhs.type.addr && !has_note(req.rhs.value))
+					res.add(new Issue(Feedback.MISSING_NOTE, req));
+			}
+	}
+
+	for (const [gi, g] of logic.groups.entries())
+	{
+		const last = g[g.length-1];
+		if (last.flag && last.flag.chain)
+			res.add(new Issue(Feedback.BAD_CHAIN, last));
 	}
 
 	// achievement is *possibly* an OCA if there is only one virtual address or only one comparison happens
@@ -233,8 +278,26 @@ function assess_logic(logic)
 				}
 			}
 		}
-
 	
+	let has_hits = flat.reduce((a, e) => a + e.hits, 0) > 0;
+	for (const [gi, g] of logic.groups.entries())
+		for (const [ri, req] of g.entries())
+		{
+			// #TODO: this should expand to covering compound requirements (via AndNext, OrNext, etc)
+			function invert_req()
+			{
+				return "TODO\nTODO\nTODO";
+			}
+
+			if (req.flag == ReqFlag.PAUSEIF && !has_hits)
+				res.add(new Issue(Feedback.UUO_PAUSE, req,
+					`<br/>Recommended change for group ${gi}, requirement ${ri+1}:<br/><code><pre>${invert_req()}</pre></code>`));
+			else if (req.flag == ReqFlag.RESETIF && !has_hits)
+				res.add(new Issue(Feedback.UUO_RESET, req,
+					`<br/>Recommended change for group ${gi}, requirement ${ri+1}:<br/><code><pre>${invert_req()}</pre></code>`));
+			else if (req.hits == 0 && ri > 0 && g[ri-1].flag == ReqFlag.RESETNEXTIF)
+				res.add(new Issue(Feedback.UUO_RNI, g[ri-1])); // TODO: suggest correction
+		}
 
 	return res;
 }
