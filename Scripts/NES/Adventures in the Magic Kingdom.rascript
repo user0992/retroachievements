@@ -185,10 +185,6 @@ LevelNameLookup = {
     MAP_SPACE: "zooming through the stars on Space Mountain",
 }
 
-LifeText = {
-    1: "life"
-}
-
 rich_presence_conditional_display(map_id() == MAP_TITLE || map_id() == MAP_INTRO,
     "Adventuring in the Magic Kingdom"
 )
