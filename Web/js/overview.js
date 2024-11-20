@@ -249,6 +249,7 @@ function load_achievement(ach, row)
 	}
 
 	document.getElementById('info-container').replaceChildren(...elts);
+	document.getElementById('asset-info').scrollTop = 0;
 	select_row(row);
 }
 
@@ -287,6 +288,7 @@ function load_leaderboard(lb, row)
 	elts.push(logicdiv);
 
 	document.getElementById('info-container').replaceChildren(...elts);
+	document.getElementById('asset-info').scrollTop = 0;
 	select_row(row);
 }
 
@@ -304,8 +306,9 @@ function load_overview(sidebar)
 	header.appendChild(document.createTextNode(current.set.title));
 	elts.push(header);
 
-	select_row(sidebar);
 	document.getElementById('info-container').replaceChildren(...elts);
+	document.getElementById('asset-info').scrollTop = 0;
+	select_row(sidebar);
 }
 
 function load_code_notes_overview(sidebar)
@@ -341,6 +344,7 @@ function load_code_notes_overview(sidebar)
 	let tablediv = document.createElement('div');
 	tablediv.classList.add('data-table');
 	let table = tablediv.appendChild(document.createElement('table'));
+	table.classList.add('code-notes');
 
 	let tblhdr = table.appendChild(document.createElement('thead'));
 	let titlerow = tblhdr.appendChild(document.createElement('tr'));
@@ -384,8 +388,9 @@ function load_code_notes_overview(sidebar)
 	}
 	elts.push(tablediv);
 
-	select_row(sidebar);
 	document.getElementById('info-container').replaceChildren(...elts);
+	document.getElementById('asset-info').scrollTop = 0;
+	select_row(sidebar);
 }
 
 function add_asset_row(type, asset_name, callback = null)
@@ -425,7 +430,8 @@ function load_code_notes(json)
 {
 	current.notes = [];
 	for (const obj of json)
-		current.notes.push(new CodeNote(obj.Address, obj.Note, obj.User));
+		if (obj.Note)
+			current.notes.push(new CodeNote(obj.Address, obj.Note, obj.User));
 
 	current.assessment.notes = assess_code_notes(current.notes);
 	if (current.set) // update the achievement assessments because there are some code note verification checks

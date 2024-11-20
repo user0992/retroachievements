@@ -22,7 +22,7 @@ div#container
 
 #container #asset-list
 {
-	flex: 0 1 400px;
+	flex: 0 0 400px;
 	height: 100%;
 
 	overflow-y: scroll;
@@ -238,6 +238,12 @@ img.icon
 	width: 100%;
 }
 
+.code-notes pre,
+.tooltip-info pre
+{
+	white-space: break-spaces;
+}
+
 .tooltip {
 	position: relative;
 	display: inline-block;
@@ -247,6 +253,7 @@ img.icon
 .tooltip .tooltip-info
 {
 	visibility: hidden;
+	width: 350px;
 	max-width: 500px;
 	background-color: black;
 	color: #fff;

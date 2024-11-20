@@ -85,7 +85,7 @@ const Feedback = Object.freeze({
 		ref: ["https://docs.retroachievements.org/guidelines/content/code-notes.html",], },
 	ONE_CONDITION: { severity: FeedbackSeverity.WARN, desc: "One-condition achievements are dangerous and should be avoided.",
 		ref: ["https://docs.retroachievements.org/developer-docs/tips-and-tricks.html#achievement-creation-tips",], },
-	MISSING_DELTA: { severity: FeedbackSeverity.WARN, desc: "Using Delta helps to control precisely when an achievement triggers. All achievements benefit from its use.",
+	MISSING_DELTA: { severity: FeedbackSeverity.INFO, desc: "Using Delta helps to control precisely when an achievement triggers. All achievements benefit from its use.",
 		ref: [
 			'https://docs.retroachievements.org/developer-docs/delta-values.html',
 			'https://docs.retroachievements.org/developer-docs/prior-values.html',
@@ -208,27 +208,34 @@ function assess_logic(logic)
 		}
 	}
 
-	function has_note(addr)
+	function missing_note(operand)
 	{
+		if (!operand || !operand.type.addr) return false;
+		let addr = parseInt(operand.value, 16);
 		for (const cn of current.notes || [])
-			if (cn.contains(addr)) return true;
-		return false;
+			if (cn.contains(addr)) return false;
+		return true;
 	}
 	
 	// skip this if notes aren't loaded
 	if (current.notes.length)
 	{
 		for (const [gi, g] of logic.groups.entries())
+		{
+			let prev_addaddress = false;
 			for (const [ri, req] of g.entries())
 			{
-				if (req.lhs && req.lhs.type.addr && !has_note(parseInt(req.lhs.value, 16)))
-					res.add(new Issue(Feedback.MISSING_NOTE, req, 
-						`Address <code>0x${req.lhs.value.padStart(8, '0')}</code> missing note`));
-				if (req.rhs && req.rhs.type.addr && !has_note(parseInt(req.rhs.value, 16)))
-					res.add(new Issue(Feedback.MISSING_NOTE, req, 
-						`Address <code>0x${req.rhs.value.padStart(8, '0')}</code> missing note`));
+				for (const operand of [req.lhs, req.rhs])
+					if (!prev_addaddress && missing_note(operand))
+						res.add(new Issue(Feedback.MISSING_NOTE, req, 
+							`Address <code>0x${operand.value.padStart(8, '0')}</code> missing note`));
+				prev_addaddress = req.flag == ReqFlag.ADDADDRESS;
 			}
+		}
 	}
+
+	if (res.deltas + res.priors == 0)
+		res.add(new Issue(Feedback.MISSING_DELTA, null));
 
 	for (const [gi, g] of logic.groups.entries())
 	{
@@ -236,6 +243,14 @@ function assess_logic(logic)
 		if (last.flag && last.flag.chain)
 			res.add(new Issue(Feedback.BAD_CHAIN, last));
 	}
+
+	for (const [gi, g] of logic.groups.entries())
+		for (const [ri, req] of g.entries())
+		{
+			// using AddAddress with Delta/Prior is dangerous
+			if (req.flag == ReqFlag.ADDADDRESS && [ReqType.DELTA, ReqType.PRIOR].includes(req.type))
+				res.add(new Issue(Feedback.STALE_ADDADDRESS, req));
+		}
 
 	// achievement is *possibly* an OCA if there is only one virtual address or only one comparison happens
 	// TODO: there should be a better way to determine this
