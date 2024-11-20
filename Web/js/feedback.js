@@ -297,8 +297,21 @@ function assess_logic(logic)
 			else if (req.flag == ReqFlag.RESETIF && !has_hits)
 				res.add(new Issue(Feedback.UUO_RESET, req,
 					`Recommended change:<br/><pre><code>${invert_req()}</code></pre>`));
-			else if (req.hits == 0 && ri > 0 && g[ri-1].flag == ReqFlag.RESETNEXTIF)
-				res.add(new Issue(Feedback.UUO_RNI, g[ri-1])); // TODO: suggest correction
+			else if (req.flag == ReqFlag.RESETNEXTIF)
+			{
+				for (let i = ri + 1; i < g.length; i++)
+				{
+					// if the requirement has hits, RNI is valid
+					if (g[i].hits > 0) break;
+
+					// if this is a combining flag like AddAddress or AndNext, the chain continues
+					if (COMBINING_MODIFIER_FLAGS.has(g[i].flag)) continue;
+
+					// otherwise, RNI was not valid
+					res.add(new Issue(Feedback.UUO_RNI, req));
+					break;
+				}
+			}
 		}
 
 	return res;
