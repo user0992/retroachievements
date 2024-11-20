@@ -137,7 +137,7 @@ function make_logic_table(logic, assessment = [], grouplabel = (i) => i == 0 ? "
 				span.appendChild(document.createTextNode(v));
 				if (v.startsWith('0x'))
 				{
-					let note = get_note(+v);
+					let note = get_note(v);
 					if (note)
 					{
 						span.classList.add('tooltip');
@@ -206,6 +206,7 @@ function load_achievement(ach, row)
 	elts.push(logicdiv);
 
 	let feedbackdiv = document.createElement('div');
+	feedbackdiv.classList.add('feedback');
 	elts.push(feedbackdiv);
 
 	feedbackdiv.appendChild(document.createElement('h1'))
@@ -216,7 +217,7 @@ function load_achievement(ach, row)
 		let text = issue.type.desc;
 		for (const ref of issue.type.ref)
 			text += ` <sup>[<a href="${ref}">ref</a>]</sup>`;
-		if (issue.detail) text += " " + issue.detail;
+		if (issue.detail) text += "<br/>" + issue.detail;
 		return text;
 	}
 

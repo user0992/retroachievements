@@ -45,7 +45,7 @@ const Feedback = Object.freeze({
 		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#capitalization-1",], },
 	DESC_PUNCT_CONSISTENCY: { severity: FeedbackSeverity.INFO, desc: "Achievement descriptions should be consistent about whether or not they end with punctuation.",
 		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#punctuation-1",], },
-	DESC_BRACKETS: { severity: FeedbackSeverity.WARN, desc: "Achievement descriptions should avoid brackets where possible.",
+	DESC_BRACKETS: { severity: FeedbackSeverity.INFO, desc: "Achievement descriptions should avoid brackets where possible.",
 		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#brackets-parentheses",], },
 	DESC_SYMBOLS: { severity: FeedbackSeverity.INFO, desc: "Achievement descriptions are discouraged from using symbols to describe conditions.",
 		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#symbols-and-emojis",], },
@@ -221,10 +221,12 @@ function assess_logic(logic)
 		for (const [gi, g] of logic.groups.entries())
 			for (const [ri, req] of g.entries())
 			{
-				if (req.lhs && req.lhs.type.addr && !has_note(req.lhs.value))
-					res.add(new Issue(Feedback.MISSING_NOTE, req));
-				if (req.rhs && req.rhs.type.addr && !has_note(req.rhs.value))
-					res.add(new Issue(Feedback.MISSING_NOTE, req));
+				if (req.lhs && req.lhs.type.addr && !has_note(parseInt(req.lhs.value, 16)))
+					res.add(new Issue(Feedback.MISSING_NOTE, req, 
+						`Address <code>0x${req.lhs.value.padStart(8, '0')}</code> missing note`));
+				if (req.rhs && req.rhs.type.addr && !has_note(parseInt(req.rhs.value, 16)))
+					res.add(new Issue(Feedback.MISSING_NOTE, req, 
+						`Address <code>0x${req.rhs.value.padStart(8, '0')}</code> missing note`));
 			}
 	}
 
@@ -291,10 +293,10 @@ function assess_logic(logic)
 
 			if (req.flag == ReqFlag.PAUSEIF && !has_hits)
 				res.add(new Issue(Feedback.UUO_PAUSE, req,
-					`<br/>Recommended change for group ${gi}, requirement ${ri+1}:<br/><code><pre>${invert_req()}</pre></code>`));
+					`Recommended change:<br/><pre><code>${invert_req()}</code></pre>`));
 			else if (req.flag == ReqFlag.RESETIF && !has_hits)
 				res.add(new Issue(Feedback.UUO_RESET, req,
-					`<br/>Recommended change for group ${gi}, requirement ${ri+1}:<br/><code><pre>${invert_req()}</pre></code>`));
+					`Recommended change:<br/><pre><code>${invert_req()}</code></pre>`));
 			else if (req.hits == 0 && ri > 0 && g[ri-1].flag == ReqFlag.RESETNEXTIF)
 				res.add(new Issue(Feedback.UUO_RNI, g[ri-1])); // TODO: suggest correction
 		}

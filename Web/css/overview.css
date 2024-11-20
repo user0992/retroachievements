@@ -283,6 +283,24 @@ img.icon
 	border-color: transparent transparent transparent black;
 }
 
+.feedback ul li
+{
+	line-height: 150%;
+}
+
+code
+{
+	border: 1px solid #CCCCCC;
+	background-color: #EEEEEE;
+	border-radius: 3px;
+}
+
+pre code
+{
+	padding: 10px;
+	display: block;
+}
+
 .warn
 {
 	background-color: #FFFF99 !important;
