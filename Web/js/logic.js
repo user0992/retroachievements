@@ -71,7 +71,7 @@ const ReqTypeWidth = Math.max(...Object.values(ReqType).map((x) => x.name.length
 const ReqFlagWidth = Math.max(...Object.values(ReqFlag).map((x) => x.name.length));
 const MemSizeWidth = Math.max(...Object.values(MemSize).map((x) => x.name.length));
 
-const OPERAND_RE = RegExp("^(([~a-z]?)(0x[G-Z ]?|f[A-Z])([0-9a-fA-F]{2,8}))|(([fv]?)(\\d+(?:.\\d+)?))|({recall})$");
+const OPERAND_RE = RegExp(/^(([~a-z]?)(0x[G-Z ]?|f[A-Z])([0-9A-F]{2,8}))|(([fv]?)(\d+(?:.\d+)?))|([G-Z ]?([0-9A-F]+))|({recall})$/i);
 class ReqOperand
 {
 	type;
@@ -100,12 +100,18 @@ class ReqOperand
 			if (rtype == '') rtype = 'v';
 
 			return new ReqOperand(
-				match[7].trim(), 
+				+match[7].trim(), 
 				ReqTypeMap[rtype], 
 				null
 			);
 		}
 		else if (match[8])
+			return new ReqOperand(
+				parseInt(match[9], 16), 
+				ReqType.VALUE, 
+				null
+			);
+		else if (match[10])
 			return new ReqOperand('', ReqType.RECALL, null);
 	}
 
