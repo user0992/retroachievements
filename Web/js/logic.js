@@ -145,6 +145,17 @@ class Requirement
 
 	}
 
+	clone()
+	{
+		let o = new Requirement();
+		o.flag = this.flag;
+		o.lhs = this.lhs;
+		o.op = this.op;
+		o.rhs = this.rhs;
+		o.hits = this.hits;
+		return o;
+	}
+
 	static fromString(def)
 	{
 		let match = def.match(REQ_RE);

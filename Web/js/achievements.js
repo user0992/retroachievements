@@ -23,6 +23,12 @@ const ConsoleMap = Object.fromEntries(
 	Object.entries(Console).map(([k, v]) => [v.id, v])
 );
 
+const AssetState = Object.freeze({
+	CORE: { rank: 0, name: 'core', },
+	UNOFFICIAL: { rank: 1, name: 'unofficial', },
+	LOCAL: { rank: 2, name: 'local', },
+});
+
 class Achievement
 {
 	id = -1;
@@ -34,21 +40,40 @@ class Achievement
 	badge;
 	state;
 	logic;
-	constructor(json)
+
+	constructor() {  }
+	static fromJSON(json)
 	{
-		this.id = json.ID;
-		this.title = json.Title;
-		this.desc = json.Description;
-		this.points = json.Points;
-		this.author = json.Author;
-		this.achtype = json.Type;
-		this.badge = json.BadgeURL;
+		let ach = new Achievement();
+		ach.id = json.ID;
+		ach.title = json.Title;
+		ach.desc = json.Description;
+		ach.points = json.Points;
+		ach.author = json.Author;
+		ach.achtype = json.Type;
+		ach.badge = json.BadgeURL;
 
-		this.state = "";
-		if (json.Flags == 3) this.state = "core";
-		if (json.Flags == 5) this.state = "unofficial";
+		ach.state = AssetState.CORE;
+		if (json.Flags == 5) ach.state = AssetState.UNOFFICIAL;
 
-		this.logic = Logic.fromString(json.MemAddr);
+		ach.logic = Logic.fromString(json.MemAddr);
+		return ach;
+	}
+	
+	static fromLocal(row)
+	{
+		let ach = new Achievement();
+		ach.id = +row[0];
+		ach.title = row[2];
+		ach.desc = row[3];
+		ach.points = +row[8];
+		ach.author = row[7];
+		ach.achtype = row[6];
+		ach.badge = `https://media.retroachievements.org/Badge/${row[13]}.png`
+		
+		ach.state = AssetState.LOCAL;
+		ach.logic = Logic.fromString(row[1]);
+		return ach;
 	}
 }
 
@@ -59,47 +84,128 @@ class Leaderboard
 	desc;
 	format;
 	lower_is_better = true;
+	state = null;
 	components = {};
-	constructor(json)
-	{
-		this.id = json.ID;
-		this.title = json.Title;
-		this.desc = json.Description;
-		this.format = json.Format;
-		this.lower_is_better = json.LowerIsBetter;
 
-		this.components = {};
+	constructor() {  }
+	static fromJSON(json)
+	{
+		let lb = new Leaderboard();
+		lb.id = json.ID;
+		lb.title = json.Title;
+		lb.desc = json.Description;
+		lb.format = json.Format;
+		lb.lower_is_better = json.LowerIsBetter;
+
+		lb.components = {};
+		console.log(json.Title, json.Mem);
 		for (let part of json.Mem.split("::"))
 		{
+			console.log(part);
 			let tag = part.substr(0, 3);
 			let mem = part.substr(4);
-			this.components[tag] = Logic.fromString(mem);
+			console.log(mem);
+			lb.components[tag] = Logic.fromString(mem);
 		}
+		lb.state = AssetState.CORE;
+		return lb;
+	}
+	
+	static fromLocal(row)
+	{
+		let lb = new Leaderboard();
+		lb.id = +row[0].substr(1);
+		lb.title = row[6];
+		lb.desc = row[7];
+		lb.format = row[5];
+		lb.lower_is_better = row[8] == '1';
+
+		lb.components = {
+			'STA': Logic.fromString(row[1]),
+			'CAN': Logic.fromString(row[2]),
+			'SUB': Logic.fromString(row[3]),
+			'VAL': Logic.fromString(row[4]),
+		}
+		lb.state = AssetState.LOCAL;
+		return lb;
 	}
 }
 
 class AchievementSet
 {
 	id;
-	title;
-	icon;
-	console;
+	title = null;
+	icon = null;
+	console = null;
 	achievements = [];
 	leaderboards = [];
-	assessment = { pass: true };
-	constructor(json)
+
+	constructor() {  }
+	static fromJSON(json)
 	{
-		this.id = json.ID;
-		this.title = json.Title;
-		this.icon = json.ImageIconURL;
-		this.console = json.ConsoleID; // TODO: make enum
+		let achset = new AchievementSet();
+		achset.id = json.ID;
+		achset.title = json.Title;
+		achset.icon = json.ImageIconURL;
+		achset.console = json.ConsoleID; // TODO: make enum
 
-		this.achievements = json.Achievements
+		achset.achievements = json.Achievements
 			.filter((x) => !x.Title.toUpperCase().includes('[VOID]'))
-			.map((x) => new Achievement(x));
+			.map((x) => Achievement.fromJSON(x));
+		achset.leaderboards = json.Leaderboards
+			.filter((x) => !x.Hidden)
+			.map((x) => Leaderboard.fromJSON(x));
+		
+		return achset;
+	}
 
-		this.leaderboards = json.Leaderboards
-			.map((x) => new Leaderboard(x));
+	static fromLocal(txt)
+	{
+		function parseColons(line)
+		{
+			let res = [];
+			let start = 0, inquotes = false;
+			for (let [ci, ch] of [...(line + ':')].entries())
+			{
+				if (start > ci) continue;
+				else if (start == ci && !inquotes && ch == '"')
+				{
+					inquotes = true;
+					continue;
+				}
+				else if ((inquotes && ch == '"' && line[ci-1] != '\\') || (!inquotes && ch == ':'))
+				{
+					if (inquotes) ci += 1;
+					let x = line.substring(start, ci);
+					if (inquotes) x = JSON.parse(x);
+
+					res.push(x);
+					start = ci + 1;
+					inquotes = false;
+				}
+			}
+			return res;
+		}
+
+		const lines = txt.match(/[^\r\n]+/g);
+		let achset = new AchievementSet();
+		achset.title = lines[1];
+		for (let i = 2; i < lines.length; i++)
+		{
+			const row = parseColons(lines[i]);
+			switch (row[0][0])
+			{
+				case 'N': // TODO: this is a local code note
+					break;
+				case 'L': // leaderboard
+					achset.leaderboards.push(Leaderboard.fromLocal(row));
+					break;
+				default: // achievement
+					achset.achievements.push(Achievement.fromLocal(row));
+					break;
+			}
+		}
+		return achset;
 	}
 }
 

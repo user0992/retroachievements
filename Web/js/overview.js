@@ -2,6 +2,7 @@ var current = { id: -1, };
 function reset_loaded()
 {
 	current.set = null;
+	current.local = null;
 	current.notes = [];
 	current.assessment = { pass: true, };
 }
@@ -53,7 +54,7 @@ document.ondrop = function(event)
 			reader.onload = function(event)
 			{
 				let data = event.target.result;
-				// load_user_file(data);
+				load_user_file(data);
 			};
 		reader.readAsText(file);
 	}
@@ -83,8 +84,7 @@ function make_logic_table(logic, assessment = [], grouplabel = (i) => i == 0 ? "
 	let logictbl = document.createElement('table');
 	let logicbody = document.createElement('tbody');
 
-	let i = 0;
-	for (const g of logic.groups)
+	for (const [gi, g] of logic.groups.entries())
 	{
 		const HEADERS = ["id", "Flag", "Type", "Size", "Mem/Val", "Cmp", "Type", "Size", "Mem/Val", "Hits"];
 
@@ -92,7 +92,7 @@ function make_logic_table(logic, assessment = [], grouplabel = (i) => i == 0 ? "
 		let titlerow = document.createElement('tr');
 		titlerow.classList.add('group-hdr', 'header')
 		let titlecell = document.createElement('td');
-		titlecell.appendChild(document.createTextNode(grouplabel(i)));
+		titlecell.appendChild(document.createTextNode(grouplabel(gi)));
 		titlecell.setAttribute('colspan', HEADERS.length);
 		titlerow.appendChild(titlecell);
 		logicbody.appendChild(titlerow);
@@ -108,15 +108,14 @@ function make_logic_table(logic, assessment = [], grouplabel = (i) => i == 0 ? "
 		}
 		logicbody.appendChild(hdrrow);
 
-		let j = 1;
-		for (const req of g)
+		for (const [ri, req] of g.entries())
 		{
 			let reqrow = document.createElement('tr');
 			for (const issue of assessment)
 				if (issue.target == req) reqrow.classList.add('warn');
 			let reqdata = ["", "", "", "", "", "", "", "", "", ""];
 
-			reqdata[0] = "" + j;
+			reqdata[0] = "" + (ri + 1);
 			if (req.flag) reqdata[1] = req.flag.name;
 			reqdata[2] = req.lhs.type.name;
 			if (req.lhs.size) reqdata[3] = req.lhs.size.name;
@@ -135,7 +134,7 @@ function make_logic_table(logic, assessment = [], grouplabel = (i) => i == 0 ? "
 				let td = document.createElement('td');
 				let span = td.appendChild(document.createElement('span'));
 				span.appendChild(document.createTextNode(v));
-				if (v.startsWith('0x'))
+				if (typeof v === 'string' && v.startsWith('0x'))
 				{
 					let note = get_note(v);
 					if (note)
@@ -150,9 +149,7 @@ function make_logic_table(logic, assessment = [], grouplabel = (i) => i == 0 ? "
 				reqrow.appendChild(td);
 			}
 			logicbody.appendChild(reqrow);
-			j += 1;
 		}
-		i += 1;
 	}
 	logictbl.appendChild(logicbody);
 	return logictbl;
@@ -167,11 +164,14 @@ function load_achievement(ach, row)
 	let infobox = document.createElement('div');
 	elts.push(infobox);
 
-	let achlink = infobox.appendChild(document.createElement('a'));
-	achlink.setAttribute('href', `https://retroachievements.org/achievement/${ach.id}`);
-	let badge = achlink.appendChild(document.createElement('img'));
-	badge.classList.add('icon');
-	badge.setAttribute('src', ach.badge);
+	if (ach.badge)
+	{
+		let achlink = infobox.appendChild(document.createElement('a'));
+		achlink.setAttribute('href', `https://retroachievements.org/achievement/${ach.id}`);
+		let badge = achlink.appendChild(document.createElement('img'));
+		badge.classList.add('icon');
+		badge.setAttribute('src', ach.badge);
+	}
 
 	let header = infobox.appendChild(document.createElement('h2'));
 	let title_mod = ach.title;
@@ -181,7 +181,7 @@ function load_achievement(ach, row)
 	header.classList.add('ach-title');
 
 	let labels = [];
-	if (ach.state) labels.push(ach.state);
+	if (ach.state) labels.push(ach.state.name);
 	if (ach.achtype) labels.push(ach.achtype);
 
 	if (labels.length)
@@ -260,20 +260,32 @@ function load_leaderboard(lb, row)
 	infobox.classList.add('main-header');
 	elts.push(infobox);
 
-	let badge = document.createElement('img');
-	badge.classList.add('icon');
-	badge.setAttribute('src', current.set.icon);
-	infobox.appendChild(badge);
+	if (current.set && current.set.icon)
+	{
+		let badge = infobox.appendChild(document.createElement('img'));
+		badge.classList.add('icon');
+		badge.setAttribute('src', current.set.icon);
+	}
 
-	let header = document.createElement('h2');
+	let header = infobox.appendChild(document.createElement('h2'));
 	header.appendChild(document.createTextNode(`📊 ${lb.title}`));
 	header.classList.add('ach-title');
-	infobox.appendChild(header);
 
-	let desc = document.createElement('p');
+	let labels = [];
+	if (lb.state) labels.push(lb.state.name);
+
+	if (labels.length)
+	{
+		let labeldiv = infobox.appendChild(document.createElement('div'));
+		labeldiv.classList.add('ach-label');
+
+		let label = labeldiv.appendChild(document.createElement('em'));
+		label.appendChild(document.createTextNode(`[${labels.join(', ')}]`));
+	}
+
+	let desc = infobox.appendChild(document.createElement('p'));
 	desc.appendChild(document.createTextNode(lb.desc));
 	desc.classList.add('ach-desc');
-	infobox.appendChild(desc);
 
 	let logicdiv = document.createElement('div');
 	logicdiv.classList.add('data-table');
@@ -361,7 +373,7 @@ function load_code_notes_overview(sidebar)
 	{
 		let row = ["", "", ""];
 		let addrinfo = '0x' + note.addr.toString(16).padStart(8, '0');
-		if (note.size > 8) addrinfo += ' &ndash; ' + '0x' + (note.addr + note.size - 1).toString(16).padStart(8, '0');
+		if (note.size > 8) addrinfo += ' - ' + '0x' + (note.addr + note.size - 1).toString(16).padStart(8, '0');
 
 		let tr = tbody.appendChild(document.createElement('tr'));
 		tr.appendChild(document.createElement('td')).appendChild(document.createTextNode(addrinfo));
@@ -414,15 +426,45 @@ function select_row(row)
 	row.classList.add('selected');
 }
 
+function all_achievements()
+{
+	let res = [];
+	if (current.set  ) res = res.concat(current.set.achievements);
+	if (current.local) res = res.concat(current.local.achievements);
+	return res;
+}
+
+function all_leaderboards()
+{
+	let res = [];
+	if (current.set  ) res = res.concat(current.set.leaderboards);
+	if (current.local) res = res.concat(current.local.leaderboards);
+	return res;
+}
+
+function update_assessment()
+{
+	current.assessment.achievements = new Map(all_achievements().map(x => [x.id, assess_achievement(x)]));
+	current.assessment.leaderboards = new Map(all_leaderboards().map(x => [x.id, assess_leaderboard(x)]));
+}
+
 function load_achievement_set(json)
 {
-	current.set = new AchievementSet(json);
-	current.assessment.achievements = new Map(current.set.achievements.map(x => [x.id, assess_achievement(x)]));
-	current.assessment.leaderboards = new Map(current.set.leaderboards.map(x => [x.id, assess_leaderboard(x)]));
+	current.set = AchievementSet.fromJSON(json);
+	update_assessment();
 
 	for (const jach of json.Achievements)
 		if (current.assessment.achievements.has(jach.ID))
 			current.assessment.achievements.get(jach.ID).mem_length = jach.MemAddr.length;
+	rebuild_sidebar();
+}
+
+function load_user_file(txt)
+{
+	current.local = AchievementSet.fromLocal(txt);
+	current.local.id = current.id;
+	update_assessment();
+
 	rebuild_sidebar();
 }
 
@@ -437,6 +479,13 @@ function load_code_notes(json)
 	if (current.set) // update the achievement assessments because there are some code note verification checks
 		current.assessment.achievements = new Map(current.set.achievements.map(x => [x.id, assess_achievement(x)]));
 	rebuild_sidebar();
+}
+
+function state_marker(state)
+{
+	if (state == AssetState.LOCAL) return "✏️ ";
+	if (state == AssetState.UNOFFICIAL) return "🚧 ";
+	return "";
 }
 
 function rebuild_sidebar()
@@ -461,17 +510,18 @@ function rebuild_sidebar()
 		assetList.push(code_notes_row);
 	}
 	
-	if (current.set != null)
+	if (current.set != null || current.local != null)
 	{
 		header = document.createElement('tr');
 		header.classList.add("asset-header");
 		header.appendChild(document.createElement('td')).appendChild(document.createTextNode("Achievements"));
 		assetList.push(header);
 
-		for (const ach of current.set.achievements)
+		for (const ach of all_achievements().sort((a, b) => a.state.rank - b.state.rank))
 		{
 			let feedback = current.assessment.achievements.get(ach.id);
-			let tr = add_asset_row(feedback.pass() ? 'pass' : 'fail', `🏆 ${ach.title} (${ach.points})`);
+			let label = state_marker(ach.state);
+			let tr = add_asset_row(feedback.pass() ? 'pass' : 'fail', `🏆 ${label}${ach.title} (${ach.points})`);
 			tr.onclick = function(){ load_achievement(ach, tr); };
 			assetList.push(tr);
 
@@ -485,10 +535,11 @@ function rebuild_sidebar()
 		header.appendChild(document.createElement('td')).appendChild(document.createTextNode("Leaderboards"));
 		assetList.push(header);
 
-		for (const lb of current.set.leaderboards)
+		for (const lb of all_leaderboards().sort((a, b) => a.state.rank - b.state.rank))
 		{
 			let feedback = current.assessment.leaderboards.get(lb.id);
-			let tr = add_asset_row(feedback.pass() ? 'pass' : 'fail', `📊 ${lb.title}`);
+			let label = state_marker(lb.state);
+			let tr = add_asset_row(feedback.pass() ? 'pass' : 'fail', `📊 ${label}${lb.title}`);
 			tr.onclick = function(){ load_leaderboard(lb, tr); };
 			assetList.push(tr);
 		}

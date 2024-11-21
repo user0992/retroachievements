@@ -135,6 +135,7 @@ class IssueList
 function assess_logic(logic)
 {
 	let res = new IssueList();
+	res.mem_length = -1;
 
 	// flattened version of the logic
 	const flat = [].concat(...logic.groups);
@@ -300,18 +301,35 @@ function assess_logic(logic)
 	for (const [gi, g] of logic.groups.entries())
 		for (const [ri, req] of g.entries())
 		{
-			// #TODO: this should expand to covering compound requirements (via AndNext, OrNext, etc)
-			function invert_req()
+			function invert_chain()
 			{
-				return "TODO\nTODO\nTODO";
+				function invert_req(req)
+				{
+					let copy = req.clone();
+					if      (copy.flag == ReqFlag.ANDNEXT) copy.flag = ReqFlag.ORNEXT;
+					else if (copy.flag == ReqFlag.ORNEXT ) copy.flag = ReqFlag.ANDNEXT;
+					if (FLIP_CMP.has(copy.op)) copy.op = FLIP_CMP.get(copy.op);
+					return copy;
+				}
+
+				let target = invert_req(req);
+				target.flag = null;
+
+				let res = target.toMarkdown();
+				for (let i = ri - 1; i >= 0; i--)
+				{
+					if (!COMBINING_MODIFIER_FLAGS.has(g[i].flag)) break;
+					res = invert_req(g[i]).toMarkdown() + '\n' + res;
+				}
+				return res;
 			}
 
 			if (req.flag == ReqFlag.PAUSEIF && !has_hits)
 				res.add(new Issue(Feedback.UUO_PAUSE, req,
-					`Recommended change:<br/><pre><code>${invert_req()}</code></pre>`));
+					`Automated recommended change:<br/><pre><code>${invert_chain()}</code></pre>`));
 			else if (req.flag == ReqFlag.RESETIF && !has_hits)
 				res.add(new Issue(Feedback.UUO_RESET, req,
-					`Recommended change:<br/><pre><code>${invert_req()}</code></pre>`));
+					`Automated recommended change:<br/><pre><code>${invert_chain()}</code></pre>`));
 			else if (req.flag == ReqFlag.RESETNEXTIF)
 			{
 				for (let i = ri + 1; i < g.length; i++)
