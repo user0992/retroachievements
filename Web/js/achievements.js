@@ -24,9 +24,9 @@ const ConsoleMap = Object.fromEntries(
 );
 
 const AssetState = Object.freeze({
-	CORE: { rank: 0, name: 'core', },
-	UNOFFICIAL: { rank: 1, name: 'unofficial', },
-	LOCAL: { rank: 2, name: 'local', },
+	CORE: { rank: 0, name: 'core', marker: '', },
+	UNOFFICIAL: { rank: 1, name: 'unofficial', marker: '🚧 '},
+	LOCAL: { rank: 2, name: 'local', marker: '✏️ '},
 });
 
 class Achievement

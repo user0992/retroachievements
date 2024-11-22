@@ -481,13 +481,6 @@ function load_code_notes(json)
 	rebuild_sidebar();
 }
 
-function state_marker(state)
-{
-	if (state == AssetState.LOCAL) return "✏️ ";
-	if (state == AssetState.UNOFFICIAL) return "🚧 ";
-	return "";
-}
-
 function rebuild_sidebar()
 {
 	let header;
@@ -520,8 +513,7 @@ function rebuild_sidebar()
 		for (const ach of all_achievements().sort((a, b) => a.state.rank - b.state.rank))
 		{
 			let feedback = current.assessment.achievements.get(ach.id);
-			let label = state_marker(ach.state);
-			let tr = add_asset_row(feedback.pass() ? 'pass' : 'fail', `🏆 ${label}${ach.title} (${ach.points})`);
+			let tr = add_asset_row(feedback.pass() ? 'pass' : 'fail', `🏆 ${ach.state.marker}${ach.title} (${ach.points})`);
 			tr.onclick = function(){ load_achievement(ach, tr); };
 			assetList.push(tr);
 
@@ -538,8 +530,7 @@ function rebuild_sidebar()
 		for (const lb of all_leaderboards().sort((a, b) => a.state.rank - b.state.rank))
 		{
 			let feedback = current.assessment.leaderboards.get(lb.id);
-			let label = state_marker(lb.state);
-			let tr = add_asset_row(feedback.pass() ? 'pass' : 'fail', `📊 ${label}${lb.title}`);
+			let tr = add_asset_row(feedback.pass() ? 'pass' : 'fail', `📊 ${lb.state.marker}${lb.title}`);
 			tr.onclick = function(){ load_leaderboard(lb, tr); };
 			assetList.push(tr);
 		}
