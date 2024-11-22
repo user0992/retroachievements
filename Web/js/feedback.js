@@ -132,6 +132,9 @@ class IssueList
 	pass() { return this.issues.filter(x => x.type.severity > FeedbackSeverity.INFO).length == 0; }
 }
 
+function send_message_to(target)
+{ return `<a href="https://retroachievements.org/messages/create?to=${target}">message ${target}</a>`; }
+
 function assess_logic(logic)
 {
 	let res = new IssueList();
@@ -367,14 +370,29 @@ function assess_achievement(ach)
 	if (ach.title.endsWith('.') && !ach.title.endsWith('..'))
 		res.add(new Issue(Feedback.TITLE_PUNCTUATION, 'title'));
 
+	// send a message to QATeam for foreign language exceptions
+	let language_exceptions = `For foreign language exceptions, ${send_message_to("QATeam")}`;
+
+	const FOREIGN_RE = /\p{Arabic}|\p{Armenian}|\p{Bengali}|\p{Bopomofo}|\p{Braille}|\p{Buhid}|\p{Canadian_Aboriginal}|\p{Cherokee}|\p{Cyrillic}|\p{Devanagari}|\p{Ethiopic}|\p{Georgian}|\p{Greek}|\p{Gujarati}|\p{Gurmukhi}|\p{Han}|\p{Hangul}|\p{Hanunoo}|\p{Hebrew}|\p{Hiragana}|\p{Inherited}|\p{Kannada}|\p{Katakana}|\p{Khmer}|\p{Lao}|\p{Latin}|\p{Limbu}|\p{Malayalam}|\p{Mongolian}|\p{Myanmar}|\p{Ogham}|\p{Oriya}|\p{Runic}|\p{Sinhala}|\p{Syriac}|\p{Tagalog}|\p{Tagbanwa}|\p{TaiLe}|\p{Tamil}|\p{Telugu}|\p{Thaana}|\p{Thai}|\p{Tibetan}|\p{Yi}/u;
+	const NON_ASCII_RE = /[^\x00-\x7F]/u;
+
 	if (/\p{Extended_Pictographic}/u.test(ach.title))
 		res.add(new Issue(Feedback.TITLE_EMOJI, 'title'));
+	else if (FOREIGN_RE.test(ach.title))
+		res.add(new Issue(Feedback.SPECIAL_CHARS, 'title', language_exceptions));
+	else if (NON_ASCII_RE.test(ach.title))
+		res.add(new Issue(Feedback.SPECIAL_CHARS, 'title'));
 
-	if (/[\{\[\(](.+)[\}\]\)]/u.test(ach.desc))
+	if (/[\{\[\(](.+)[\}\]\)]/.test(ach.desc))
 		res.add(new Issue(Feedback.DESC_BRACKETS, 'desc'));
 
 	if (/\p{Extended_Pictographic}/u.test(ach.desc))
 		res.add(new Issue(Feedback.DESC_EMOJI, 'desc'));
+	else if (FOREIGN_RE.test(ach.desc))
+		res.add(new Issue(Feedback.SPECIAL_CHARS, 'desc', language_exceptions));
+	else if (NON_ASCII_RE.test(ach.desc))
+		res.add(new Issue(Feedback.SPECIAL_CHARS, 'desc'));
+
 
 	return res;
 }
