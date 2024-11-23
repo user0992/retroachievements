@@ -98,13 +98,10 @@ class Leaderboard
 		lb.lower_is_better = json.LowerIsBetter;
 
 		lb.components = {};
-		console.log(json.Title, json.Mem);
 		for (let part of json.Mem.split("::"))
 		{
-			console.log(part);
-			let tag = part.substr(0, 3);
-			let mem = part.substr(4);
-			console.log(mem);
+			let tag = part.substring(0, 3);
+			let mem = part.substring(4);
 			lb.components[tag] = Logic.fromString(mem);
 		}
 		lb.state = AssetState.CORE;
@@ -114,7 +111,7 @@ class Leaderboard
 	static fromLocal(row)
 	{
 		let lb = new Leaderboard();
-		lb.id = +row[0].substr(1);
+		lb.id = +row[0].substring(1);
 		lb.title = row[6];
 		lb.desc = row[7];
 		lb.format = row[5];
@@ -165,7 +162,9 @@ class AchievementSet
 		{
 			let res = [];
 			let start = 0, inquotes = false;
-			for (let [ci, ch] of [...(line + ':')].entries())
+
+			let chars = Array.from(line + ':');
+			for (let [ci, ch] of chars.entries())
 			{
 				if (start > ci) continue;
 				else if (start == ci && !inquotes && ch == '"')
@@ -176,7 +175,7 @@ class AchievementSet
 				else if ((inquotes && ch == '"' && line[ci-1] != '\\') || (!inquotes && ch == ':'))
 				{
 					if (inquotes) ci += 1;
-					let x = line.substring(start, ci);
+					let x = chars.slice(start, ci).join('');
 					if (inquotes) x = JSON.parse(x);
 
 					res.push(x);

@@ -373,10 +373,10 @@ function load_code_notes_overview(sidebar)
 	{
 		let row = ["", "", ""];
 		let addrinfo = '0x' + note.addr.toString(16).padStart(8, '0');
-		if (note.size > 8) addrinfo += ' - ' + '0x' + (note.addr + note.size - 1).toString(16).padStart(8, '0');
+		if (note.size > 8) addrinfo += '<br/>- ' + '0x' + (note.addr + note.size - 1).toString(16).padStart(8, '0');
 
 		let tr = tbody.appendChild(document.createElement('tr'));
-		tr.appendChild(document.createElement('td')).appendChild(document.createTextNode(addrinfo));
+		tr.appendChild(document.createElement('td')).innerHTML = addrinfo;
 		tr.appendChild(document.createElement('td'))
 			.appendChild(document.createElement('pre'))
 			.appendChild(document.createTextNode(note.note));

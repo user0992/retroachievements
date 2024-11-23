@@ -11,7 +11,7 @@ const TITLE_CASE_MINORS = new Set([
 function tc_minor(word) { return TITLE_CASE_MINORS.has(word); }
 function make_title_case(phrase)
 {
-	function tc(s) { return s.charAt(0).toUpperCase() + s.substr(1).toLowerCase(); }
+	function tc(s) { return s.charAt(0).toUpperCase() + s.substring(1).toLowerCase(); }
 	return phrase.replace(/[\w'\u2019]+/g, function(x, i)
 	{
 		if (x == x.toUpperCase()) return x; // assume allcaps for a reason
@@ -39,8 +39,6 @@ const Feedback = Object.freeze({
 		ref: ["https://en.wikipedia.org/wiki/Title_case#Chicago_Manual_of_Style",], },
 	TITLE_PUNCTUATION: { severity: FeedbackSeverity.WARN, desc: "Achievement titles are not full sentences, and should not end with punctuation (exception: ?, !, or ellipses).",
 		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#punctuation",], },
-	TITLE_EMOJI: { severity: FeedbackSeverity.WARN, desc: "Achievement titles may not contain emoji.",
-		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#emojis",], },
 	DESC_SENTENCE_CASE: { severity: FeedbackSeverity.INFO, desc: "Achievement descriptions should not be in title case, but rather sentence case.",
 		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#capitalization-1",], },
 	DESC_PUNCT_CONSISTENCY: { severity: FeedbackSeverity.INFO, desc: "Achievement descriptions should be consistent about whether or not they end with punctuation.",
@@ -49,12 +47,15 @@ const Feedback = Object.freeze({
 		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#brackets-parentheses",], },
 	DESC_SYMBOLS: { severity: FeedbackSeverity.INFO, desc: "Achievement descriptions are discouraged from using symbols to describe conditions.",
 		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#symbols-and-emojis",], },
-	DESC_EMOJI: { severity: FeedbackSeverity.WARN, desc: "Achievement descriptions may not contain emoji.",
-		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#symbols-and-emojis",], },
 	DESC_QUOTES: { severity: FeedbackSeverity.INFO, desc: "Achievement descriptions should only use double quotation marks, except for quotes inside quotes.",
 		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#symbols-and-emojis",], },
 	NUM_FORMAT: { severity: FeedbackSeverity.INFO, desc: "Numbers should be formatted to conform to English standards (period for decimal separation, commas for grouping).",
 		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#number-formatting",], },
+	NO_EMOJI: { severity: FeedbackSeverity.WARN, desc: "Achievement titles and descriptions may not contain emoji.",
+		ref: [
+			"https://docs.retroachievements.org/guidelines/content/writing-policy.html#emojis",
+			"https://docs.retroachievements.org/guidelines/content/writing-policy.html#symbols-and-emojis",
+		], },
 	SPECIAL_CHARS: { severity: FeedbackSeverity.WARN, desc: "Avoid using accented/special characters, as they can have rendering issues.",
 		ref: [
 			"https://docs.retroachievements.org/guidelines/content/naming-conventions.html",
@@ -353,46 +354,64 @@ function assess_logic(logic)
 	return res;
 }
 
-function assess_achievement(ach)
-{
-	let res = assess_logic(ach.logic);
+const EMOJI_RE = /\p{Emoji_Presentation}/gu;
+const TYPOGRAPHY_PUNCT = /[\u2018\u2019\u201C\u201D]/gu;
+const FOREIGN_RE = /(?:\p{Script=Arabic}|\p{Script=Armenian}|\p{Script=Bengali}|\p{Script=Bopomofo}|\p{Script=Braille}|\p{Script=Buhid}|\p{Script=Canadian_Aboriginal}|\p{Script=Cherokee}|\p{Script=Cyrillic}|\p{Script=Devanagari}|\p{Script=Ethiopic}|\p{Script=Georgian}|\p{Script=Greek}|\p{Script=Gujarati}|\p{Script=Gurmukhi}|\p{Script=Han}|\p{Script=Hangul}|\p{Script=Hanunoo}|\p{Script=Hebrew}|\p{Script=Hiragana}|\p{Script=Inherited}|\p{Script=Kannada}|\p{Script=Katakana}|\p{Script=Khmer}|\p{Script=Lao}|\p{Script=Limbu}|\p{Script=Malayalam}|\p{Script=Mongolian}|\p{Script=Myanmar}|\p{Script=Ogham}|\p{Script=Oriya}|\p{Script=Runic}|\p{Script=Sinhala}|\p{Script=Syriac}|\p{Script=Tagalog}|\p{Script=Tagbanwa}|\p{Script=Tamil}|\p{Script=Telugu}|\p{Script=Thaana}|\p{Script=Thai}|\p{Script=Tibetan}|\p{Script=Yi})+/gu;
+const NON_ASCII_RE = /(?:[^\x00-\x7F])+/g;
 
-	// WRITING/PRESENTATION
-	res.corrected_title = make_title_case(ach.title);
-	if (res.corrected_title != ach.title)
+function assess_writing(asset)
+{
+	let res = new IssueList();
+
+	res.corrected_title = make_title_case(asset.title);
+	if (res.corrected_title != asset.title)
 	{
-		const links = [...titlecase_links(ach.title).entries()].map(
+		const links = [...titlecase_links(asset.title).entries()].map(
 			([i, url]) => `[<a href="${url}">${i+1}</a>]`).join(' ');
 		res.add(new Issue(Feedback.TITLE_CASE, 'title', 
 			`Automated suggestion: <em>${res.corrected_title}</em> &mdash; Additional suggestions: ${links}`));
 	}
 
-	if (ach.title.endsWith('.') && !ach.title.endsWith('..'))
+	if (asset.title.endsWith('.') && !asset.title.endsWith('..'))
 		res.add(new Issue(Feedback.TITLE_PUNCTUATION, 'title'));
 
 	// send a message to QATeam for foreign language exceptions
-	let language_exceptions = `For foreign language exceptions, ${send_message_to("QATeam")}`;
+	let language_exceptions = `For policy exceptions regarding the use of foreign language, ${send_message_to("QATeam")}`;
 
-	const FOREIGN_RE = /\p{Arabic}|\p{Armenian}|\p{Bengali}|\p{Bopomofo}|\p{Braille}|\p{Buhid}|\p{Canadian_Aboriginal}|\p{Cherokee}|\p{Cyrillic}|\p{Devanagari}|\p{Ethiopic}|\p{Georgian}|\p{Greek}|\p{Gujarati}|\p{Gurmukhi}|\p{Han}|\p{Hangul}|\p{Hanunoo}|\p{Hebrew}|\p{Hiragana}|\p{Inherited}|\p{Kannada}|\p{Katakana}|\p{Khmer}|\p{Lao}|\p{Latin}|\p{Limbu}|\p{Malayalam}|\p{Mongolian}|\p{Myanmar}|\p{Ogham}|\p{Oriya}|\p{Runic}|\p{Sinhala}|\p{Syriac}|\p{Tagalog}|\p{Tagbanwa}|\p{TaiLe}|\p{Tamil}|\p{Telugu}|\p{Thaana}|\p{Thai}|\p{Tibetan}|\p{Yi}/;
-	const NON_ASCII_RE = /[^\x00-\x7F]/u;
+	function build_indicated_feedback(text, re)
+	{ return '<em>' + text.replace(re, x => `<span class="warn">${x}</span>`) + '</em>'; }
 
-	if (/\p{Extended_Pictographic}/u.test(ach.title))
-		res.add(new Issue(Feedback.TITLE_EMOJI, 'title'));
-	else if (FOREIGN_RE.test(ach.title))
-		res.add(new Issue(Feedback.SPECIAL_CHARS, 'title', language_exceptions));
-	else if (NON_ASCII_RE.test(ach.title))
-		res.add(new Issue(Feedback.SPECIAL_CHARS, 'title'));
+	for (const elt of ['title', 'desc'])
+	{
+		if (EMOJI_RE.test(asset[elt]))
+			res.add(new Issue(Feedback.NO_EMOJI, elt));
+		else if (TYPOGRAPHY_PUNCT.test(asset[elt]))
+		{
+			let corrected = asset[elt].replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+			res.add(new Issue(Feedback.SPECIAL_CHARS, elt,
+				'"Smart" quotes are great for typography, but often don\'t render correctly in emulators<br/>' +
+				build_indicated_feedback(asset[elt], TYPOGRAPHY_PUNCT) + ' &xrArr; ' + corrected));
+		}
+		else if (FOREIGN_RE.test(asset[elt]))
+			res.add(new Issue(Feedback.SPECIAL_CHARS, elt,
+				build_indicated_feedback(asset[elt], FOREIGN_RE) + '<br/>' + language_exceptions));
+		else if (NON_ASCII_RE.test(asset[elt]))
+			res.add(new Issue(Feedback.SPECIAL_CHARS, elt,
+				build_indicated_feedback(asset[elt], NON_ASCII_RE)));
+	}
 
-	if (/[\{\[\(](.+)[\}\]\)]/.test(ach.desc))
+	if (/[\{\[\(](.+)[\}\]\)]/.test(asset.desc))
 		res.add(new Issue(Feedback.DESC_BRACKETS, 'desc'));
 
-	if (/\p{Extended_Pictographic}/u.test(ach.desc))
-		res.add(new Issue(Feedback.DESC_EMOJI, 'desc'));
-	else if (FOREIGN_RE.test(ach.desc))
-		res.add(new Issue(Feedback.SPECIAL_CHARS, 'desc', language_exceptions));
-	else if (NON_ASCII_RE.test(ach.desc))
-		res.add(new Issue(Feedback.SPECIAL_CHARS, 'desc'));
+	return res;
+}
 
+function assess_achievement(ach)
+{
+	let res = new IssueList();
+
+	res.issues = res.issues.concat(assess_logic(ach.logic).issues);
+	res.issues = res.issues.concat(assess_writing(ach).issues);
 
 	return res;
 }
