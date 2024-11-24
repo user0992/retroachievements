@@ -210,14 +210,29 @@ class Logic
 		return logic;
 	}
 
+	getOperands()
+	{
+		return this.groups.reduce(
+			(ia, ie) => ia.concat(
+				ie.reduce((ja, je) => ja.concat(je.lhs, je.rhs), [])
+			), 
+			[]
+		).filter(x => x);
+	}
+
+	getTypes()     { return this.getOperands().map(x => x.type).filter(x => x); }
+	getMemSizes()  { return this.getOperands().map(x => x.size).filter(x => x); }
+	getAddresses() { return this.getOperands().filter(x => x.type && x.type.addr).map(x => parseInt(x.value, 16)); }
+	getFlags()     { return this.groups.reduce((ia, ie) => ia.concat(ie.map(x => x.flag)), []).filter(x => x); }
+
 	toMarkdown()
 	{
 		let output = "";
 		let i = 0;
 
-		const wValue = Math.max(...[...this.getOperands()].map((x) => x.value ? x.value.length : 0));
-		const wReqType = Math.max(...[...this.getTypes()].map((x) => x.name.length));
-		const wMemSize = Math.max(...[...this.getMemSizes()].map((x) => x.name.length));
+		const wValue = Math.max(...this.getOperands().map((x) => x.value ? x.value.length : 0));
+		const wReqType = Math.max(...this.getTypes().map((x) => x.name.length));
+		const wMemSize = Math.max(...this.getMemSizes().map((x) => x.name.length));
 
 		for (const g of this.groups)
 		{

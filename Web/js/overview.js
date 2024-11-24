@@ -111,11 +111,17 @@ function make_logic_table(logic, assessment = [], grouplabel = (i) => i == 0 ? "
 		for (const [ri, req] of g.entries())
 		{
 			let reqrow = document.createElement('tr');
-			for (const issue of assessment)
-				if (issue.target == req) reqrow.classList.add('warn');
+			
+			let ref_list = [];
+			for (const [ii, issue] of assessment.entries())
+				if (issue.target == req)
+				{
+					reqrow.classList.add('warn');
+					ref_list.push(ii);
+				}
 			let reqdata = ["", "", "", "", "", "", "", "", "", ""];
 
-			reqdata[0] = "" + (ri + 1);
+			reqdata[0] = "" + (ri + 1) + ref_list.map(x => ` <sup>(#${x+1})</sup>`).join('');
 			if (req.flag) reqdata[1] = req.flag.name;
 			reqdata[2] = req.lhs.type.name;
 			if (req.lhs.size) reqdata[3] = req.lhs.size.name;
@@ -133,7 +139,7 @@ function make_logic_table(logic, assessment = [], grouplabel = (i) => i == 0 ? "
 			{
 				let td = document.createElement('td');
 				let span = td.appendChild(document.createElement('span'));
-				span.appendChild(document.createTextNode(v));
+				span.innerHTML = v;
 				if (typeof v === 'string' && v.startsWith('0x'))
 				{
 					let note = get_note(v);
@@ -205,6 +211,38 @@ function load_achievement(ach, row)
 	logicdiv.appendChild(make_logic_table(ach.logic, feedback.issues));
 	elts.push(logicdiv);
 
+	let statsdiv = document.createElement('div');
+	statsdiv.classList.add('stats');
+	elts.push(statsdiv);
+
+	statsdiv.appendChild(document.createElement('h1'))
+		.appendChild(document.createTextNode('Statistics'));
+
+	const stats = feedback.stats;
+	let statslist = statsdiv.appendChild(document.createElement('ul'));
+
+	let sublist;
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Memory Length: ${stats.mem_length}/65535`));
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Group Count: ${stats.group_count} (1 Core + ${stats.alt_groups} Alt${stats.alt_groups == 1 ? '' : 's'})`));
+
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Requirement Count: ${stats.cond_count}`));
+	sublist = statslist.appendChild(document.createElement('ul'));
+	sublist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Max Requirements Per Group: ${stats.group_maxsize}`));
+	
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode("Logic Features"));
+	sublist = statslist.appendChild(document.createElement('ul'));
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Unique Flags: (${stats.unique_flags.size}) ${[...stats.unique_flags].map(x => `<code>${x.name}</code>`).join(', ')}`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Unique Mem Sizes: (${stats.unique_sizes.size}) ${[...stats.unique_sizes].map(x => `<code>${x.name}</code>`).join(', ')}`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Unique Comparisons: (${stats.unique_cmps.size}) ${[...stats.unique_cmps].map(x => `<code>${x}</code>`).join(', ')}`;
+
 	let feedbackdiv = document.createElement('div');
 	feedbackdiv.classList.add('feedback');
 	elts.push(feedbackdiv);
@@ -212,9 +250,9 @@ function load_achievement(ach, row)
 	feedbackdiv.appendChild(document.createElement('h1'))
 		.appendChild(document.createTextNode('Feedback'));
 
-	function make_issue_list_entry(issue)
+	function make_issue_list_entry(ii, issue)
 	{
-		let text = issue.type.desc;
+		let text = `<sup>(#${ii+1})</sup> ${issue.type.desc}`;
 		for (const ref of issue.type.ref)
 			text += ` <sup>[<a href="${ref}">ref</a>]</sup>`;
 		if (issue.detail) text += "<br/>" + issue.detail;
@@ -222,29 +260,29 @@ function load_achievement(ach, row)
 	}
 
 	let cissues;
-	cissues = feedback.issues.filter(x => ['title', 'desc'].includes(x.target));
+	cissues = [...feedback.issues.entries()].filter(([i, x]) => ['title', 'desc'].includes(x.target));
 	if (cissues.length > 0)
 	{
 		feedbackdiv.appendChild(document.createElement('h2'))
 			.appendChild(document.createTextNode('Presentation & Writing'));
 		let ul = feedbackdiv.appendChild(document.createElement('ul'));
-		for (const issue of cissues)
+		for (const [ii, issue] of cissues)
 		{
 			let li = ul.appendChild(document.createElement('li'));
-			li.innerHTML = make_issue_list_entry(issue);
+			li.innerHTML = make_issue_list_entry(ii, issue);
 		}
 	}
 
-	cissues = feedback.issues.filter(x => !['title', 'desc'].includes(x.target));
+	cissues = [...feedback.issues.entries()].filter(([i, x]) => !['title', 'desc'].includes(x.target));
 	if (cissues.length > 0)
 	{
 		feedbackdiv.appendChild(document.createElement('h2'))
 			.appendChild(document.createTextNode('Logic & Design'));
 		let ul = feedbackdiv.appendChild(document.createElement('ul'));
-		for (const issue of cissues)
+		for (const [ii, issue] of cissues)
 		{
 			let li = ul.appendChild(document.createElement('li'));
-			li.innerHTML = make_issue_list_entry(issue);
+			li.innerHTML = make_issue_list_entry(ii, issue);
 		}
 	}
 
@@ -400,6 +438,55 @@ function load_code_notes_overview(sidebar)
 	}
 	elts.push(tablediv);
 
+	let statsdiv = document.createElement('div');
+	statsdiv.classList.add('stats');
+	elts.push(statsdiv);
+
+	statsdiv.appendChild(document.createElement('h1'))
+		.appendChild(document.createTextNode('Statistics'));
+
+	const stats = current.assessment.notes.stats;
+	let statslist = statsdiv.appendChild(document.createElement('ul'));
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`${stats.notes_count} code notes (${stats.notes_used} used, ${stats.notes_unused} unused)`));
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode('Sizes noted'));
+	let sizelist = statslist.appendChild(document.createElement('ul'));
+	for (const [k,v] of stats.size_counts.entries())
+		sizelist.appendChild(document.createElement('li')).innerHTML = `<code>${k}</code>: ${v}`;
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode('Author contributions'));
+	let authorlist = statslist.appendChild(document.createElement('ul'));
+	for (const [k,v] of stats.author_counts.entries())
+		authorlist.appendChild(document.createElement('li')).innerHTML = `${k}: ${v} (${(100 * v / stats.notes_count).toFixed(1)}%)`;
+
+	let feedbackdiv = document.createElement('div');
+	feedbackdiv.classList.add('feedback');
+	elts.push(feedbackdiv);
+
+	feedbackdiv.appendChild(document.createElement('h1'))
+		.appendChild(document.createTextNode('Feedback'));
+
+	function make_issue_list_entry(ii, issue)
+	{
+		let text = `<sup>(#${ii+1})</sup> <code>0x${issue.target.addr.toString(16).padStart(8, '0')}</code> &mdash; ${issue.type.desc}`;
+		for (const ref of issue.type.ref)
+			text += ` <sup>[<a href="${ref}">ref</a>]</sup>`;
+		if (issue.detail) text += "<br/>" + issue.detail;
+		return text;
+	}
+
+	let cissues = [...current.assessment.notes.issues.entries()];
+	if (cissues.length > 0)
+	{
+		let ul = feedbackdiv.appendChild(document.createElement('ul'));
+		for (const [ii, issue] of cissues)
+		{
+			let li = ul.appendChild(document.createElement('li'));
+			li.innerHTML = make_issue_list_entry(ii, issue);
+		}
+	}
+
 	document.getElementById('info-container').replaceChildren(...elts);
 	document.getElementById('asset-info').scrollTop = 0;
 	select_row(sidebar);
@@ -446,6 +533,7 @@ function update_assessment()
 {
 	current.assessment.achievements = new Map(all_achievements().map(x => [x.id, assess_achievement(x)]));
 	current.assessment.leaderboards = new Map(all_leaderboards().map(x => [x.id, assess_leaderboard(x)]));
+	current.assessment.notes = assess_code_notes(current.notes);
 }
 
 function load_achievement_set(json)
@@ -455,7 +543,7 @@ function load_achievement_set(json)
 
 	for (const jach of json.Achievements)
 		if (current.assessment.achievements.has(jach.ID))
-			current.assessment.achievements.get(jach.ID).mem_length = jach.MemAddr.length;
+			current.assessment.achievements.get(jach.ID).stats.mem_length = jach.MemAddr.length;
 	rebuild_sidebar();
 }
 
@@ -474,10 +562,8 @@ function load_code_notes(json)
 	for (const obj of json)
 		if (obj.Note)
 			current.notes.push(new CodeNote(obj.Address, obj.Note, obj.User));
+	update_assessment();
 
-	current.assessment.notes = assess_code_notes(current.notes);
-	if (current.set) // update the achievement assessments because there are some code note verification checks
-		current.assessment.achievements = new Map(current.set.achievements.map(x => [x.id, assess_achievement(x)]));
 	rebuild_sidebar();
 }
 

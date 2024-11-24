@@ -122,15 +122,22 @@ class Issue
 	}
 }
 
-class IssueList
+class Assessment
 {
 	issues = [];
+	stats = {};
 	constructor()
 	{
 	}
 
 	add(x) { return this.issues.push(x); }
 	pass() { return this.issues.filter(x => x.type.severity > FeedbackSeverity.INFO).length == 0; }
+
+	combine(o)
+	{
+		for (const issue of o.issues) this.add(issue);
+		Object.assign(this.stats, o.stats);
+	}
 }
 
 function send_message_to(target)
@@ -138,29 +145,28 @@ function send_message_to(target)
 
 function assess_logic(logic)
 {
-	let res = new IssueList();
+	let res = new Assessment();
 	res.mem_length = -1;
 
 	// flattened version of the logic
 	const flat = [].concat(...logic.groups);
-	const operands = new Set(flat.reduce((a, e) => a.concat(e.lhs, e.rhs), []).filter(x => x));
-	const comparisons = flat.reduce((a, e) => a.concat(e.op), []).filter(x => FLIP_CMP.has(x));
+	const operands = new Set(logic.getOperands());
+	const comparisons = flat.map(x => x.op).filter(x => FLIP_CMP.has(x));
 
 	// number of groups (number of alt groups is this minus 1)
-	res.group_count = logic.groups.length;
-	res.alt_groups = res.group_count - 1;
+	res.stats.group_count = logic.groups.length;
+	res.stats.alt_groups = res.stats.group_count - 1;
 
 	// size of the largest group
-	res.group_maxsize = Math.max(...logic.groups.map((x) => x.length));
+	res.stats.group_maxsize = Math.max(...logic.groups.map((x) => x.length));
 
 	// total number of conditions
-	res.cond_count = logic.groups.reduce((a, e) => a + e.length, 0);
+	res.stats.cond_count = logic.groups.reduce((a, e) => a + e.length, 0);
 
 	// set of unique flags, comparisons, and sizes used in the achievement
-	res.unique_flags = new Set(flat.reduce((a, e) => a.concat(e.flag), []).filter(x => x));
-	res.unique_cmps = new Set(comparisons);
-	res.unique_sizes = new Set([...operands].reduce((a, e) => a.concat(e.size), []).filter(x => x));
-	res.unique_sizes_no8bit = new Set([...operands].reduce((a, e) => a.concat(e.size), []).filter(x => x && x.bytes > 1));
+	res.stats.unique_flags = new Set(logic.getFlags());
+	res.stats.unique_cmps = new Set(comparisons);
+	res.stats.unique_sizes = new Set(logic.getMemSizes().filter(x => x.bytes > 1));
 
 	// list of all chained requirements
 	let chains = [];
@@ -176,26 +182,26 @@ function assess_logic(logic)
 	}
 
 	// length of longest requirement chain
-	res.max_chain = chains.reduce((a, e) => Math.max(a, e.length), 0);
+	res.stats.max_chain = chains.reduce((a, e) => Math.max(a, e.length), 0);
 
 	// count of achievements with hit counts
-	res.hit_counts_one = flat.reduce((a, e) => a + (e.hits == 1 ? 1 : 0), 0);
-	res.hit_counts_many = flat.reduce((a, e) => a + (e.hits > 1 ? 1 : 0), 0);
+	res.stats.hit_counts_one = flat.reduce((a, e) => a + (e.hits == 1 ? 1 : 0), 0);
+	res.stats.hit_counts_many = flat.reduce((a, e) => a + (e.hits > 1 ? 1 : 0), 0);
 
 	// count of achievements with PauseIf
-	res.pause_ifs = flat.reduce((a, e) => a + (e.flag == ReqFlag.PAUSEIF ? 1 : 0), 0);
-	res.pause_locks = flat.reduce((a, e) => a + (e.flag == ReqFlag.PAUSEIF && e.hits > 0 ? 1 : 0), 0);
+	res.stats.pause_ifs = flat.reduce((a, e) => a + (e.flag == ReqFlag.PAUSEIF ? 1 : 0), 0);
+	res.stats.pause_locks = flat.reduce((a, e) => a + (e.flag == ReqFlag.PAUSEIF && e.hits > 0 ? 1 : 0), 0);
 
 	// count of achievements with ResetIf
-	res.reset_ifs = flat.reduce((a, e) => a + (e.flag == ReqFlag.RESETIF ? 1 : 0), 0);
-	res.reset_with_hits = flat.reduce((a, e) => a + (e.flag == ReqFlag.RESETIF && e.hits > 0 ? 1 : 0), 0);
+	res.stats.reset_ifs = flat.reduce((a, e) => a + (e.flag == ReqFlag.RESETIF ? 1 : 0), 0);
+	res.stats.reset_with_hits = flat.reduce((a, e) => a + (e.flag == ReqFlag.RESETIF && e.hits > 0 ? 1 : 0), 0);
 
 	// count of achievements with Deltas and Prior
-	res.deltas = [...operands].reduce((a, e) => a + (e.type == ReqType.DELTA ? 1 : 0), 0);
-	res.priors = [...operands].reduce((a, e) => a + (e.type == ReqType.PRIOR ? 1 : 0), 0);
+	res.stats.deltas = [...operands].reduce((a, e) => a + (e.type == ReqType.DELTA ? 1 : 0), 0);
+	res.stats.priors = [...operands].reduce((a, e) => a + (e.type == ReqType.PRIOR ? 1 : 0), 0);
 	
 	// list of virtual addresses
-	res.virtual_addresses = new Set();
+	res.stats.virtual_addresses = new Set();
 	function _req2str(req) { return req.lhs.toString() + (!req.rhs ? '' : (req.op + req.rhs.toString())); }
 	for (const [gi, g] of logic.groups.entries())
 	{
@@ -206,8 +212,8 @@ function assess_logic(logic)
 				prefix += _req2str(req) + ':';
 			else
 			{
-				if (req.lhs && req.lhs.type.addr) res.virtual_addresses.add(prefix + req.lhs.toString());
-				if (req.rhs && req.rhs.type.addr) res.virtual_addresses.add(prefix + req.rhs.toString());
+				if (req.lhs && req.lhs.type.addr) res.stats.virtual_addresses.add(prefix + req.lhs.toString());
+				if (req.rhs && req.rhs.type.addr) res.stats.virtual_addresses.add(prefix + req.rhs.toString());
 				prefix = '';
 			}
 		}
@@ -239,7 +245,7 @@ function assess_logic(logic)
 		}
 	}
 
-	if (res.deltas + res.priors == 0)
+	if (res.stats.deltas + res.stats.priors == 0)
 		res.add(new Issue(Feedback.MISSING_DELTA, null));
 
 	for (const [gi, g] of logic.groups.entries())
@@ -259,8 +265,8 @@ function assess_logic(logic)
 
 	// achievement is *possibly* an OCA if there is only one virtual address or only one comparison happens
 	// TODO: there should be a better way to determine this
-	res.oca = res.virtual_addresses.size <= 1 || comparisons.length <= 1;
-	if (res.oca) res.add(new Issue(Feedback.ONE_CONDITION, null));
+	res.stats.oca = res.stats.virtual_addresses.size <= 1 || comparisons.length <= 1;
+	if (res.stats.oca) res.add(new Issue(Feedback.ONE_CONDITION, null));
 
 	let groups_with_reset = new Set();
 	for (const [gi, g] of logic.groups.entries())
@@ -295,7 +301,7 @@ function assess_logic(logic)
 				}
 				else if (req.flag != ReqFlag.RESETIF)
 				{
-					if (!foundrni && res.reset_ifs == 0)
+					if (!foundrni && res.stats.reset_ifs == 0)
 						res.add(new Issue(Feedback.HIT_NO_RESET, req));
 				}
 			}
@@ -361,7 +367,7 @@ const NON_ASCII_RE = /(?:[^\x00-\x7F])+/g;
 
 function assess_writing(asset)
 {
-	let res = new IssueList();
+	let res = new Assessment();
 
 	res.corrected_title = make_title_case(asset.title);
 	if (res.corrected_title != asset.title)
@@ -408,34 +414,50 @@ function assess_writing(asset)
 
 function assess_achievement(ach)
 {
-	let res = new IssueList();
+	let res = new Assessment();
 
-	res.issues = res.issues.concat(assess_logic(ach.logic).issues);
-	res.issues = res.issues.concat(assess_writing(ach).issues);
+	res.combine(assess_writing(ach));
+	res.combine(assess_logic(ach.logic));
 
 	return res;
 }
 
 function assess_code_notes(notes)
 {
-	let res = new IssueList();
+	let res = new Assessment();
 
+	res.stats.size_counts = new Map();
+	res.stats.author_counts = new Map();
 	for (const note of notes)
 	{
+		res.stats.author_counts.set(note.author, 1 + (res.stats.author_counts.get(note.author) || 0));
 		if (note.note.trim() == '')
 			res.add(new Issue(Feedback.NOTE_EMPTY, note));
-		else if (note.type == null && note.size == 1)
+		
+		if (note.type == null && note.size == 1)
 			res.add(new Issue(Feedback.NOTE_NO_SIZE, note));
+		else
+		{
+			let type = note.type ? note.type.name : 'Other';
+			res.stats.size_counts.set(type, 1 + (res.stats.size_counts.get(type) || 0));
+		}
 
 		// TODO: check enumerated values
 	}
-	
+
+	res.stats.notes_count = notes.length;
+	let all_addresses = all_achievements().reduce((a, e) => a.concat(e.logic.getAddresses()), []);
+	let used_notes = notes.filter(x => all_addresses.some(y => x.contains(y)));
+
+	res.stats.notes_used = used_notes.length;
+	res.stats.notes_unused = res.stats.notes_count - res.stats.notes_used;
+		
 	return res;
 }
 
 function assess_leaderboard(lb)
 {
-	let res = new IssueList();
+	let res = new Assessment();
 
 	return res;
 }
