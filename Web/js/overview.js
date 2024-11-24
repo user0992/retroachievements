@@ -223,7 +223,7 @@ function load_achievement(ach, row)
 
 	let sublist;
 	statslist.appendChild(document.createElement('li'))
-		.appendChild(document.createTextNode(`Memory Length: ${stats.mem_length}/65535`));
+		.appendChild(document.createTextNode(`Memory Length: ${ach.logic.mem.length}/65535`));
 	statslist.appendChild(document.createElement('li'))
 		.appendChild(document.createTextNode(`Group Count: ${stats.group_count} (1 Core + ${stats.alt_groups} Alt${stats.alt_groups == 1 ? '' : 's'})`));
 
@@ -232,16 +232,41 @@ function load_achievement(ach, row)
 	sublist = statslist.appendChild(document.createElement('ul'));
 	sublist.appendChild(document.createElement('li'))
 		.appendChild(document.createTextNode(`Max Requirements Per Group: ${stats.group_maxsize}`));
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<span title="A sequence of achievements linked by flags">Longest Chain</span>: ${stats.max_chain}`;
 	
+	let warn = stats.addresses.size <= 1 ? "☠️" : (stats.oca ? "⚠️" : "");
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Addresses: ${stats.addresses.size} (${stats.virtual_addresses.size} virtual addresses) ${warn}`));
+
 	statslist.appendChild(document.createElement('li'))
 		.appendChild(document.createTextNode("Logic Features"));
 	sublist = statslist.appendChild(document.createElement('ul'));
 	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `Unique Flags: (${stats.unique_flags.size}) ${[...stats.unique_flags].map(x => `<code>${x.name}</code>`).join(', ')}`;
+		.innerHTML = `Unique Flags: (${stats.unique_flags.size}) ` + 
+		[...stats.unique_flags].map(x => `<code>${x.name}</code>`).join(', ');
 	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `Unique Mem Sizes: (${stats.unique_sizes.size}) ${[...stats.unique_sizes].map(x => `<code>${x.name}</code>`).join(', ')}`;
+		.innerHTML = `<span title="Excluding 8-bit and Bit values">Unique Mem Sizes</span>: (${stats.unique_sizes.size}) ` +
+		[...stats.unique_sizes].map(x => `<code>${x.name}</code>`).join(', ');
 	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `Unique Comparisons: (${stats.unique_cmps.size}) ${[...stats.unique_cmps].map(x => `<code>${x}</code>`).join(', ')}`;
+		.innerHTML = `Unique Comparisons: (${stats.unique_cmps.size}) ` +
+		[...stats.unique_cmps].map(x => `<code>${x}</code>`).join(', ');
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<code>Delta</code>s: ${stats.deltas} / <code>Prior</code>s: ${stats.priors} ${stats.deltas + stats.priors == 0 ? '⚠️': ''}`;
+
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Requirements with hitcounts: ${stats.hit_counts_one + stats.hit_counts_many}`));
+	sublist = statslist.appendChild(document.createElement('ul'));
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<span title="a checkpoint hit is a hitcount of 1, which locks when satisfied">Checkpoint hits</span>: ${stats.hit_counts_one}`;
+
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode("Pauses and Resets"));
+	sublist = statslist.appendChild(document.createElement('ul'));
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<code>PauseIf</code>s: ${stats.pause_ifs} (${stats.pause_locks} <span title="a PauseLock is a PauseIf with a hitcount">PauseLock${stats.pause_locks == 1 ? '' : 's'}</span>)`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<code>ResetIf</code>s: ${stats.reset_ifs} (${stats.reset_with_hits} with hits)`;
 
 	let feedbackdiv = document.createElement('div');
 	feedbackdiv.classList.add('feedback');
@@ -534,16 +559,14 @@ function update_assessment()
 	current.assessment.achievements = new Map(all_achievements().map(x => [x.id, assess_achievement(x)]));
 	current.assessment.leaderboards = new Map(all_leaderboards().map(x => [x.id, assess_leaderboard(x)]));
 	current.assessment.notes = assess_code_notes(current.notes);
+
+	current.assessment.set = assess_set();
 }
 
 function load_achievement_set(json)
 {
 	current.set = AchievementSet.fromJSON(json);
 	update_assessment();
-
-	for (const jach of json.Achievements)
-		if (current.assessment.achievements.has(jach.ID))
-			current.assessment.achievements.get(jach.ID).stats.mem_length = jach.MemAddr.length;
 	rebuild_sidebar();
 }
 
@@ -552,7 +575,6 @@ function load_user_file(txt)
 	current.local = AchievementSet.fromLocal(txt);
 	current.local.id = current.id;
 	update_assessment();
-
 	rebuild_sidebar();
 }
 
@@ -563,7 +585,6 @@ function load_code_notes(json)
 		if (obj.Note)
 			current.notes.push(new CodeNote(obj.Address, obj.Note, obj.User));
 	update_assessment();
-
 	rebuild_sidebar();
 }
 

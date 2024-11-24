@@ -70,6 +70,8 @@ const Feedback = Object.freeze({
 			"https://docs.retroachievements.org/guidelines/content/progression-and-win-condition-guidelines.html#progression-conditions",
 			"https://docs.retroachievements.org/guidelines/content/progression-and-win-condition-guidelines.html#win-conditions",
 		], },
+	ACHIEVEMENT_DIFFICULTY: { severity: FeedbackSeverity.INFO, desc: "A good spread of achievement difficulties is important.",
+		ref: ["https://docs.retroachievements.org/developer-docs/difficulty-scale-and-balance.html",], },
 
 	// code notes
 	NOTE_EMPTY: { severity: FeedbackSeverity.WARN, desc: "Empty code note.",
@@ -91,6 +93,8 @@ const Feedback = Object.freeze({
 			'https://docs.retroachievements.org/developer-docs/delta-values.html',
 			'https://docs.retroachievements.org/developer-docs/prior-values.html',
 		], },
+	COMMON_ALT: { severity: FeedbackSeverity.INFO, desc: "If every alt group contains the same bit of logic in common, it can be refactored back into the Core group.",
+		ref: [], },
 	STALE_ADDADDRESS: { severity: FeedbackSeverity.WARN, desc: "AddAddress should only ever use Mem. Stale references with AddAddress can be dangerous.",
 		ref: ['https://docs.retroachievements.org/developer-docs/hit-counts.html',], },
 	PAUSELOCK_NO_RESET: { severity: FeedbackSeverity.WARN, desc: "PauseLocks require a reset, either via ResetNextIf, or a ResetIf in another group.",
@@ -182,25 +186,26 @@ function assess_logic(logic)
 	}
 
 	// length of longest requirement chain
-	res.stats.max_chain = chains.reduce((a, e) => Math.max(a, e.length), 0);
+	res.stats.max_chain = Math.max(...chains.map(x => x.length));
 
 	// count of achievements with hit counts
-	res.stats.hit_counts_one = flat.reduce((a, e) => a + (e.hits == 1 ? 1 : 0), 0);
-	res.stats.hit_counts_many = flat.reduce((a, e) => a + (e.hits > 1 ? 1 : 0), 0);
+	res.stats.hit_counts_one = flat.filter(x => x.hits == 1).length;
+	res.stats.hit_counts_many = flat.filter(x => x.hits > 1).length;
 
 	// count of achievements with PauseIf
-	res.stats.pause_ifs = flat.reduce((a, e) => a + (e.flag == ReqFlag.PAUSEIF ? 1 : 0), 0);
-	res.stats.pause_locks = flat.reduce((a, e) => a + (e.flag == ReqFlag.PAUSEIF && e.hits > 0 ? 1 : 0), 0);
+	res.stats.pause_ifs = flat.filter(x => x.flag == ReqFlag.PAUSEIF).length;
+	res.stats.pause_locks = flat.filter(x => x.flag == ReqFlag.PAUSEIF && x.hits > 0).length;
 
 	// count of achievements with ResetIf
-	res.stats.reset_ifs = flat.reduce((a, e) => a + (e.flag == ReqFlag.RESETIF ? 1 : 0), 0);
-	res.stats.reset_with_hits = flat.reduce((a, e) => a + (e.flag == ReqFlag.RESETIF && e.hits > 0 ? 1 : 0), 0);
+	res.stats.reset_ifs = flat.filter(x => x.flag == ReqFlag.RESETIF).length;
+	res.stats.reset_with_hits = flat.filter(x => x.flag == ReqFlag.RESETIF && x.hits > 0).length;
 
 	// count of achievements with Deltas and Prior
-	res.stats.deltas = [...operands].reduce((a, e) => a + (e.type == ReqType.DELTA ? 1 : 0), 0);
-	res.stats.priors = [...operands].reduce((a, e) => a + (e.type == ReqType.PRIOR ? 1 : 0), 0);
+	res.stats.deltas = [...operands].filter(x => x.type == ReqType.DELTA).length;
+	res.stats.priors = [...operands].filter(x => x.type == ReqType.PRIOR).length;
 	
-	// list of virtual addresses
+	// list of addresses & virtual addresses
+	res.stats.addresses = new Set(logic.getAddresses());
 	res.stats.virtual_addresses = new Set();
 	function _req2str(req) { return req.lhs.toString() + (!req.rhs ? '' : (req.op + req.rhs.toString())); }
 	for (const [gi, g] of logic.groups.entries())
@@ -324,6 +329,7 @@ function assess_logic(logic)
 
 				let target = invert_req(req);
 				target.flag = null;
+				target.hits = 0;
 
 				let res = target.toMarkdown();
 				for (let i = ri - 1; i >= 0; i--)
@@ -339,6 +345,9 @@ function assess_logic(logic)
 					`Automated recommended change:<br/><pre><code>${invert_chain()}</code></pre>`));
 			else if (req.flag == ReqFlag.RESETIF && !has_hits)
 				res.add(new Issue(Feedback.UUO_RESET, req,
+					`Automated recommended change:<br/><pre><code>${invert_chain()}</code></pre>`));
+			else if (req.flag == ReqFlag.RESETIF && req.hits == 1)
+				res.add(new Issue(Feedback.RESET_HITCOUNT_1, req,
 					`Automated recommended change:<br/><pre><code>${invert_chain()}</code></pre>`));
 			else if (req.flag == ReqFlag.RESETNEXTIF)
 			{
@@ -458,6 +467,23 @@ function assess_code_notes(notes)
 function assess_leaderboard(lb)
 {
 	let res = new Assessment();
+
+	return res;
+}
+
+function assess_set()
+{
+	let res = new Assessment();
+	let achievements = all_achievements();
+
+	res.stats.count_progression = achievements.filter(x => x.achtype == 'progression').length;
+	res.stats.count_wincond = achievements.filter(x => x.achtype == 'win_condition').length;
+	res.stats.count_missable = achievements.filter(x => x.achtype == 'missable').length;
+
+	if (res.stats.count_wincond == 0 && res.stats.count_progression == 0)
+		res.add(new Issue(Feedback.NO_TYPING, null));
+	else if (res.stats.count_progression == 0)
+		res.add(new Issue(Feedback.NO_PROGRESSION, null));
 
 	return res;
 }

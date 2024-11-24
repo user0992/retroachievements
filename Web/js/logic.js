@@ -192,6 +192,7 @@ class Requirement
 class Logic
 {
 	groups = [];
+	mem = null;
 	constructor()
 	{
 
@@ -207,6 +208,7 @@ class Logic
 				group.push(Requirement.fromString(req));
 			logic.groups.push(group);
 		}
+		logic.mem = def;
 		return logic;
 	}
 
