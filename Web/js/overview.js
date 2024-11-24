@@ -237,7 +237,7 @@ function load_achievement(ach, row)
 	
 	let warn = stats.addresses.size <= 1 ? "☠️" : (stats.oca ? "⚠️" : "");
 	statslist.appendChild(document.createElement('li'))
-		.appendChild(document.createTextNode(`Addresses: ${stats.addresses.size} (${stats.virtual_addresses.size} virtual addresses) ${warn}`));
+		.innerHTML = `Addresses: ${stats.addresses.size} (${stats.virtual_addresses.size} <span title="addresses constructed via a series of AddAddress flags">virtual addresses</span>) ${warn}`;
 
 	statslist.appendChild(document.createElement('li'))
 		.appendChild(document.createTextNode("Logic Features"));
