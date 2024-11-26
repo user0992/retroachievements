@@ -219,6 +219,7 @@ class Logic
 		for (const [i, g] of def.split(/(?<!0x)S/).entries())
 		{
 			let group = [];
+			if (g.length == 0) continue; // some sets have empty core groups
 			for (const [j, req] of g.split("_").entries())
 				group.push(Requirement.fromString(req));
 			logic.groups.push(group);
