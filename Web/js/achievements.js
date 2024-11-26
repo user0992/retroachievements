@@ -151,6 +151,7 @@ class AchievementSet
 			.map((x) => Achievement.fromJSON(x));
 		achset.leaderboards = json.Leaderboards
 			.filter((x) => !x.Hidden)
+			.filter((x) => !x.Title.toUpperCase().includes('[VOID]'))
 			.map((x) => Leaderboard.fromJSON(x));
 		
 		return achset;
@@ -192,31 +193,26 @@ class AchievementSet
 		for (let i = 2; i < lines.length; i++)
 		{
 			const row = parseColons(lines[i]);
+			let asset;
 			switch (row[0][0])
 			{
 				case 'N': // TODO: this is a local code note
 					break;
 				case 'L': // leaderboard
-					achset.leaderboards.push(Leaderboard.fromLocal(row));
+					asset = Leaderboard.fromLocal(row);
+					if (!asset.title.toUpperCase().includes('[VOID]'))
+						achset.leaderboards.push(asset);
 					break;
 				default: // achievement
-					achset.achievements.push(Achievement.fromLocal(row));
+					asset = Achievement.fromLocal(row);
+					if (!asset.title.toUpperCase().includes('[VOID]'))
+						achset.achievements.push(asset);
 					break;
 			}
 		}
 		return achset;
 	}
 }
-
-const LABEL_RE = RegExp(
-	"([\\(\\[\\{])" + 
-	".*" +
-	"(\\d+ ?[x\\*\u00D7] ?)*" +
-	"(upper4|lower4|\\d+[\\- ]?(?:bit|byte)s?|float|double32|mbf32|bitflags?|bitfield|bitcount)(?: BE| LE)?" + 
-	"([x\\*\u00D7] ?\\d+ ?)*" + 
-	".*" +
-	"([\\)\\]\\}])", 
-"gi");
 
 class CodeNote
 {
@@ -237,12 +233,6 @@ class CodeNote
 	contains(addr)
 	{
 		return addr >= this.addr && addr < this.addr + this.size;
-	}
-
-	isArray()
-	{
-		if (this.type == null) return false;
-		return this.size != this.type.bytes;
 	}
 
 	// transliterated closely from CodeNoteModel::ExtractSize for maximum compatability

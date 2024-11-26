@@ -170,8 +170,18 @@ function make_logic_table(logic, assessment = [], grouplabel = (i) => i == 0 ? "
 	return logictbl;
 }
 
+function make_issue_list_entry(ii, issue)
+{
+	let text = `<sup>(#${ii+1})</sup> ${issue.type.desc}`;
+	for (const ref of issue.type.ref)
+		text += ` <sup>[<a href="${ref}">ref</a>]</sup>`;
+	if (issue.detail) text += "<br/>" + issue.detail;
+	return text;
+}
+
 function load_achievement(ach, row)
 {
+	let z;
 	let feedback = current.assessment.achievements.get(ach.id);
 	let feedback_targets = new Set(feedback.issues.map(x => x.target));
 
@@ -218,14 +228,13 @@ function load_achievement(ach, row)
 	let logicdiv = document.createElement('div');
 	logicdiv.classList.add('data-table');
 	logicdiv.appendChild(make_logic_table(ach.logic, feedback.issues));
+	elts.push(logicdiv);
 	
 	let btndiv = logicdiv.appendChild(document.createElement('div'));
 	btndiv.classList.add('float-right');
 	let btn = btndiv.appendChild(document.createElement('button'));
 	btn.appendChild(document.createTextNode('Copy Markdown'));
 	btn.onclick = () => copyToClipboard(ach.logic.toMarkdown());
-	
-	elts.push(logicdiv);
 	
 	let statsdiv = document.createElement('div');
 	statsdiv.classList.add('stats');
@@ -241,7 +250,7 @@ function load_achievement(ach, row)
 	statslist.appendChild(document.createElement('li'))
 		.appendChild(document.createTextNode(`Memory Length: ${ach.logic.mem.length}/65535`));
 	statslist.appendChild(document.createElement('li'))
-		.appendChild(document.createTextNode(`Group Count: ${stats.group_count} (1 Core + ${stats.alt_groups} Alt${stats.alt_groups == 1 ? '' : 's'})`));
+		.appendChild(document.createTextNode(`Group Count: ${stats.group_count} (1 Core + ${z = stats.alt_groups} Alt${z == 1 ? '' : 's'})`));
 
 	statslist.appendChild(document.createElement('li'))
 		.appendChild(document.createTextNode(`Requirement Count: ${stats.cond_count}`));
@@ -283,7 +292,7 @@ function load_achievement(ach, row)
 		.appendChild(document.createTextNode("Pauses and Resets"));
 	sublist = statslist.appendChild(document.createElement('ul'));
 	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `<code>PauseIf</code>s: ${stats.pause_ifs} (${stats.pause_locks} <span title="a PauseLock is a PauseIf with a hitcount">PauseLock${stats.pause_locks == 1 ? '' : 's'}</span>)`;
+		.innerHTML = `<code>PauseIf</code>s: ${stats.pause_ifs} (${z = stats.pause_locks} <span title="a PauseLock is a PauseIf with a hitcount">PauseLock${z == 1 ? '' : 's'}</span>)`;
 	sublist.appendChild(document.createElement('li'))
 		.innerHTML = `<code>ResetIf</code>s: ${stats.reset_ifs} (${stats.reset_with_hits} with hits)`;
 
@@ -293,15 +302,6 @@ function load_achievement(ach, row)
 
 	feedbackdiv.appendChild(document.createElement('h1'))
 		.appendChild(document.createTextNode('Feedback'));
-
-	function make_issue_list_entry(ii, issue)
-	{
-		let text = `<sup>(#${ii+1})</sup> ${issue.type.desc}`;
-		for (const ref of issue.type.ref)
-			text += ` <sup>[<a href="${ref}">ref</a>]</sup>`;
-		if (issue.detail) text += "<br/>" + issue.detail;
-		return text;
-	}
 
 	let cissues;
 	cissues = [...feedback.issues.entries()].filter(([i, x]) => ['title', 'desc'].includes(x.target));
@@ -359,7 +359,7 @@ function load_leaderboard(lb, row)
 	if (labels.length)
 	{
 		let labeldiv = infobox.appendChild(document.createElement('div'));
-		labeldiv.classList.add('ach-label');
+		labeldiv.classList.add('float-right');
 
 		let label = labeldiv.appendChild(document.createElement('em'));
 		label.appendChild(document.createTextNode(`[${labels.join(', ')}]`));
@@ -388,17 +388,148 @@ function load_leaderboard(lb, row)
 
 function load_overview(sidebar)
 {
-	if (current.set == null) return;
+	let z;
+	const achievements = all_achievements();
+	const leaderboards = all_leaderboards();
+	if (achievements.length == 0 && leaderboards.length == 0) return;
+	
+	const feedback = current.assessment.set;
+	const stats = feedback.stats;
 	let elts = [];
 
-	let badge = document.createElement('img');
-	badge.classList.add('icon');
-	badge.setAttribute('src', current.set.icon);
-	elts.push(badge);
+	let infobox = document.createElement('div');
+	infobox.classList.add('main-header');
+	elts.push(infobox);
 
-	let header = document.createElement('h1');
-	header.appendChild(document.createTextNode(current.set.title));
-	elts.push(header);
+	if (current.set)
+	{
+		let badge = infobox.appendChild(document.createElement('img'));
+		badge.classList.add('icon');
+		badge.setAttribute('src', current.set.icon);
+	}
+
+	infobox.appendChild(document.createElement('h1'))
+		.appendChild(document.createTextNode(get_game_title()));
+
+	let set_components = [];
+	if (achievements.length > 0)
+	{
+		let achinfo = `${achievements.length} achievement`;
+		if (achievements.length != 1) achinfo += 's';
+
+		// mixed achievement state
+		const achstates = [...feedback.stats.achievement_state.entries()].filter(([x, c]) => c > 0);
+		if (achstates.length > 1) achinfo += ` (${achstates.map(([x, c]) => `${c} ${x.name}`).join(', ')})`;
+		set_components.push(achinfo);
+	}
+
+	if (leaderboards.length > 0)
+		set_components.push(`${z = leaderboards.length} leaderboard${z == 1 ? '' : 's'}`);
+
+	infobox.appendChild(document.createElement('p'))
+		.innerHTML = `Set contains ${set_components.join(' and ')}`;
+
+	let statsdiv = document.createElement('div');
+	statsdiv.classList.add('stats');
+	elts.push(statsdiv);
+
+	let chartdiv, chartdata, COLORS;
+
+	chartdiv = statsdiv.appendChild(document.createElement('div'));
+
+	chartdiv.appendChild(document.createElement('h3')).innerText = 'Achievement Typing'
+	chartdiv.classList.add('chart', 'float-right');
+	chartdata = [...stats.achievement_type.entries()];
+	COLORS = { '': '#FBDD70', 'progression': '#8DD7E1', 'win_condition': '#A36FD4', 'missable': '#F28590', };
+	new Chart(
+		chartdiv.appendChild(document.createElement('canvas')),
+		{
+			type: 'doughnut',
+			data: {
+				labels: chartdata.map(([k,v]) => k ? k : '(none)'),
+				datasets: [
+					{
+						label: 'achievement count',
+						data: chartdata.map(([k,v]) => v.length),
+						backgroundColor: chartdata.map(([k,v]) => COLORS[k]),
+					}
+				]
+			},
+		}
+	);
+
+	statsdiv.appendChild(document.createElement('h1'))
+		.appendChild(document.createTextNode('Statistics'));
+
+	let statslist = statsdiv.appendChild(document.createElement('ul'));
+	let sublist;
+
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode("Achievements"));
+	sublist = statslist.appendChild(document.createElement('ul'));
+
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `${stats.achievement_count} achievements: ` + 
+		[...stats.achievement_type.entries()].map(([k,v]) => `${v.length} ${k ? k : 'standard'}`).join(', ');
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Total points: ${stats.total_points}`;
+	
+	let avg_feedback = '';
+	if (Math.round(stats.avg_points) <  5) avg_feedback = ' <strong>(low)</strong>';
+	if (Math.round(stats.avg_points) <  4) avg_feedback = ' <strong>(very low)</strong>';
+	if (Math.round(stats.avg_points) > 10) avg_feedback = ' <strong>(high)</strong>';
+	if (Math.round(stats.avg_points) > 15) avg_feedback = ' <strong>(very high)</strong>';
+
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<span title="~7 points per achievement is a good target">Average points</span>: ~${stats.avg_points.toFixed(1)}${avg_feedback}`;
+	
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode("Proficiencies"));
+	sublist = statslist.appendChild(document.createElement('ul'));
+
+	let vp = (x) => `${x.length} (${Math.round(100 * x.length / stats.achievement_count)}%)`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Flags used (${stats.all_flags.size}): ${[...stats.all_flags].map(x => `<code>${x.name}</code>`).join(', ')}`;
+	
+	let flagbreakdown = sublist.appendChild(document.createElement('ul'));
+	for (const k of stats.all_flags)
+		flagbreakdown.appendChild(document.createElement('li'))
+			.innerHTML = `<code>${k.name}</code> used in ${z = stats.using_flag.get(k)} achievement${z == 1 ? '' : 's'}`;
+
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Comparisons used (${stats.all_cmps.size}): ${[...stats.all_cmps].map(x => `<code>${x}</code>`).join(', ')}`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Sizes used (${stats.all_sizes.size}): ${[...stats.all_sizes].map(x => `<code>${x.name}</code>`).join(', ')}`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Achievements using <span title="Delta and Prior checks combined">Delta checks</span>: ${vp(stats.using_delta)}`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Achievements using Alt groups: ${stats.using_alt_groups.length}`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Achievements using hitcounts: ${stats.using_hitcounts.length}`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Achievements using <span title="requirements with a hitcount of 1">checkpoint hits</span>: ${stats.using_checkpoint_hits.length}`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Achievements using <span title="BitX and BitCount memory sizes">bit operations</span>: ${stats.using_bit_ops.length}`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Achievements using <span title="PauseIf with a hitcount">PauseLocks</span>: ${stats.using_pauselock.length} (${stats.using_pauselock_alt_reset.length} with Alt reset)`;
+	
+	let cissues = [...feedback.issues.entries()];
+	if (cissues.length > 0)
+	{
+		let feedbackdiv = document.createElement('div');
+		feedbackdiv.classList.add('feedback');
+		elts.push(feedbackdiv);
+
+		feedbackdiv.appendChild(document.createElement('h1'))
+			.appendChild(document.createTextNode('Feedback'));
+		
+		let ul = feedbackdiv.appendChild(document.createElement('ul'));
+		for (const [ii, issue] of cissues)
+		{
+			let li = ul.appendChild(document.createElement('li'));
+			li.innerHTML = make_issue_list_entry(ii, issue);
+		}
+	}
 
 	document.getElementById('info-container').replaceChildren(...elts);
 	document.getElementById('asset-info').scrollTop = 0;
@@ -424,7 +555,7 @@ function load_code_notes_overview(sidebar)
 		badge.setAttribute('src', current.set.icon);
 
 		header = infobox.appendChild(document.createElement('h1'));
-		header.appendChild(document.createTextNode(current.set.title));
+		header.appendChild(document.createTextNode(get_game_title()));
 	}
 
 	let authors = new Set(current.notes.map(x => x.author));
@@ -557,6 +688,13 @@ function select_row(row)
 	row.classList.add('selected');
 }
 
+function get_game_title()
+{
+	if (current.set  ) return current.set.title;
+	if (current.local) return current.local.title;
+	return null;
+}
+
 function all_achievements()
 {
 	let res = [];
@@ -612,7 +750,7 @@ function rebuild_sidebar()
 	assetList = [];
 	let post_load = null;
 
-	if (current.set != null)
+	if (current.set != null || current.local != null)
 	{
 		let overview_row = add_asset_row(current.assessment.set.pass() ? 'info' : 'fail', "🔍 Set Overview");
 		overview_row.onclick = function(){ load_overview(overview_row); };

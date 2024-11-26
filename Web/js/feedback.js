@@ -72,6 +72,8 @@ const Feedback = Object.freeze({
 		], },
 	ACHIEVEMENT_DIFFICULTY: { severity: FeedbackSeverity.INFO, desc: "A good spread of achievement difficulties is important.",
 		ref: ["https://docs.retroachievements.org/developer-docs/difficulty-scale-and-balance.html",], },
+	PROGRESSION_ONLY: { severity: FeedbackSeverity.WARN, desc: "Progression-only sets should be avoided. Consider adding custom challenge achievements to improve it.",
+		ref: ["https://retroachievements.org/game/5442",], },
 
 	// code notes
 	NOTE_EMPTY: { severity: FeedbackSeverity.WARN, desc: "Empty code note.",
@@ -177,7 +179,7 @@ function assess_logic(logic)
 	// set of unique flags, comparisons, and sizes used in the achievement
 	res.stats.unique_flags = new Set(logic.getFlags());
 	res.stats.unique_cmps = new Set(comparisons);
-	res.stats.unique_sizes = new Set(logic.getMemSizes().filter(x => x.bytes > 1));
+	res.stats.unique_sizes = new Set(logic.getMemSizes()).difference(BitProficiency);
 
 	// list of all chained requirements
 	let chains = [];
@@ -426,7 +428,7 @@ function assess_writing(asset)
 			let corrected = asset[elt].replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
 			res.add(new Issue(Feedback.SPECIAL_CHARS, elt,
 				'"Smart" quotes are great for typography, but often don\'t render correctly in emulators<br/>' +
-				build_indicated_feedback(asset[elt], TYPOGRAPHY_PUNCT) + ' &xrArr; ' + corrected));
+				build_indicated_feedback(asset[elt], TYPOGRAPHY_PUNCT) + ` &xrArr; <code>${corrected}</code>`));
 		}
 		else if (FOREIGN_RE.test(asset[elt]))
 			res.add(new Issue(Feedback.SPECIAL_CHARS, elt,
@@ -495,22 +497,21 @@ function assess_leaderboard(lb)
 function assess_set()
 {
 	let res = new Assessment();
-	let achievements = all_achievements();
-	let achfeedback = [...current.assessment.achievements.values()];
+	const achievements = all_achievements();
+	const achfeedback = [...current.assessment.achievements.values()];
 
 	// counts of achievement types
 	res.stats.achievement_count = achievements.length;
 	let achstate = res.stats.achievement_state = new Map(Object.values(AssetState).map(x => [x, 0]));
 	for (const ach of achievements) achstate.set(ach.state, achstate.get(ach.state) + 1);
-	
-	res.stats.ach_progression = achievements.filter(x => x.achtype == 'progression');
-	res.stats.ach_wincond = achievements.filter(x => x.achtype == 'win_condition');
-	res.stats.ach_missable = achievements.filter(x => x.achtype == 'missable');
+
+	let achtype = res.stats.achievement_type = new Map(['', 'progression', 'win_condition', 'missable'].map(x => [x, []]));
+	for (const ach of achievements) achtype.get(ach.achtype || '').push(ach);
 
 	// reflect an issue if achievement typing hasn't been added
-	if (res.stats.ach_wincond.length == 0 && res.stats.ach_progression.length == 0)
+	if (achtype.get('win_condition').length == 0 && achtype.get('progression').length == 0)
 		res.add(new Issue(Feedback.NO_TYPING, null));
-	else if (res.stats.ach_progression.length == 0)
+	else if (achtype.get('progression').length == 0)
 		res.add(new Issue(Feedback.NO_PROGRESSION, null));
 	
 	// points total and average
