@@ -164,11 +164,6 @@ img.icon
 	margin: 0 auto;
 }
 
-#info-container .ach-label
-{
-	float: right;
-}
-
 #info-container .ach-label em
 {
 	color: grey;
@@ -332,6 +327,11 @@ pre code
 {
 	padding: 10px;
 	display: block;
+}
+
+.float-right
+{
+	float: right;
 }
 
 .fade

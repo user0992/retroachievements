@@ -66,6 +66,18 @@ const MemSizeMap = Object.fromEntries(
 	Object.entries(MemSize).map(([k, v]) => [v.prefix, v])
 );
 
+const BitProficiency = new Set([
+	MemSize.BIT0,
+	MemSize.BIT1,
+	MemSize.BIT2,
+	MemSize.BIT3,
+	MemSize.BIT4,
+	MemSize.BIT5,
+	MemSize.BIT6,
+	MemSize.BIT7,
+	MemSize.BITCOUNT,
+]);
+
 const ValueWidth = 10;
 const ReqTypeWidth = Math.max(...Object.values(ReqType).map((x) => x.name.length));
 const ReqFlagWidth = Math.max(...Object.values(ReqFlag).map((x) => x.name.length));
@@ -115,15 +127,12 @@ class ReqOperand
 			return new ReqOperand('', ReqType.RECALL, null);
 	}
 
-	toString()
-	{
-		if (this.type == ReqType.RECALL) return this.type.prefix;
-		return this.type && this.type.addr ? ('0x' + this.value.toString(16)) : this.value.toString();
-	}
+	toValueString() { return this.type && this.type.addr ? ('0x' + this.value.toString(16)) : this.value.toString(); }
+	toString() { return this.type == ReqType.RECALL ? this.type.prefix : this.toValueString(); }
 
 	toMarkdown(wReqType = ReqTypeWidth, wMemSize = MemSizeWidth, wValue = ValueWidth)
 	{
-		let value = this.value || "";
+		let value = "" + (this.value == null ? "" : this.value);
 		let size = this.size ? this.size.name : "";
 		return this.type.name.padEnd(wReqType + 1, " ") +
 			size.padEnd(wMemSize + 1, " ") +
@@ -143,6 +152,12 @@ class Requirement
 	constructor()
 	{
 
+	}
+
+	isCmp()
+	{
+		if (!this.rhs) return false;
+		return new Set(['=', '!=', '>', '>=', '<', '<=']).has(this.op);
 	}
 
 	clone()
@@ -232,7 +247,7 @@ class Logic
 		let output = "";
 		let i = 0;
 
-		const wValue = Math.max(...this.getOperands().map((x) => x.value ? x.value.length : 0));
+		const wValue = Math.max(...this.getOperands().map((x) => x.toValueString().length));
 		const wReqType = Math.max(...this.getTypes().map((x) => x.name.length));
 		const wMemSize = Math.max(...this.getMemSizes().map((x) => x.name.length));
 

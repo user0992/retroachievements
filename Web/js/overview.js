@@ -79,6 +79,15 @@ function get_note(v)
 	return note_text;
 }
 
+async function copyToClipboard(text)
+{
+	try {
+		await navigator.clipboard.writeText(text);
+	} catch (error) {
+		console.error(error.message);
+	}
+}
+
 function make_logic_table(logic, assessment = [], grouplabel = (i) => i == 0 ? "Core Group" : `Alt Group ${i}`)
 {
 	let logictbl = document.createElement('table');
@@ -193,7 +202,7 @@ function load_achievement(ach, row)
 	if (labels.length)
 	{
 		let labeldiv = infobox.appendChild(document.createElement('div'));
-		labeldiv.classList.add('ach-label');
+		labeldiv.classList.add('float-right');
 
 		let label = labeldiv.appendChild(document.createElement('em'));
 		label.appendChild(document.createTextNode(`[${labels.join(', ')}]`));
@@ -209,8 +218,15 @@ function load_achievement(ach, row)
 	let logicdiv = document.createElement('div');
 	logicdiv.classList.add('data-table');
 	logicdiv.appendChild(make_logic_table(ach.logic, feedback.issues));
+	
+	let btndiv = logicdiv.appendChild(document.createElement('div'));
+	btndiv.classList.add('float-right');
+	let btn = btndiv.appendChild(document.createElement('button'));
+	btn.appendChild(document.createTextNode('Copy Markdown'));
+	btn.onclick = () => copyToClipboard(ach.logic.toMarkdown());
+	
 	elts.push(logicdiv);
-
+	
 	let statsdiv = document.createElement('div');
 	statsdiv.classList.add('stats');
 	elts.push(statsdiv);
@@ -243,6 +259,8 @@ function load_achievement(ach, row)
 		.appendChild(document.createTextNode("Logic Features"));
 	sublist = statslist.appendChild(document.createElement('ul'));
 	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<code>Delta</code>s: ${stats.deltas} / <code>Prior</code>s: ${stats.priors} ${stats.deltas + stats.priors == 0 ? '⚠️': ''}`;
+	sublist.appendChild(document.createElement('li'))
 		.innerHTML = `Unique Flags: (${stats.unique_flags.size}) ` + 
 		[...stats.unique_flags].map(x => `<code>${x.name}</code>`).join(', ');
 	sublist.appendChild(document.createElement('li'))
@@ -252,7 +270,8 @@ function load_achievement(ach, row)
 		.innerHTML = `Unique Comparisons: (${stats.unique_cmps.size}) ` +
 		[...stats.unique_cmps].map(x => `<code>${x}</code>`).join(', ');
 	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `<code>Delta</code>s: ${stats.deltas} / <code>Prior</code>s: ${stats.priors} ${stats.deltas + stats.priors == 0 ? '⚠️': ''}`;
+		.innerHTML = `Source Modifications: ` +
+		[...stats.source_modification.entries()].filter(([op, c]) => c > 0).map(([op, c]) => `<code>${op}</code> (${c})`).join(', ');
 
 	statslist.appendChild(document.createElement('li'))
 		.appendChild(document.createTextNode(`Requirements with hitcounts: ${stats.hit_counts_one + stats.hit_counts_many}`));
@@ -581,9 +600,8 @@ function load_user_file(txt)
 function load_code_notes(json)
 {
 	current.notes = [];
-	for (const obj of json)
-		if (obj.Note)
-			current.notes.push(new CodeNote(obj.Address, obj.Note, obj.User));
+	for (const obj of json) if (obj.Note)
+		current.notes.push(new CodeNote(obj.Address, obj.Note, obj.User));
 	update_assessment();
 	rebuild_sidebar();
 }
@@ -596,7 +614,7 @@ function rebuild_sidebar()
 
 	if (current.set != null)
 	{
-		let overview_row = add_asset_row('info', "🔍 Set Overview");
+		let overview_row = add_asset_row(current.assessment.set.pass() ? 'info' : 'fail', "🔍 Set Overview");
 		overview_row.onclick = function(){ load_overview(overview_row); };
 		if (!post_load) post_load = overview_row.onclick;
 		assetList.push(overview_row);
@@ -604,7 +622,7 @@ function rebuild_sidebar()
 
 	if (current.notes.length > 0)
 	{
-		let code_notes_row = add_asset_row('info', "📝 Code Notes");
+		let code_notes_row = add_asset_row(current.assessment.notes.pass() ? 'info' : 'fail', "📝 Code Notes");
 		code_notes_row.onclick = function(){ load_code_notes_overview(code_notes_row); };
 		if (!post_load) post_load = code_notes_row.onclick;
 		assetList.push(code_notes_row);

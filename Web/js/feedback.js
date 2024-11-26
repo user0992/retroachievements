@@ -111,6 +111,13 @@ const Feedback = Object.freeze({
 		ref: ['https://docs.retroachievements.org/developer-docs/flags/pauseif.html',], },
 	RESET_HITCOUNT_1: { severity: FeedbackSeverity.WARN, desc: "A ResetIf or ResetNextIf with a hitcount of 1 does not require a hitcount. The hitcount can be safely removed.",
 		ref: ['https://docs.retroachievements.org/developer-docs/flags/resetif.html',], },
+	USELESS_ADDSUB: { severity: FeedbackSeverity.WARN, desc: "Using AddSource and SubSource is better supported in old emulators, and should be preferred where possible.",
+		ref: [
+			'https://docs.retroachievements.org/developer-docs/flags/addsource.html',
+			'https://docs.retroachievements.org/developer-docs/flags/subsource.html',
+		], },
+	UNSATISFIABLE: { severity: FeedbackSeverity.ERROR, desc: "Requirement can never be satisfied. If this is intentional, writing it explicitly is preferred (Val 0 = Val 1, for instance).",
+		ref: [], },
 });
 
 class Issue
@@ -273,6 +280,10 @@ function assess_logic(logic)
 	res.stats.oca = res.stats.virtual_addresses.size <= 1 || comparisons.length <= 1;
 	if (res.stats.oca) res.add(new Issue(Feedback.ONE_CONDITION, null));
 
+	// check for Mem>Del Counter
+	res.stats.mem_del = flat.filter(x => x.hits > 0 && x.isCmp() && x.op != '=' && x.lhs.value == x.rhs.value &&
+		[x.lhs.type, x.rhs.type].includes(ReqType.MEM) && [x.lhs.type, x.rhs.type].includes(ReqType.DELTA)).length;
+
 	let groups_with_reset = new Set();
 	for (const [gi, g] of logic.groups.entries())
 		for (const [ri, req] of g.entries())
@@ -286,10 +297,11 @@ function assess_logic(logic)
 		ReqFlag.ANDNEXT,
 		ReqFlag.ORNEXT,
 	]);
+
+	res.stats.pause_lock_alt_reset = 0;
 	for (const [gi, g] of logic.groups.entries())
 		for (const [ri, req] of g.entries())
 		{
-			// this is a pauselock
 			if (req.hits > 0)
 			{
 				let foundrni = false;
@@ -299,10 +311,16 @@ function assess_logic(logic)
 					if (!COMBINING_MODIFIER_FLAGS.has(g[i].flag)) break;
 				}
 
+				// this is a pauselock
 				if (req.flag == ReqFlag.PAUSEIF)
 				{
-					if (!foundrni && groups_with_reset.difference(new Set([gi])).size == 0)
-						res.add(new Issue(Feedback.PAUSELOCK_NO_RESET, req));
+					if (!foundrni)
+					{
+						if (groups_with_reset.difference(new Set([gi])).size == 0)
+							res.add(new Issue(Feedback.PAUSELOCK_NO_RESET, req));
+						else
+							res.stats.pauselock_alt_reset += 1;
+					}
 				}
 				else if (req.flag != ReqFlag.RESETIF)
 				{
@@ -311,6 +329,9 @@ function assess_logic(logic)
 				}
 			}
 		}
+
+	let smod = res.stats.source_modification = new Map(['*', '/', '&', '^', '%', '+', '-'].map(x => [x, 0]));
+	for (let req of flat) if (smod.has(req.op)) smod.set(req.op, smod.get(req.op) + 1);
 	
 	let has_hits = flat.reduce((a, e) => a + e.hits, 0) > 0;
 	for (const [gi, g] of logic.groups.entries())
@@ -475,15 +496,48 @@ function assess_set()
 {
 	let res = new Assessment();
 	let achievements = all_achievements();
+	let achfeedback = [...current.assessment.achievements.values()];
 
-	res.stats.count_progression = achievements.filter(x => x.achtype == 'progression').length;
-	res.stats.count_wincond = achievements.filter(x => x.achtype == 'win_condition').length;
-	res.stats.count_missable = achievements.filter(x => x.achtype == 'missable').length;
+	// counts of achievement types
+	res.stats.achievement_count = achievements.length;
+	let achstate = res.stats.achievement_state = new Map(Object.values(AssetState).map(x => [x, 0]));
+	for (const ach of achievements) achstate.set(ach.state, achstate.get(ach.state) + 1);
+	
+	res.stats.ach_progression = achievements.filter(x => x.achtype == 'progression');
+	res.stats.ach_wincond = achievements.filter(x => x.achtype == 'win_condition');
+	res.stats.ach_missable = achievements.filter(x => x.achtype == 'missable');
 
-	if (res.stats.count_wincond == 0 && res.stats.count_progression == 0)
+	// reflect an issue if achievement typing hasn't been added
+	if (res.stats.ach_wincond.length == 0 && res.stats.ach_progression.length == 0)
 		res.add(new Issue(Feedback.NO_TYPING, null));
-	else if (res.stats.count_progression == 0)
+	else if (res.stats.ach_progression.length == 0)
 		res.add(new Issue(Feedback.NO_PROGRESSION, null));
+	
+	// points total and average
+	res.stats.total_points = achievements.reduce((a, e) => a + e.points, 0);
+	res.stats.avg_points = res.stats.total_points / res.stats.achievement_count;
+
+	// all components used across all achievements
+	res.stats.all_flags = achfeedback.reduce((a, e) => a.union(e.stats.unique_flags), new Set());
+	res.stats.all_cmps = achfeedback.reduce((a, e) => a.union(e.stats.unique_cmps), new Set());
+	res.stats.all_sizes = achfeedback.reduce((a, e) => a.union(e.stats.unique_sizes), new Set());
+
+	// number of achievements using bit operations, such as BitX and BitCount
+	res.stats.using_bit_ops = achievements.filter(x => new Set(x.logic.getMemSizes()).intersection(BitProficiency).size > 0);
+
+	// number of achievements using each feature
+	res.stats.using_alt_groups = achievements.filter(x => current.assessment.achievements.get(x.id).stats.alt_groups > 0);
+	res.stats.using_delta = achievements.filter(x => { const s = current.assessment.achievements.get(x.id).stats; return s.deltas + s.priors > 0; });
+	res.stats.using_hitcounts = achievements.filter(x => current.assessment.achievements.get(x.id).stats.hit_counts_many > 0);
+	res.stats.using_checkpoint_hits = achievements.filter(x => current.assessment.achievements.get(x.id).stats.hit_counts_one > 0);
+	res.stats.using_pauselock = achievements.filter(x => current.assessment.achievements.get(x.id).stats.pause_locks > 0);
+	res.stats.using_pauselock_alt_reset = achievements.filter(x => current.assessment.achievements.get(x.id).stats.pause_lock_alt_reset > 0);
+
+	// count of achievements using each flag type
+	res.stats.using_flag = new Map(Object.values(ReqFlag).map(x => [x, 0]));
+	for (const ach of achievements)
+		for (const flag of current.assessment.achievements.get(ach.id).stats.unique_flags)
+			res.stats.using_flag.set(flag, res.stats.using_flag.get(flag) + 1);
 
 	return res;
 }
