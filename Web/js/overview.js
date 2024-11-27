@@ -60,6 +60,33 @@ document.ondrop = function(event)
 	}
 }
 
+document.onkeydown = function(event)
+{
+	let handled = true;
+	let crow = document.querySelector('.asset-row.selected');
+	switch (event.key)
+	{
+		case "Up":
+		case "ArrowUp":
+			for (let n = crow.previousSibling; n; n = n.previousSibling)
+				if (n.classList.contains('asset-row')) { n.click(); break; }
+			break;
+		case "Down":
+		case "ArrowDown":
+			for (let n = crow.nextSibling; n; n = n.nextSibling)
+				if (n.classList.contains('asset-row')) { n.click(); break; }
+			break;
+		default:
+			handled = false;
+	}
+
+	if (handled)
+	{
+		event.preventDefault();
+		event.stopPropagation();
+	}
+}
+
 function get_note(v)
 {
 	let addr = +v, note = null;
@@ -670,7 +697,7 @@ function load_code_notes_overview(sidebar)
 function add_asset_row(type, asset_name, callback = null)
 {
 	let tr = document.createElement('tr');
-	tr.classList.add(type)
+	tr.classList.add('asset-row', type);
 
 	let td_asset_name = document.createElement('td');
 	td_asset_name.classList.add('asset-name');
