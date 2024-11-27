@@ -63,7 +63,7 @@ const Feedback = Object.freeze({
 		], },
 
 	// set design errors
-	NO_PROGRESSION: { severity: FeedbackSeverity.INFO, desc: "Set lacks progression typing. This might be unavoidable, depending on the game, but progression achievements should be added when possible.",
+	NO_PROGRESSION: { severity: FeedbackSeverity.INFO, desc: "Set lacks progression achievements (win conditions found). This might be unavoidable, depending on the game, but progression achievements should be added when possible.",
 		ref: ["https://docs.retroachievements.org/guidelines/content/progression-and-win-condition-guidelines.html#progression-conditions",], },
 	NO_TYPING: { severity: FeedbackSeverity.WARN, desc: "Set lacks progression and win condition typing.",
 		ref: [
