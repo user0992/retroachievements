@@ -337,6 +337,8 @@ function assess_logic(logic)
 	
 	let has_hits = flat.reduce((a, e) => a + e.hits, 0) > 0;
 	for (const [gi, g] of logic.groups.entries())
+	{
+		let group_flags = new Set(g.map(x => x.flag));
 		for (const [ri, req] of g.entries())
 		{
 			function invert_chain()
@@ -363,7 +365,7 @@ function assess_logic(logic)
 				return res;
 			}
 
-			if (req.flag == ReqFlag.PAUSEIF && !has_hits)
+			if (req.flag == ReqFlag.PAUSEIF && !has_hits && !group_flags.has(ReqFlag.MEASURED) && !group_flags.has(ReqFlag.MEASUREDP))
 				res.add(new Issue(Feedback.UUO_PAUSE, req,
 					`Automated recommended change:<br/><pre><code>${invert_chain()}</code></pre>`));
 			else if (req.flag == ReqFlag.RESETIF && !has_hits)
@@ -388,7 +390,7 @@ function assess_logic(logic)
 				}
 			}
 		}
-
+	}
 	return res;
 }
 

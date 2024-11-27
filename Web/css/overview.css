@@ -200,6 +200,11 @@ img.icon
 	padding: 5px 15px;
 }
 
+#info-container .data-table table tbody tr.hidden
+{
+	display: none;
+}
+
 #info-container .data-table table tbody tr:nth-child(odd)
 {
 	background-color: #E8E8E8;
