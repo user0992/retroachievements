@@ -11,7 +11,7 @@ const TITLE_CASE_MINORS = new Set([
 function tc_minor(word) { return TITLE_CASE_MINORS.has(word); }
 function make_title_case(phrase)
 {
-	function tc(s) { return s.charAt(0).toUpperCase() + s.substring(1).toLowerCase(); }
+	function tc(s) { return s.charAt(0).toUpperCase() + s.substring(1); }
 	return phrase.replace(/[\w'\u2019]+/g, function(x, i)
 	{
 		if (x == x.toUpperCase()) return x; // assume allcaps for a reason
