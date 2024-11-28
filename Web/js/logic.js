@@ -37,6 +37,9 @@ const MemSize = Object.freeze({
 	WORD_BE:  { name: "16-bit BE",    prefix: "0xI", bytes: 2, },
 	TBYTE_BE: { name: "24-bit BE",    prefix: "0xJ", bytes: 3, },
 	DWORD_BE: { name: "32-bit BE",    prefix: "0xG", bytes: 4, },
+	
+	LOWER4:   { name: "Lower4",       prefix: "0xL", bytes: 1, },
+	UPPER4:   { name: "Upper4",       prefix: "0xU", bytes: 1, },
 
 	FLOAT:    { name: "Float",        prefix: "fF", bytes: 4, },
 	FLOAT_BE: { name: "Float BE",     prefix: "fB", bytes: 4, },

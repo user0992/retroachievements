@@ -277,6 +277,14 @@ class CodeNote
 					wordIsSize = true;
 					foundSize = true;
 				}
+				// deviation from ExtractSize() - identify lower4/upper4 as 8-bit
+				else if (num == 4 && ['lower', 'upper'].includes(prevWord))
+				{
+					bytes = 1;
+					memSize = MemSize.BYTE;
+					wordIsSize = true;
+					foundSize = true;
+				}
 			}
 			else if (prevWordIsSize)
 			{
@@ -506,6 +514,11 @@ function testCodeNotes()
 
 	_testNote("100 32-bit pointers [400 bytes]", 400, null);
 	_testNote("[400 bytes] 100 32-bit pointers", 400, null);
+
+	_testNote("[lower4] score digit 1", 1, MemSize.BYTE);
+	_testNote("[upper4] score digit 2", 1, MemSize.BYTE);
+	_testNote("lower 4-byte value", 1, MemSize.BYTE);
+	_testNote("lower (4-byte) value", 4, MemSize.DWORD);
 
 	console.log(fails + "/" + count + " failed")
 }
