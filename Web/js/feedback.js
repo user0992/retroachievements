@@ -61,6 +61,8 @@ const Feedback = Object.freeze({
 			"https://docs.retroachievements.org/guidelines/content/naming-conventions.html",
 			"https://docs.retroachievements.org/developer-docs/tips-and-tricks.html#naming-convention-tips",
 		], },
+	FOREIGN_CHARS: { severity: FeedbackSeverity.INFO, desc: `Achievement titles and descriptions should be written in English and should avoid special characters. For policy exceptions regarding the use of foreign language, ${send_message_to("QATeam")}`,
+		ref: ["https://docs.retroachievements.org/guidelines/content/writing-policy.html#language",], },
 
 	// set design errors
 	NO_PROGRESSION: { severity: FeedbackSeverity.INFO, desc: "Set lacks progression achievements (win conditions found). This might be unavoidable, depending on the game, but progression achievements should be added when possible.",
@@ -111,6 +113,8 @@ const Feedback = Object.freeze({
 		ref: ['https://docs.retroachievements.org/developer-docs/flags/resetnextif.html',], },
 	UUO_PAUSE: { severity: FeedbackSeverity.WARN, desc: "PauseIf should only be used with requirements that have hitcounts.",
 		ref: ['https://docs.retroachievements.org/developer-docs/flags/pauseif.html',], },
+	PAUSING_MEASURED: { severity: FeedbackSeverity.INFO, desc: "PauseIf should only be used with requirements that have hitcounts, unless being used to freeze updates to a Measured requirement.",
+		ref: ['https://docs.retroachievements.org/developer-docs/flags/measured.html#measured',], },
 	RESET_HITCOUNT_1: { severity: FeedbackSeverity.WARN, desc: "A ResetIf or ResetNextIf with a hitcount of 1 does not require a hitcount. The hitcount can be safely removed.",
 		ref: ['https://docs.retroachievements.org/developer-docs/flags/resetif.html',], },
 	USELESS_ADDSUB: { severity: FeedbackSeverity.WARN, desc: "Using AddSource and SubSource is better supported in old emulators, and should be preferred where possible.",
@@ -365,9 +369,15 @@ function assess_logic(logic)
 				return res;
 			}
 
-			if (req.flag == ReqFlag.PAUSEIF && !has_hits && !group_flags.has(ReqFlag.MEASURED) && !group_flags.has(ReqFlag.MEASUREDP))
-				res.add(new Issue(Feedback.UUO_PAUSE, req,
-					`Automated recommended change:<br/><pre><code>${invert_chain()}</code></pre>`));
+			if (req.flag == ReqFlag.PAUSEIF && !has_hits)
+			{
+				// if the group has a Measured flag, give a slightly different warning
+				if (group_flags.has(ReqFlag.MEASURED) || group_flags.has(ReqFlag.MEASUREDP))
+					res.add(new Issue(Feedback.PAUSING_MEASURED, req));
+				else
+					res.add(new Issue(Feedback.UUO_PAUSE, req,
+						`Automated recommended change:<br/><pre><code>${invert_chain()}</code></pre>`));
+			}
 			else if (req.flag == ReqFlag.RESETIF && !has_hits)
 				res.add(new Issue(Feedback.UUO_RESET, req,
 					`Automated recommended change:<br/><pre><code>${invert_chain()}</code></pre>`));
@@ -415,9 +425,6 @@ function assess_writing(asset)
 	if (asset.title.endsWith('.') && !asset.title.endsWith('..'))
 		res.add(new Issue(Feedback.TITLE_PUNCTUATION, 'title'));
 
-	// send a message to QATeam for foreign language exceptions
-	let language_exceptions = `For policy exceptions regarding the use of foreign language, ${send_message_to("QATeam")}`;
-
 	function build_indicated_feedback(text, re)
 	{ return '<em>' + text.replace(re, x => `<span class="warn">${x}</span>`) + '</em>'; }
 
@@ -433,8 +440,8 @@ function assess_writing(asset)
 				build_indicated_feedback(asset[elt], TYPOGRAPHY_PUNCT) + ` &xrArr; <code>${corrected}</code>`));
 		}
 		else if (FOREIGN_RE.test(asset[elt]))
-			res.add(new Issue(Feedback.SPECIAL_CHARS, elt,
-				build_indicated_feedback(asset[elt], FOREIGN_RE) + '<br/>' + language_exceptions));
+			res.add(new Issue(Feedback.FOREIGN_CHARS, elt,
+				build_indicated_feedback(asset[elt], FOREIGN_RE)));
 		else if (NON_ASCII_RE.test(asset[elt]))
 			res.add(new Issue(Feedback.SPECIAL_CHARS, elt,
 				build_indicated_feedback(asset[elt], NON_ASCII_RE)));
