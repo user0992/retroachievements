@@ -4,6 +4,7 @@ function reset_loaded()
 	current.set = null;
 	current.local = null;
 	current.notes = [];
+	current.rp = null;
 	current.assessment = { pass: true, };
 }
 var assetList = [];
@@ -46,9 +47,8 @@ document.ondrop = function(event)
 		else if (file.name.endsWith('-Rich.txt'))
 			reader.onload = function(event)
 			{
-				// would prefer to get the Rich Presence from the RichPresencePatch in the json!
 				let data = event.target.result;
-				// load_rich_presence(data);
+				load_rich_presence(data, true);
 			};
 		else if (file.name.endsWith('-User.txt'))
 			reader.onload = function(event)
@@ -750,6 +750,8 @@ function update_assessment()
 function load_achievement_set(json)
 {
 	current.set = AchievementSet.fromJSON(json);
+	if ('RichPresencePatch' in json)
+		load_rich_presence(json.RichPresencePatch, false);
 	update_assessment();
 	rebuild_sidebar();
 }
@@ -767,6 +769,14 @@ function load_code_notes(json)
 	current.notes = [];
 	for (const obj of json) if (obj.Note)
 		current.notes.push(new CodeNote(obj.Address, obj.Note, obj.User));
+	update_assessment();
+	rebuild_sidebar();
+}
+
+function load_rich_presence(txt, from_file)
+{
+	if (!current.rp || from_file)
+		current.rp = RichPresence.fromText(txt);
 	update_assessment();
 	rebuild_sidebar();
 }

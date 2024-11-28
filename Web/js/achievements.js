@@ -522,3 +522,16 @@ function testCodeNotes()
 
 	console.log(fails + "/" + count + " failed")
 }
+
+class RichPresence
+{
+	macros = {};
+	lookups = {};
+	display = [];
+	constructor() {  }
+
+	static fromText(txt)
+	{
+
+	}
+}
