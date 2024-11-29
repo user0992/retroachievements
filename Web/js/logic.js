@@ -59,6 +59,29 @@ const MemSize = Object.freeze({
 	BITCOUNT: { name: "BitCount",     prefix: "0xK", bytes: 1, },
 });
 
+const FormatType = Object.freeze({
+	SCORE:         { name: "Score", type: "SCORE", category: "value", },
+	FRAMES:        { name: "Frames", type: "FRAMES", category: "time", },
+	MILLISECS:     { name: "Centiseconds", type: "MILLISECS", category: "time", },
+	SECS:          { name: "Seconds", type: "SECS", category: "time", },
+	MINUTES:       { name: "Minutes", type: "MINUTES", category: "time", },
+	SECS_AS_MINS:  { name: "Seconds", type: "SECS_AS_MINS", category: "time", },
+	VALUE:         { name: "Value", type: "VALUE", category: "value", },
+	UNSIGNED:      { name: "Unsigned", type: "UNSIGNED", category: "value", },
+	TENS:          { name: "Value &times; 10", type: "TENS", category: "value", },
+	HUNDREDS:      { name: "Value &times; 100", type: "HUNDREDS", category: "value", },
+	THOUSANDS:     { name: "Value &times; 1000", type: "THOUSANDS", category: "value", },
+	FIXED1:        { name: "Fixed1", type: "FIXED1", category: "value", },
+	FIXED2:        { name: "Fixed2", type: "FIXED2", category: "value", },
+	FIXED3:        { name: "Fixed3", type: "FIXED3", category: "value", },
+	FLOAT1:        { name: "Float1", type: "FLOAT1", category: "value", },
+	FLOAT2:        { name: "Float2", type: "FLOAT2", category: "value", },
+	FLOAT3:        { name: "Float3", type: "FLOAT3", category: "value", },
+	FLOAT4:        { name: "Float4", type: "FLOAT4", category: "value", },
+	FLOAT5:        { name: "Float5", type: "FLOAT5", category: "value", },
+	FLOAT6:        { name: "Float6", type: "FLOAT6", category: "value", },
+});
+
 const ReqTypeMap = Object.fromEntries(
 	Object.entries(ReqType).map(([k, v]) => [v.prefix, v])
 );
@@ -67,6 +90,9 @@ const ReqFlagMap = Object.fromEntries(
 );
 const MemSizeMap = Object.fromEntries(
 	Object.entries(MemSize).map(([k, v]) => [v.prefix, v])
+);
+const FormatTypeMap = Object.fromEntries(
+	Object.entries(FormatType).map(([k, v]) => [v.type, v])
 );
 
 const BitProficiency = new Set([
@@ -86,7 +112,7 @@ const ReqTypeWidth = Math.max(...Object.values(ReqType).map((x) => x.name.length
 const ReqFlagWidth = Math.max(...Object.values(ReqFlag).map((x) => x.name.length));
 const MemSizeWidth = Math.max(...Object.values(MemSize).map((x) => x.name.length));
 
-const OPERAND_RE = RegExp(/^(([~a-z]?)(0x[G-Z ]?|f[A-Z])([0-9A-F]{2,8}))|(([fv]?)(\d+(?:.\d+)?))|([G-Z ]?([0-9A-F]+))|({recall})$/i);
+const OPERAND_RE = /^(([~a-z]?)(0x[G-Z ]?|f[A-Z])([0-9A-F]{2,8}))|(([fv]?)(-?\d+(?:.\d+)?))|([G-Z ]?([0-9A-F]+))|({recall})$/i;
 class ReqOperand
 {
 	type;
@@ -144,7 +170,10 @@ class ReqOperand
 	toObject() { return {...this}; }
 }
 
-const REQ_RE = RegExp("^([A-Z]:)?(.+?)(?:([!<>=+\\-*/&\\^%]{1,2})(.+?))?(?:\\.(\\d+)\\.)?$");
+// original regex failed on "v-1"
+// const REQ_RE = /^([A-Z]:)?(.+?)(?:([!<>=+\-*/&\^%]{1,2})(.+?))?(?:\.(\d+)\.)?$/;
+const OPERAND_PARSING = "[~a-z]?(?:0x[G-Z ]?|f[A-Z])[0-9A-F]{2,8}|[fv]?-?\\d+(?:.\\d+)?|[G-Z ]?[0-9A-F]+|{recall}";
+const REQ_RE = new RegExp(`^([A-Z]:)?(${OPERAND_PARSING})(?:([!<>=+\\-*/&\\^%]{1,2})(${OPERAND_PARSING}))?(?:\\.(\\d+)\\.)?$`, "i");
 class Requirement
 {
 	lhs;

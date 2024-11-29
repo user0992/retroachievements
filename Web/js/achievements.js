@@ -525,13 +525,90 @@ function testCodeNotes()
 
 class RichPresence
 {
-	macros = {};
-	lookups = {};
+	macros = {
+		// built-in macros
+		'Number': FormatType.VALUE,
+		'Unsigned': FormatType.UNSIGNED,
+		'Score': FormatType.SCORE,
+		'Centiseconds': FormatType.MILLISECS,
+		'Seconds': FormatType.SECS,
+		'Minutes': FormatType.MINUTES,
+		'Fixed1': FormatType.FIXED1,
+		'Fixed2': FormatType.FIXED2,
+		'Fixed3': FormatType.FIXED3,
+		'Float1': FormatType.FLOAT1,
+		'Float2': FormatType.FLOAT2,
+		'Float3': FormatType.FLOAT3,
+		'Float4': FormatType.FLOAT4,
+		'Float5': FormatType.FLOAT5,
+		'Float6': FormatType.FLOAT6,
+		'ASCIIChar': null,
+		'UnicodeChar': null,
+	};
+	custom_macros = new Set();
+	lookups = new Map();
 	display = [];
 	constructor() {  }
 
 	static fromText(txt)
 	{
+		let richp = new RichPresence();
 
+		let obj = null;
+		function structCleanup(next)
+		{
+			if (obj && obj.type == 'display')
+				return;
+			else if (obj && obj.type == 'macro')
+			{
+				richp.custom_macros.add(obj.name);
+				richp.macros[obj.name] = obj.param;
+			}
+			else if (obj && obj.type == 'lookup')
+				richp.lookups.set(obj.name, obj.param);
+			obj = next;
+		}
+		
+		const lines = txt.match(/[^\r\n]+/g);
+		for (let line of lines)
+		{
+			line = line.split('//', 1)[0].trim();
+
+			if (line.length == 0) continue; // blank lines skipped
+			else if (obj && obj.type == 'display')
+			{ // display must be last, so no need to parse other line starts
+				if (line.startsWith('?'))
+				{
+					let parts = line.split('?');
+					richp.display.push({
+						condition: Logic.fromString(parts[1]),
+						string: parts[2],
+						lookups: [...parts[2].matchAll(/@([a-z]+)\((.+?)\)/gi).map((x) => ({
+							name: x[1],
+							calc: Logic.fromString(x[2]),
+						}))],
+					});
+				}
+				else richp.display.push([null, line]);
+			}
+			else if (line.startsWith('Format:'))
+				structCleanup({ type: 'macro', name: line.substring(7), param: null, });
+			else if (line.startsWith('Lookup:'))
+				structCleanup({ type: 'lookup', name: line.substring(7), param: new Map(), });
+			else if (line.startsWith('Display:'))
+				structCleanup({ type: 'display', });
+			else if (obj && obj.type == 'macro')
+			{
+				if (line.startsWith('FormatType='))
+					obj.param = FormatTypeMap[line.substring(11)];
+			}
+			else if (obj && obj.type == 'lookup')
+			{
+				let parts = line.split('=');
+				for (const inp of parts[0].split(','))
+					obj.param.set(inp == '*' ? '*' : +inp, parts[1]);
+			}
+		}
+		return richp;
 	}
 }
