@@ -84,6 +84,14 @@ const Feedback = Object.freeze({
 		ref: ["https://docs.retroachievements.org/guidelines/content/code-notes.html#specifying-memory-addresses-size",], },
 	NOTE_ENUM_HEX: { severity: FeedbackSeverity.WARN, desc: "Enumerated hex values in code notes must be prefixed with \"0x\".",
 		ref: ["https://docs.retroachievements.org/guidelines/content/code-notes.html#adding-values-and-labels",], },
+
+	// rich presence
+	NO_DYNAMIC_RP: { severity: FeedbackSeverity.WARN, desc: "Dynamic rich presence is required for all sets.",
+		ref: ['https://docs.retroachievements.org/developer-docs/rich-presence.html#introduction',], },
+	NO_CONDITIONAL_DISPLAY: { severity: FeedbackSeverity.INFO, desc: "Good rich presence usually requires conditional displays.",
+		ref: ['https://docs.retroachievements.org/developer-docs/rich-presence.html#conditional-display-strings',], },
+	MISSING_NOTE_RP: { severity: FeedbackSeverity.WARN, desc: "All addresses used in rich presence require a code note.",
+		ref: [], },
 		
 	// code errors
 	BAD_CHAIN: { severity: FeedbackSeverity.ERROR, desc: "The last requirement of a group cannot have a chaining flag.",
@@ -159,6 +167,30 @@ class Assessment
 
 function send_message_to(target)
 { return `<a href="https://retroachievements.org/messages/create?to=${target}">message ${target}</a>`; }
+
+function* missing_notes(logic)
+{
+	function _is_missing(operand)
+	{
+		if (!operand || !operand.type.addr) return false;
+		let addr = parseInt(operand.value, 16);
+		for (const cn of current.notes || [])
+			if (cn.contains(addr)) return false;
+		return true;
+	}
+	
+	for (const [gi, g] of logic.groups.entries())
+	{
+		let prev_addaddress = false;
+		for (const [ri, req] of g.entries())
+		{
+			for (const operand of [req.lhs, req.rhs])
+				if (!prev_addaddress && _is_missing(operand))
+					yield { addr: operand.value, req: req, };
+			prev_addaddress = req.flag == ReqFlag.ADDADDRESS;
+		}
+	}
+}
 
 function assess_logic(logic)
 {
@@ -236,31 +268,13 @@ function assess_logic(logic)
 			}
 		}
 	}
-
-	function missing_note(operand)
-	{
-		if (!operand || !operand.type.addr) return false;
-		let addr = parseInt(operand.value, 16);
-		for (const cn of current.notes || [])
-			if (cn.contains(addr)) return false;
-		return true;
-	}
 	
 	// skip this if notes aren't loaded
 	if (current.notes.length)
 	{
-		for (const [gi, g] of logic.groups.entries())
-		{
-			let prev_addaddress = false;
-			for (const [ri, req] of g.entries())
-			{
-				for (const operand of [req.lhs, req.rhs])
-					if (!prev_addaddress && missing_note(operand))
-						res.add(new Issue(Feedback.MISSING_NOTE, req, 
-							`Address <code>0x${operand.value.padStart(8, '0')}</code> missing note`));
-				prev_addaddress = req.flag == ReqFlag.ADDADDRESS;
-			}
-		}
+		for (const x of missing_notes(logic))
+			res.add(new Issue(Feedback.MISSING_NOTE, x.req, 
+				`Address <code>0x${x.addr.padStart(8, '0')}</code> missing note`));
 	}
 
 	if (res.stats.deltas + res.stats.priors == 0)
@@ -463,6 +477,16 @@ function assess_achievement(ach)
 	return res;
 }
 
+function assess_leaderboard(lb)
+{
+	// assess writing initially
+	let res = assess_writing(lb);
+
+
+
+	return res;
+}
+
 function assess_code_notes(notes)
 {
 	let res = new Assessment();
@@ -496,9 +520,37 @@ function assess_code_notes(notes)
 	return res;
 }
 
-function assess_leaderboard(lb)
+function assess_rich_presence()
 {
 	let res = new Assessment();
+	if (!current.rp) return res;
+
+	res.stats.mem_length = current.rp.text.length;
+	res.stats.custom_macros = new Map([...Object.entries(current.rp.macros)]
+		.filter(([k, v]) => current.rp.custom_macros.has(k))
+	);
+	res.stats.lookups = current.rp.lookups;
+
+	res.stats.display_groups = current.rp.display.length;
+	res.stats.cond_display = current.rp.display.filter(x => x.condition != null).length;
+	res.stats.max_lookups = Math.max(...current.rp.display.map(x => x.lookups.length));
+
+	if (res.stats.max_lookups == 0 && res.stats.cond_display == 0)
+		res.add(new Issue(Feedback.NO_DYNAMIC_RP, null));
+	else if (res.stats.cond_display == 0)
+		res.add(new Issue(Feedback.NO_CONDITIONAL_DISPLAY, null));
+
+	for (const [di, d] of current.rp.display.entries())
+	{
+		if (d.condition != null)
+			for (const x of missing_notes(d.condition))
+				res.add(new Issue(Feedback.MISSING_NOTE_RP, null,
+					`Missing note for condition of display #${di+1}: <code>0x${x.addr.padStart(8, '0')}</code>`));
+		for (const [li, look] of d.lookups.entries())
+			for (const x of missing_notes(look.calc))
+				res.add(new Issue(Feedback.MISSING_NOTE_RP, null,
+					`Missing note for ${look.name} lookup of display #${di+1}: <code>0x${x.addr.padStart(8, '0')}</code>`));
+	}
 
 	return res;
 }

@@ -200,11 +200,6 @@ img.icon
 	padding: 5px 15px;
 }
 
-#info-container .data-table table tbody tr.hidden
-{
-	display: none;
-}
-
 #info-container .data-table table tbody tr:nth-child(odd)
 {
 	background-color: #E8E8E8;
@@ -264,6 +259,21 @@ img.icon
 {
 	white-space: break-spaces;
 }
+
+.rich-presence pre
+{
+	white-space: pre-wrap;
+	word-break: break-all;
+	line-height: 175%;
+}
+
+.rich-presence .keyword { color: rgb(128, 64, 168); }
+.rich-presence .header { background-color: rgb(255, 192, 192); }
+.rich-presence .condition { background-color: rgb(192, 255, 192); }
+.rich-presence .lookup { background-color: rgb(255, 255, 192); }
+.rich-presence .link { border-bottom: 1px dotted black; cursor: pointer; }
+.rich-presence .logic { cursor: pointer; }
+.rich-presence .logic.selected { color: red; }
 
 .tooltip {
 	position: relative;

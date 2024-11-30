@@ -206,7 +206,7 @@ function make_issue_list_entry(ii, issue)
 	return text;
 }
 
-function load_achievement(ach, row)
+function show_achievement(ach, row)
 {
 	let z;
 	let feedback = current.assessment.achievements.get(ach.id);
@@ -323,37 +323,40 @@ function load_achievement(ach, row)
 	sublist.appendChild(document.createElement('li'))
 		.innerHTML = `<code>ResetIf</code>s: ${stats.reset_ifs} (${stats.reset_with_hits} with hits)`;
 
-	let feedbackdiv = document.createElement('div');
-	feedbackdiv.classList.add('feedback');
-	elts.push(feedbackdiv);
-
-	feedbackdiv.appendChild(document.createElement('h1'))
-		.appendChild(document.createTextNode('Feedback'));
-
-	let cissues;
-	cissues = [...feedback.issues.entries()].filter(([i, x]) => ['title', 'desc'].includes(x.target));
-	if (cissues.length > 0)
+	if (feedback.issues.length > 0)
 	{
-		feedbackdiv.appendChild(document.createElement('h2'))
-			.appendChild(document.createTextNode('Presentation & Writing'));
-		let ul = feedbackdiv.appendChild(document.createElement('ul'));
-		for (const [ii, issue] of cissues)
+		let feedbackdiv = document.createElement('div');
+		feedbackdiv.classList.add('feedback');
+		elts.push(feedbackdiv);
+
+		feedbackdiv.appendChild(document.createElement('h1'))
+			.appendChild(document.createTextNode('Feedback'));
+
+		let cissues;
+		cissues = [...feedback.issues.entries()].filter(([i, x]) => ['title', 'desc'].includes(x.target));
+		if (cissues.length > 0)
 		{
-			let li = ul.appendChild(document.createElement('li'));
-			li.innerHTML = make_issue_list_entry(ii, issue);
+			feedbackdiv.appendChild(document.createElement('h2'))
+				.appendChild(document.createTextNode('Presentation & Writing'));
+			let ul = feedbackdiv.appendChild(document.createElement('ul'));
+			for (const [ii, issue] of cissues)
+			{
+				let li = ul.appendChild(document.createElement('li'));
+				li.innerHTML = make_issue_list_entry(ii, issue);
+			}
 		}
-	}
 
-	cissues = [...feedback.issues.entries()].filter(([i, x]) => !['title', 'desc'].includes(x.target));
-	if (cissues.length > 0)
-	{
-		feedbackdiv.appendChild(document.createElement('h2'))
-			.appendChild(document.createTextNode('Logic & Design'));
-		let ul = feedbackdiv.appendChild(document.createElement('ul'));
-		for (const [ii, issue] of cissues)
+		cissues = [...feedback.issues.entries()].filter(([i, x]) => !['title', 'desc'].includes(x.target));
+		if (cissues.length > 0)
 		{
-			let li = ul.appendChild(document.createElement('li'));
-			li.innerHTML = make_issue_list_entry(ii, issue);
+			feedbackdiv.appendChild(document.createElement('h2'))
+				.appendChild(document.createTextNode('Logic & Design'));
+			let ul = feedbackdiv.appendChild(document.createElement('ul'));
+			for (const [ii, issue] of cissues)
+			{
+				let li = ul.appendChild(document.createElement('li'));
+				li.innerHTML = make_issue_list_entry(ii, issue);
+			}
 		}
 	}
 
@@ -362,8 +365,12 @@ function load_achievement(ach, row)
 	select_row(row);
 }
 
-function load_leaderboard(lb, row)
+function show_leaderboard(lb, row)
 {
+	let z;
+	let feedback = current.assessment.leaderboards.get(lb.id);
+	let feedback_targets = new Set(feedback.issues.map(x => x.target));
+
 	let elts = [];
 	let infobox = document.createElement('div');
 	infobox.classList.add('main-header');
@@ -377,7 +384,10 @@ function load_leaderboard(lb, row)
 	}
 
 	let header = infobox.appendChild(document.createElement('h2'));
-	header.appendChild(document.createTextNode(`📊 ${lb.title}`));
+	let title_mod = ach.title;
+	if (feedback_targets.has('title'))
+		title_mod = `<span class="warn">${title_mod}</span>`;
+	header.innerHTML = `📊 ${title_mod}`;
 	header.classList.add('ach-title');
 
 	let labels = [];
@@ -393,7 +403,10 @@ function load_leaderboard(lb, row)
 	}
 
 	let desc = infobox.appendChild(document.createElement('p'));
-	desc.appendChild(document.createTextNode(lb.desc));
+	let desc_mod = ach.desc;
+	if (feedback_targets.has('desc'))
+		desc_mod = `<span class="warn">${desc_mod}</span>`;
+	desc.innerHTML = desc_mod;
 	desc.classList.add('ach-desc');
 
 	let logicdiv = document.createElement('div');
@@ -408,12 +421,61 @@ function load_leaderboard(lb, row)
 	logicdiv.appendChild(make_logic_table(lb.components['VAL'], [], (i) => `Value Group ${i+1}`));
 	elts.push(logicdiv);
 
+	let statsdiv = document.createElement('div');
+	statsdiv.classList.add('stats');
+	elts.push(statsdiv);
+
+	statsdiv.appendChild(document.createElement('h1'))
+		.appendChild(document.createTextNode('Statistics'));
+
+	const stats = feedback.stats;
+	let statslist = statsdiv.appendChild(document.createElement('ul'));
+
+	// TODO
+
+	if (feedback.issues.length > 0)
+	{
+		let feedbackdiv = document.createElement('div');
+		feedbackdiv.classList.add('feedback');
+		elts.push(feedbackdiv);
+
+		feedbackdiv.appendChild(document.createElement('h1'))
+			.appendChild(document.createTextNode('Feedback'));
+
+		let cissues;
+		cissues = [...feedback.issues.entries()].filter(([i, x]) => ['title', 'desc'].includes(x.target));
+		if (cissues.length > 0)
+		{
+			feedbackdiv.appendChild(document.createElement('h2'))
+				.appendChild(document.createTextNode('Presentation & Writing'));
+			let ul = feedbackdiv.appendChild(document.createElement('ul'));
+			for (const [ii, issue] of cissues)
+			{
+				let li = ul.appendChild(document.createElement('li'));
+				li.innerHTML = make_issue_list_entry(ii, issue);
+			}
+		}
+
+		cissues = [...feedback.issues.entries()].filter(([i, x]) => !['title', 'desc'].includes(x.target));
+		if (cissues.length > 0)
+		{
+			feedbackdiv.appendChild(document.createElement('h2'))
+				.appendChild(document.createTextNode('Logic & Design'));
+			let ul = feedbackdiv.appendChild(document.createElement('ul'));
+			for (const [ii, issue] of cissues)
+			{
+				let li = ul.appendChild(document.createElement('li'));
+				li.innerHTML = make_issue_list_entry(ii, issue);
+			}
+		}
+	}
+
 	document.getElementById('info-container').replaceChildren(...elts);
 	document.getElementById('asset-info').scrollTop = 0;
 	select_row(row);
 }
 
-function load_overview(sidebar)
+function show_set_overview(sidebar)
 {
 	let z;
 	const achievements = all_achievements();
@@ -563,7 +625,7 @@ function load_overview(sidebar)
 	select_row(sidebar);
 }
 
-function load_code_notes_overview(sidebar)
+function show_code_notes(sidebar)
 {
 	if (current.notes == null) return;
 	let elts = [];
@@ -694,6 +756,119 @@ function load_code_notes_overview(sidebar)
 	select_row(sidebar);
 }
 
+function show_rich_presence(sidebar)
+{
+	if (current.rp == null) return;
+	let elts = [];
+
+	let z;
+	const feedback = current.assessment.rp;
+
+	let infobox = document.createElement('div');
+	infobox.classList.add('main-header');
+	elts.push(infobox);
+
+	let header;
+	if (current.set != null)
+	{
+		let badge = infobox.appendChild(document.createElement('img'));
+		badge.classList.add('icon');
+		badge.setAttribute('src', current.set.icon);
+
+		header = infobox.appendChild(document.createElement('h1'));
+		header.appendChild(document.createTextNode(get_game_title()));
+	}
+
+	let rpdiv = document.createElement('div');
+	rpdiv.classList.add('rich-presence');
+	elts.push(rpdiv);
+
+	function addLookups(t)
+	{ return t.replaceAll(/(@([_a-z][_a-z0-9]*)\((.+?)\))/gi, '<span class="lookup">@<span class="link">$2</span>(<span class="logic">$3</span>)</span>'); }
+
+	let display = false;
+	rptext = current.rp.text.split(/\r\n|(?!\r\n)[\n-\r\x85\u2028\u2029]/g).map(line => {
+		line = line.trim();
+		if (display) line = line.startsWith('?')
+			? line.replaceAll(/\?(.+)\?(.+)/g, (_, p1, p2) => `?<span class="condition logic">${p1}</span>?${addLookups(p2)}`)
+			: addLookups(line);
+		if (line.startsWith('Display:')) display = true;
+		return line;
+	}).join('\n');
+	rptext = rptext.replaceAll(/((Lookup|Format|Display):(\S*))/g, '<span class="header" id="def-$3">$1</span>');
+
+	rpdiv.appendChild(document.createElement('pre'))
+		.appendChild(document.createElement('code'))
+		.innerHTML = rptext;
+
+	let logicdiv = document.createElement('div');
+	logicdiv.classList.add('data-table');
+	elts.push(logicdiv);
+
+	let statsdiv = document.createElement('div');
+	statsdiv.classList.add('stats');
+	elts.push(statsdiv);
+
+	statsdiv.appendChild(document.createElement('h1'))
+		.appendChild(document.createTextNode('Statistics'));
+	
+	const stats = feedback.stats;
+	let sublist;
+	let statslist = statsdiv.appendChild(document.createElement('ul'));
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Memory size: ${stats.mem_length}/65535`));
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Custom macros (${stats.custom_macros.size})`));
+	
+	sublist = statslist.appendChild(document.createElement('ul'));
+	for (const [k, v] of stats.custom_macros.entries())
+		sublist.appendChild(document.createElement('li')).innerHTML = `<code>${k}</code> &xrArr; <code>${v.type}</code>`;
+	
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Lookups: ${stats.lookups.size} (${[...stats.lookups.values()].filter(x => x.has('*')).length} with default values)`));
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Display clauses: ${stats.display_groups} (${stats.cond_display} conditional displays)`));
+	sublist = statslist.appendChild(document.createElement('ul'));
+	sublist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Most lookups in one display clause: ${stats.max_lookups}`));
+
+	let cissues = [...feedback.issues.entries()];
+	if (cissues.length > 0)
+	{
+		let feedbackdiv = document.createElement('div');
+		feedbackdiv.classList.add('feedback');
+		elts.push(feedbackdiv);
+
+		feedbackdiv.appendChild(document.createElement('h1'))
+			.appendChild(document.createTextNode('Feedback'));
+		
+		let ul = feedbackdiv.appendChild(document.createElement('ul'));
+		for (const [ii, issue] of cissues)
+		{
+			let li = ul.appendChild(document.createElement('li'));
+			li.innerHTML = make_issue_list_entry(ii, issue);
+		}
+	}
+
+	document.getElementById('info-container').replaceChildren(...elts);
+	document.getElementById('asset-info').scrollTop = 0;
+	select_row(sidebar);
+
+	for (let elt of document.querySelectorAll('.rich-presence .link'))
+		elt.onclick = (x) => { document.getElementById(`def-${elt.innerText}`).scrollIntoView({behavior: 'smooth', block: 'nearest'}); }
+
+	for (let elt of document.querySelectorAll('.rich-presence .logic'))
+		elt.onclick = (x) => {
+			for (let e2 of document.querySelectorAll('.rich-presence .logic.selected'))
+				e2.classList.remove('selected');
+			elt.classList.add('selected');
+
+			const logic = Logic.fromString(elt.innerText);
+			logicdiv.replaceChildren(make_logic_table(logic));
+			logicdiv.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+		}
+}
+
 function add_asset_row(type, asset_name, callback = null)
 {
 	let tr = document.createElement('tr');
@@ -713,6 +888,7 @@ function select_row(row)
 	for (let tr of document.getElementById('list-body').children)
 		tr.classList.remove('selected');
 	row.classList.add('selected');
+	row.scrollIntoView({behavior: 'smooth', block: 'nearest'});
 }
 
 function get_game_title()
@@ -743,6 +919,7 @@ function update_assessment()
 	current.assessment.achievements = new Map(all_achievements().map(x => [x.id, assess_achievement(x)]));
 	current.assessment.leaderboards = new Map(all_leaderboards().map(x => [x.id, assess_leaderboard(x)]));
 	current.assessment.notes = assess_code_notes(current.notes);
+	current.assessment.rp = assess_rich_presence(current.rp);
 
 	current.assessment.set = assess_set();
 }
@@ -750,7 +927,7 @@ function update_assessment()
 function load_achievement_set(json)
 {
 	current.set = AchievementSet.fromJSON(json);
-	if ('RichPresencePatch' in json)
+	if (json.RichPresencePatch)
 		load_rich_presence(json.RichPresencePatch, false);
 	update_assessment();
 	rebuild_sidebar();
@@ -789,18 +966,26 @@ function rebuild_sidebar()
 
 	if (current.set != null || current.local != null)
 	{
-		let overview_row = add_asset_row(current.assessment.set.pass() ? 'info' : 'fail', "🔍 Set Overview");
-		overview_row.onclick = function(){ load_overview(overview_row); };
-		if (!post_load) post_load = overview_row.onclick;
-		assetList.push(overview_row);
+		let row = add_asset_row(current.assessment.set.pass() ? 'info' : 'fail', "🔍 Set Overview");
+		row.onclick = function(){ show_set_overview(row); };
+		if (!post_load) post_load = row.onclick;
+		assetList.push(row);
 	}
 
 	if (current.notes.length > 0)
 	{
-		let code_notes_row = add_asset_row(current.assessment.notes.pass() ? 'info' : 'fail', "📝 Code Notes");
-		code_notes_row.onclick = function(){ load_code_notes_overview(code_notes_row); };
-		if (!post_load) post_load = code_notes_row.onclick;
-		assetList.push(code_notes_row);
+		let row = add_asset_row(current.assessment.notes.pass() ? 'info' : 'fail', "📝 Code Notes");
+		row.onclick = function(){ show_code_notes(row); };
+		if (!post_load) post_load = row.onclick;
+		assetList.push(row);
+	}
+
+	if (current.rp)
+	{
+		let row = add_asset_row(current.assessment.rp.pass() ? 'info' : 'fail', "🎮 Rich Presence");
+		row.onclick = function(){ show_rich_presence(row); };
+		if (!post_load) post_load = row.onclick;
+		assetList.push(row);
 	}
 	
 	if (current.set != null || current.local != null)
@@ -814,7 +999,7 @@ function rebuild_sidebar()
 		{
 			let feedback = current.assessment.achievements.get(ach.id);
 			let tr = add_asset_row(feedback.pass() ? 'pass' : 'fail', `🏆 ${ach.state.marker}${ach.title} (${ach.points})`);
-			tr.onclick = function(){ load_achievement(ach, tr); };
+			tr.onclick = function(){ show_achievement(ach, tr); };
 			assetList.push(tr);
 
 			// preload image
@@ -831,7 +1016,7 @@ function rebuild_sidebar()
 		{
 			let feedback = current.assessment.leaderboards.get(lb.id);
 			let tr = add_asset_row(feedback.pass() ? 'pass' : 'fail', `📊 ${lb.state.marker}${lb.title}`);
-			tr.onclick = function(){ load_leaderboard(lb, tr); };
+			tr.onclick = function(){ show_leaderboard(lb, tr); };
 			assetList.push(tr);
 		}
 	}

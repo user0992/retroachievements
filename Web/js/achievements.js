@@ -525,6 +525,7 @@ function testCodeNotes()
 
 class RichPresence
 {
+	text = "";
 	macros = {
 		// built-in macros
 		'Number': FormatType.VALUE,
@@ -553,6 +554,7 @@ class RichPresence
 	static fromText(txt)
 	{
 		let richp = new RichPresence();
+		richp.text = txt;
 
 		let obj = null;
 		function structCleanup(next)
@@ -583,13 +585,12 @@ class RichPresence
 					richp.display.push({
 						condition: Logic.fromString(parts[1]),
 						string: parts[2],
-						lookups: [...parts[2].matchAll(/@([a-z]+)\((.+?)\)/gi).map((x) => ({
-							name: x[1],
-							calc: Logic.fromString(x[2]),
-						}))],
 					});
 				}
-				else richp.display.push([null, line]);
+				else richp.display.push({
+					condition: null, 
+					string: line,
+				});
 			}
 			else if (line.startsWith('Format:'))
 				structCleanup({ type: 'macro', name: line.substring(7), param: null, });
@@ -609,6 +610,13 @@ class RichPresence
 					obj.param.set(inp == '*' ? '*' : +inp, parts[1]);
 			}
 		}
+
+		// process all lookups in each display
+		for (let d of richp.display)
+			d.lookups = [...d.string.matchAll(/@([_a-z][_a-z0-9]*)\((.+?)\)/gi).map((x) => ({
+				name: x[1],
+				calc: Logic.fromString(x[2]),
+			}))];
 		return richp;
 	}
 }
