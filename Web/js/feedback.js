@@ -487,7 +487,15 @@ function assess_leaderboard(lb)
 	// assess writing initially
 	let res = assess_writing(lb);
 
+	res.combine(assess_logic(lb.components['STA']));
 
+	res.stats.is_instant_submission = lb.components['SUB'].groups.every(g => g.every(req => req.isAlwaysTrue()));
+	res.stats.conditional_value = lb.components['VAL'].groups.length > 1 &&
+		lb.components['VAL'].groups.every(
+			g => 
+				g.some(req => req.flag == ReqFlag.MEASUREDIF) && 
+				g.some(req => req.flag == ReqFlag.MEASURED || req.flag == ReqFlag.MEASUREDP)
+		);
 
 	return res;
 }

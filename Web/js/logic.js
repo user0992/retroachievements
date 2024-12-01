@@ -30,33 +30,33 @@ const ReqFlag = Object.freeze({
 });
 
 const MemSize = Object.freeze({
-	BYTE:     { name: "8-bit",        prefix: "0xH", bytes: 1, },
-	WORD:     { name: "16-bit",       prefix: "0x",  bytes: 2, },
-	TBYTE:    { name: "24-bit",       prefix: "0xW", bytes: 3, },
-	DWORD:    { name: "32-bit",       prefix: "0xX", bytes: 4, },
-	WORD_BE:  { name: "16-bit BE",    prefix: "0xI", bytes: 2, },
-	TBYTE_BE: { name: "24-bit BE",    prefix: "0xJ", bytes: 3, },
-	DWORD_BE: { name: "32-bit BE",    prefix: "0xG", bytes: 4, },
+	BYTE:     { name: "8-bit",        prefix: "0xH", bytes: 1, maxvalue: 0xFF, },
+	WORD:     { name: "16-bit",       prefix: "0x",  bytes: 2, maxvalue: 0xFFFF, },
+	TBYTE:    { name: "24-bit",       prefix: "0xW", bytes: 3, maxvalue: 0xFFFFFF, },
+	DWORD:    { name: "32-bit",       prefix: "0xX", bytes: 4, maxvalue: 0xFFFFFFFF, },
+	WORD_BE:  { name: "16-bit BE",    prefix: "0xI", bytes: 2, maxvalue: 0xFFFF, },
+	TBYTE_BE: { name: "24-bit BE",    prefix: "0xJ", bytes: 3, maxvalue: 0xFFFFFF, },
+	DWORD_BE: { name: "32-bit BE",    prefix: "0xG", bytes: 4, maxvalue: 0xFFFFFFFF, },
 	
-	LOWER4:   { name: "Lower4",       prefix: "0xL", bytes: 1, },
-	UPPER4:   { name: "Upper4",       prefix: "0xU", bytes: 1, },
+	LOWER4:   { name: "Lower4",       prefix: "0xL", bytes: 1, maxvalue: 0xF, },
+	UPPER4:   { name: "Upper4",       prefix: "0xU", bytes: 1, maxvalue: 0xF, },
 
-	FLOAT:    { name: "Float",        prefix: "fF", bytes: 4, },
-	FLOAT_BE: { name: "Float BE",     prefix: "fB", bytes: 4, },
-	DBL32:    { name: "Double32",     prefix: "fH", bytes: 8, },
-	DBL32_BE: { name: "Double32 BE",  prefix: "fI", bytes: 8, },
-	MBF32:    { name: "MBF32",        prefix: "fM", bytes: 4, },
-	MBF32_LE: { name: "MBF32 LE",     prefix: "fL", bytes: 4, },
+	FLOAT:    { name: "Float",        prefix: "fF", bytes: 4, maxvalue: Number.POSITIVE_INFINITY, },
+	FLOAT_BE: { name: "Float BE",     prefix: "fB", bytes: 4, maxvalue: Number.POSITIVE_INFINITY, },
+	DBL32:    { name: "Double32",     prefix: "fH", bytes: 8, maxvalue: Number.POSITIVE_INFINITY, },
+	DBL32_BE: { name: "Double32 BE",  prefix: "fI", bytes: 8, maxvalue: Number.POSITIVE_INFINITY, },
+	MBF32:    { name: "MBF32",        prefix: "fM", bytes: 4, maxvalue: Number.POSITIVE_INFINITY, },
+	MBF32_LE: { name: "MBF32 LE",     prefix: "fL", bytes: 4, maxvalue: Number.POSITIVE_INFINITY, },
 
-	BIT0:     { name: "Bit0",         prefix: "0xM", bytes: 1, },
-	BIT1:     { name: "Bit1",         prefix: "0xN", bytes: 1, },
-	BIT2:     { name: "Bit2",         prefix: "0xO", bytes: 1, },
-	BIT3:     { name: "Bit3",         prefix: "0xP", bytes: 1, },
-	BIT4:     { name: "Bit4",         prefix: "0xQ", bytes: 1, },
-	BIT5:     { name: "Bit5",         prefix: "0xR", bytes: 1, },
-	BIT6:     { name: "Bit6",         prefix: "0xS", bytes: 1, },
-	BIT7:     { name: "Bit7",         prefix: "0xT", bytes: 1, },
-	BITCOUNT: { name: "BitCount",     prefix: "0xK", bytes: 1, },
+	BIT0:     { name: "Bit0",         prefix: "0xM", bytes: 1, maxvalue: 1, },
+	BIT1:     { name: "Bit1",         prefix: "0xN", bytes: 1, maxvalue: 1, },
+	BIT2:     { name: "Bit2",         prefix: "0xO", bytes: 1, maxvalue: 1, },
+	BIT3:     { name: "Bit3",         prefix: "0xP", bytes: 1, maxvalue: 1, },
+	BIT4:     { name: "Bit4",         prefix: "0xQ", bytes: 1, maxvalue: 1, },
+	BIT5:     { name: "Bit5",         prefix: "0xR", bytes: 1, maxvalue: 1, },
+	BIT6:     { name: "Bit6",         prefix: "0xS", bytes: 1, maxvalue: 1, },
+	BIT7:     { name: "Bit7",         prefix: "0xT", bytes: 1, maxvalue: 1, },
+	BITCOUNT: { name: "BitCount",     prefix: "0xK", bytes: 1, maxvalue: 8, },
 });
 
 const FormatType = Object.freeze({
@@ -156,6 +156,19 @@ class ReqOperand
 			return new ReqOperand('', ReqType.RECALL, null);
 	}
 
+	static equals(a, b)
+	{
+		if (a == b || a == null || b == null) return a == b;
+		return a.type == b.type && a.size == b.size && a.value == b.value;
+	}
+
+	maxValue()
+	{
+		if (this.type && !this.type.addr) return +this.value;
+		if (this.type == ReqType.RECALL) return Number.POSITIVE_INFINITY;
+		return this.size.maxvalue;
+	}
+
 	toValueString() { return this.type && this.type.addr ? ('0x' + this.value.toString(16)) : this.value.toString(); }
 	toString() { return this.type == ReqType.RECALL ? this.type.prefix : this.toValueString(); }
 
@@ -201,6 +214,15 @@ class Requirement
 		o.rhs = this.rhs;
 		o.hits = this.hits;
 		return o;
+	}
+
+	isAlwaysTrue() { return this.op == '=' && ReqOperand.equals(this.lhs, this.rhs); }
+	isAlwaysFalse()
+	{ 
+		return this.op == '=' // equals cmp
+			&& this.lhs && !this.lhs.type.addr // lhs is a static value
+			&& this.rhs && !this.rhs.type.addr // rhs is a static value
+			&& !ReqOperand.equals(this.lhs, this.rhs); // values cant be equal
 	}
 
 	static fromString(def)
