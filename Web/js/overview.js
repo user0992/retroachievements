@@ -384,7 +384,7 @@ function show_leaderboard(lb, row)
 	}
 
 	let header = infobox.appendChild(document.createElement('h2'));
-	let title_mod = ach.title;
+	let title_mod = lb.title;
 	if (feedback_targets.has('title'))
 		title_mod = `<span class="warn">${title_mod}</span>`;
 	header.innerHTML = `📊 ${title_mod}`;
@@ -403,7 +403,7 @@ function show_leaderboard(lb, row)
 	}
 
 	let desc = infobox.appendChild(document.createElement('p'));
-	let desc_mod = ach.desc;
+	let desc_mod = lb.desc;
 	if (feedback_targets.has('desc'))
 		desc_mod = `<span class="warn">${desc_mod}</span>`;
 	desc.innerHTML = desc_mod;
