@@ -112,7 +112,7 @@ const ReqTypeWidth = Math.max(...Object.values(ReqType).map((x) => x.name.length
 const ReqFlagWidth = Math.max(...Object.values(ReqFlag).map((x) => x.name.length));
 const MemSizeWidth = Math.max(...Object.values(MemSize).map((x) => x.name.length));
 
-const OPERAND_RE = /^(([~a-z]?)(0x[G-Z ]?|f[A-Z])([0-9A-F]{2,8}))|(([fv]?)([-+]?\d+(?:\.\d+)?))|([G-Z ]?([0-9A-F]+))|({recall})$/i;
+const OPERAND_RE = /^(([~dpbvf]?)(0x[G-Z ]?|f[A-Z])([0-9A-F]{2,8}))|(([fv]?)([-+]?\d+(?:\.\d+)?))|([G-Z ]?([0-9A-F]+))|({recall})$/i;
 class ReqOperand
 {
 	type;
@@ -128,6 +128,7 @@ class ReqOperand
 	static fromString(def)
 	{
 		let match = def.match(OPERAND_RE);
+		console.log(match);
 		if (match[1])
 			return new ReqOperand(
 				match[4].trim(), 
@@ -185,7 +186,7 @@ class ReqOperand
 
 // original regex failed on "v-1"
 // const REQ_RE = /^([A-Z]:)?(.+?)(?:([!<>=+\-*/&\^%]{1,2})(.+?))?(?:\.(\d+)\.)?$/;
-const OPERAND_PARSING = "[~a-z]?(?:0x[G-Z ]?|f[A-Z])[0-9A-F]{2,8}|[fv]?[-+]?\\d+(?:\\.\\d+)?|[G-Z ]?[0-9A-F]+|{recall}";
+const OPERAND_PARSING = "[~dpbvf]?(?:0x[G-Z ]?|f[A-Z])[0-9A-F]{2,8}|[fv]?[-+]?\\d+(?:\\.\\d+)?|[G-Z ]?[0-9A-F]+|{recall}";
 const REQ_RE = new RegExp(`^([A-Z]:)?(${OPERAND_PARSING})(?:([!<>=+\\-*/&\\^%]{1,2})(${OPERAND_PARSING}))?(?:\\.(\\d+)\\.)?$`, "i");
 class Requirement
 {
@@ -270,7 +271,7 @@ class Logic
 	static fromString(def)
 	{
 		let logic = new Logic();
-		for (const [i, g] of def.split(/(?<!0x)S/).entries())
+		for (const [i, g] of def.split(/(?<!0x)[S$]/).entries())
 		{
 			let group = [];
 			if (g.length == 0) continue; // some sets have empty core groups
