@@ -267,13 +267,17 @@ img.icon
 	line-height: 175%;
 }
 
+/*
+	based on Okabe and Ito palette from
+	https://www.nceas.ucsb.edu/sites/default/files/2022-06/Colorblind%20Safe%20Color%20Schemes.pdf
+*/
 .rich-presence .keyword { color: rgb(128, 64, 168); }
-.rich-presence .header { background-color: rgb(255, 192, 192); }
-.rich-presence .condition { background-color: rgb(192, 255, 192); }
-.rich-presence .lookup { background-color: rgb(255, 255, 192); }
+.rich-presence .header { background-color: rgba(204, 121, 167, 0.5); }
+.rich-presence .condition { background-color: rgba(000, 158, 115, 0.25); }
+.rich-presence .lookup { background-color: rgba(240, 228, 066, 0.5); }
 .rich-presence .link { border-bottom: 1px dotted black; cursor: pointer; }
 .rich-presence .logic { cursor: pointer; }
-.rich-presence .logic.selected { color: red; }
+.rich-presence .logic.selected { color: rgb(213, 094, 000); }
 
 .tooltip {
 	position: relative;
