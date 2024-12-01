@@ -96,7 +96,7 @@ footer
 { background-image: url("../img/error-5-16.png"); }
 
 #asset-list tbody tr.info td.asset-name
-{ background-image: url("../img/alert-16.png"); }
+{ /* background-image: url("../img/alert-16.png"); */ }
 
 #asset-list tbody tr:hover
 {
