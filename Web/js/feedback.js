@@ -184,9 +184,14 @@ function* missing_notes(logic)
 		let prev_addaddress = false;
 		for (const [ri, req] of g.entries())
 		{
+			let lastreport = null;
 			for (const operand of [req.lhs, req.rhs])
 				if (!prev_addaddress && _is_missing(operand))
+				{
+					if (lastreport == operand.value) continue;
 					yield { addr: operand.value, req: req, };
+					lastreport = operand.value;
+				}
 			prev_addaddress = req.flag == ReqFlag.ADDADDRESS;
 		}
 	}
@@ -540,17 +545,18 @@ function assess_rich_presence()
 	else if (res.stats.cond_display == 0)
 		res.add(new Issue(Feedback.NO_CONDITIONAL_DISPLAY, null));
 
-	for (const [di, d] of current.rp.display.entries())
-	{
-		if (d.condition != null)
-			for (const x of missing_notes(d.condition))
-				res.add(new Issue(Feedback.MISSING_NOTE_RP, null,
-					`Missing note for condition of display #${di+1}: <code>0x${x.addr.padStart(8, '0')}</code>`));
-		for (const [li, look] of d.lookups.entries())
-			for (const x of missing_notes(look.calc))
-				res.add(new Issue(Feedback.MISSING_NOTE_RP, null,
-					`Missing note for ${look.name} lookup of display #${di+1}: <code>0x${x.addr.padStart(8, '0')}</code>`));
-	}
+	if (current.notes.length)
+		for (const [di, d] of current.rp.display.entries())
+		{
+			if (d.condition != null)
+				for (const x of missing_notes(d.condition))
+					res.add(new Issue(Feedback.MISSING_NOTE_RP, null,
+						`Missing note for condition of display #${di+1}: <code>0x${x.addr.padStart(8, '0')}</code>`));
+			for (const [li, look] of d.lookups.entries())
+				for (const x of missing_notes(look.calc))
+					res.add(new Issue(Feedback.MISSING_NOTE_RP, null,
+						`Missing note for ${look.name} lookup of display #${di+1}: <code>0x${x.addr.padStart(8, '0')}</code>`));
+		}
 
 	return res;
 }
