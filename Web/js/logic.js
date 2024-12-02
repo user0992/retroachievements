@@ -60,8 +60,10 @@ const MemSize = Object.freeze({
 });
 
 const FormatType = Object.freeze({
+	POINTS:        { name: "Score", type: "POINTS", category: "value", },
 	SCORE:         { name: "Score", type: "SCORE", category: "value", },
 	FRAMES:        { name: "Frames", type: "FRAMES", category: "time", },
+	TIME:          { name: "Frames", type: "TIME", category: "time", },
 	MILLISECS:     { name: "Centiseconds", type: "MILLISECS", category: "time", },
 	SECS:          { name: "Seconds", type: "SECS", category: "time", },
 	MINUTES:       { name: "Minutes", type: "MINUTES", category: "time", },
@@ -112,6 +114,13 @@ const ReqTypeWidth = Math.max(...Object.values(ReqType).map((x) => x.name.length
 const ReqFlagWidth = Math.max(...Object.values(ReqFlag).map((x) => x.name.length));
 const MemSizeWidth = Math.max(...Object.values(MemSize).map((x) => x.name.length));
 
+class LogicParseError extends Error {
+	constructor(type, mem) {
+		super(`Failed to parse ${type}: ${mem}`);
+		this.name = 'LogicParseError';
+	}
+}
+
 const OPERAND_RE = /^(([~dpbvf]?)(0x[G-Z ]?|f[A-Z])([0-9A-F]{2,8}))|(([fv]?)([-+]?\d+(?:\.\d+)?))|([G-Z ]?([0-9A-F]+))|({recall})$/i;
 class ReqOperand
 {
@@ -127,34 +136,37 @@ class ReqOperand
 
 	static fromString(def)
 	{
-		let match = def.match(OPERAND_RE);
-		console.log(match);
-		if (match[1])
-			return new ReqOperand(
-				match[4].trim(), 
-				ReqTypeMap[match[2].trim()], 
-				MemSizeMap[match[3].trim()]
-			);
-		else if (match[5])
+		try
 		{
-			// force Value type if no prefix
-			let rtype = match[6].trim();
-			if (rtype == '') rtype = 'v';
+			let match = def.match(OPERAND_RE);
+			if (match[1])
+				return new ReqOperand(
+					match[4].trim(), 
+					ReqTypeMap[match[2].trim()], 
+					MemSizeMap[match[3].trim()]
+				);
+			else if (match[5])
+			{
+				// force Value type if no prefix
+				let rtype = match[6].trim();
+				if (rtype == '') rtype = 'v';
 
-			return new ReqOperand(
-				+match[7].trim(), 
-				ReqTypeMap[rtype.toLowerCase()], 
-				null
-			);
+				return new ReqOperand(
+					+match[7].trim(), 
+					ReqTypeMap[rtype.toLowerCase()], 
+					null
+				);
+			}
+			else if (match[8])
+				return new ReqOperand(
+					parseInt(match[9], 16), 
+					ReqType.VALUE, 
+					null
+				);
+			else if (match[10])
+				return new ReqOperand('', ReqType.RECALL, null);
 		}
-		else if (match[8])
-			return new ReqOperand(
-				parseInt(match[9], 16), 
-				ReqType.VALUE, 
-				null
-			);
-		else if (match[10])
-			return new ReqOperand('', ReqType.RECALL, null);
+		catch (e) { throw new LogicParseError('operand', def); }
 	}
 
 	static equals(a, b)
@@ -228,19 +240,22 @@ class Requirement
 
 	static fromString(def)
 	{
-		let match = def.match(REQ_RE);
 		let req = new Requirement();
-
-		req.lhs = ReqOperand.fromString(match[2]);
-		if (match[1]) req.flag = ReqFlagMap[match[1]];
-
-		if (match[3])
+		try
 		{
-			req.op = match[3];
-			req.rhs = ReqOperand.fromString(match[4]);
-		}
+			let match = def.match(REQ_RE);
+			req.lhs = ReqOperand.fromString(match[2]);
+			if (match[1]) req.flag = ReqFlagMap[match[1]];
 
-		if (match[5]) req.hits = +match[5];
+			if (match[3])
+			{
+				req.op = match[3];
+				req.rhs = ReqOperand.fromString(match[4]);
+			}
+
+			if (match[5]) req.hits = +match[5];
+		}
+		catch (e) { throw new LogicParseError('requirement', def); }
 		return req;
 	}
 
@@ -263,23 +278,29 @@ class Logic
 {
 	groups = [];
 	mem = null;
+	value = false;
 	constructor()
 	{
 
 	}
 
-	static fromString(def)
+	static fromString(def, value = null)
 	{
 		let logic = new Logic();
-		for (const [i, g] of def.split(/(?<!0x)[S$]/).entries())
+		try
 		{
-			let group = [];
-			if (g.length == 0) continue; // some sets have empty core groups
-			for (const [j, req] of g.split("_").entries())
-				group.push(Requirement.fromString(req));
-			logic.groups.push(group);
+			logic.value = value == null ? ('$' in def) : !!value;
+			for (const [i, g] of def.split(logic.value ? "$" : /(?<!0x)S/).entries())
+			{
+				let group = [];
+				if (g.length == 0) continue; // some sets have empty core groups
+				for (const [j, req] of g.split("_").entries())
+					group.push(Requirement.fromString(req));
+				logic.groups.push(group);
+			}
+			logic.mem = def;
 		}
-		logic.mem = def;
+		catch (e) { throw new LogicParseError('logic', def); }
 		return logic;
 	}
 

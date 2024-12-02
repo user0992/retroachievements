@@ -56,7 +56,7 @@ class Achievement
 		ach.state = AssetState.CORE;
 		if (json.Flags == 5) ach.state = AssetState.UNOFFICIAL;
 
-		ach.logic = Logic.fromString(json.MemAddr);
+		ach.logic = Logic.fromString(json.MemAddr, false);
 		return ach;
 	}
 	
@@ -72,11 +72,12 @@ class Achievement
 		ach.badge = `https://media.retroachievements.org/Badge/${row[13]}.png`
 		
 		ach.state = AssetState.LOCAL;
-		ach.logic = Logic.fromString(row[1]);
+		ach.logic = Logic.fromString(row[1], false);
 		return ach;
 	}
 }
 
+FAST_WORDS = ["fast", "quick", "speed", "rush", "hurry"]
 class Leaderboard
 {
 	id = -1;
@@ -94,7 +95,7 @@ class Leaderboard
 		lb.id = json.ID;
 		lb.title = json.Title;
 		lb.desc = json.Description;
-		lb.format = json.Format;
+		lb.format = FormatTypeMap[json.Format];
 		lb.lower_is_better = json.LowerIsBetter;
 
 		lb.components = {};
@@ -102,7 +103,7 @@ class Leaderboard
 		{
 			let tag = part.substring(0, 3);
 			let mem = part.substring(4);
-			lb.components[tag] = Logic.fromString(mem);
+			lb.components[tag] = Logic.fromString(mem, tag == 'VAL');
 		}
 		lb.state = AssetState.CORE;
 		return lb;
@@ -114,17 +115,24 @@ class Leaderboard
 		lb.id = +row[0].substring(1);
 		lb.title = row[6];
 		lb.desc = row[7];
-		lb.format = row[5];
+		lb.format = FormatTypeMap[row[5]];
 		lb.lower_is_better = row[8] == '1';
 
 		lb.components = {
-			'STA': Logic.fromString(row[1]),
-			'CAN': Logic.fromString(row[2]),
-			'SUB': Logic.fromString(row[3]),
-			'VAL': Logic.fromString(row[4]),
+			'STA': Logic.fromString(row[1], false),
+			'CAN': Logic.fromString(row[2], false),
+			'SUB': Logic.fromString(row[3], false),
+			'VAL': Logic.fromString(row[4], true),
 		}
 		lb.state = AssetState.LOCAL;
 		return lb;
+	}
+
+	isTime() { return this.format.category == "time" || FAST_WORDS.some(x => this.desc.toLowerCase().includes(x) || this.title.toLowerCase().includes(x)); }
+	getType()
+	{
+		if (this.isTime()) return this.lower_is_better ? "speedrun" : "survival";
+		return "score";
 	}
 }
 
@@ -523,6 +531,20 @@ function testCodeNotes()
 	console.log(fails + "/" + count + " failed")
 }
 
+class LookupRange
+{
+	start = null;
+	end = null;
+	value;
+	constructor(start, end, value)
+	{
+		this.start = start;
+		this.end = end;
+		this.value = value;
+	}
+
+	isFallback() { return this.start == null && this.end == null; }
+}
 class RichPresence
 {
 	text = "";
@@ -583,7 +605,7 @@ class RichPresence
 				{
 					let parts = line.split('?');
 					richp.display.push({
-						condition: Logic.fromString(parts[1]),
+						condition: Logic.fromString(parts[1], false),
 						string: parts[2],
 					});
 				}
@@ -595,7 +617,7 @@ class RichPresence
 			else if (line.startsWith('Format:'))
 				structCleanup({ type: 'macro', name: line.substring(7), param: null, });
 			else if (line.startsWith('Lookup:'))
-				structCleanup({ type: 'lookup', name: line.substring(7), param: new Map(), });
+				structCleanup({ type: 'lookup', name: line.substring(7), param: [], });
 			else if (line.startsWith('Display:'))
 				structCleanup({ type: 'display', });
 			else if (obj && obj.type == 'macro')
@@ -605,9 +627,16 @@ class RichPresence
 			}
 			else if (obj && obj.type == 'lookup')
 			{
-				let parts = line.split('=');
-				for (const inp of parts[0].split(','))
-					obj.param.set(inp == '*' ? '*' : +inp, parts[1]);
+				let [inps, val] = line.split('=');
+				for (const inp of inps.split(','))
+				{
+					if (inp == '*') obj.param.push(new LookupRange(null, null, val));
+					else
+					{
+						let rv = inp.split('-');
+						obj.param.push(new LookupRange(rv[0], rv[rv.length - 1], val));
+					}
+				}
 			}
 		}
 
@@ -615,7 +644,7 @@ class RichPresence
 		for (let d of richp.display)
 			d.lookups = [...d.string.matchAll(/@([_a-z][_a-z0-9]*)\((.+?)\)/gi).map((x) => ({
 				name: x[1],
-				calc: Logic.fromString(x[2]),
+				calc: Logic.fromString(x[2], true),
 			}))];
 		return richp;
 	}

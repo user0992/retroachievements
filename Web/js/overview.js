@@ -35,26 +35,58 @@ document.ondrop = function(event)
 		if (file.name.endsWith('-Notes.json'))
 			reader.onload = function(event)
 			{
-				let data = JSON.parse(event.target.result);
-				load_code_notes(data);
+				try
+				{
+					let data = JSON.parse(event.target.result);
+					load_code_notes(data);
+				}
+				catch (e)
+				{
+					if (e instanceof LogicParseError) alert(e.message);
+					else console.error(e);
+				}
 			};
 		else if (file.name.endsWith('.json'))
 			reader.onload = function(event)
 			{
-				let data = JSON.parse(event.target.result);
-				load_achievement_set(data);
+				try
+				{
+					let data = JSON.parse(event.target.result);
+					load_achievement_set(data);
+				}
+				catch (e)
+				{
+					if (e instanceof LogicParseError) alert(e.message);
+					else console.error(e);
+				}
 			};
 		else if (file.name.endsWith('-Rich.txt'))
 			reader.onload = function(event)
 			{
-				let data = event.target.result;
-				load_rich_presence(data, true);
+				try
+				{
+					let data = event.target.result;
+					load_rich_presence(data, true);
+				}
+				catch (e)
+				{
+					if (e instanceof LogicParseError) alert(e.message);
+					else console.error(e);
+				}
 			};
 		else if (file.name.endsWith('-User.txt'))
 			reader.onload = function(event)
 			{
-				let data = event.target.result;
-				load_user_file(data);
+				try
+				{
+					let data = event.target.result;
+					load_user_file(data);
+				}
+				catch (e)
+				{
+					if (e instanceof LogicParseError) alert(e.message);
+					else console.error(e);
+				}
 			};
 		reader.readAsText(file);
 	}
@@ -115,10 +147,13 @@ async function copyToClipboard(text)
 	}
 }
 
-function make_logic_table(logic, assessment = [], grouplabel = (i) => i == 0 ? "Core Group" : `Alt Group ${i}`)
+function make_logic_table(logic, assessment = [])
 {
 	let logictbl = document.createElement('table');
 	let logicbody = document.createElement('tbody');
+
+	let grouplabel = (i) => i == 0 ? "Core Group" : `Alt Group ${i}`
+	if (logic.value) grouplabel = (i) => `Value Group ${i+1}`;
 
 	for (const [gi, g] of logic.groups.entries())
 	{
@@ -202,7 +237,7 @@ function make_issue_list_entry(ii, issue)
 	let text = `<sup>(#${ii+1})</sup> ${issue.type.desc}`;
 	for (const ref of issue.type.ref)
 		text += ` <sup>[<a href="${ref}">ref</a>]</sup>`;
-	if (issue.detail) text += "<br/>" + issue.detail;
+	text += issue.detail.map(x => "<br/>" + x).join('');
 	return text;
 }
 
@@ -411,14 +446,11 @@ function show_leaderboard(lb, row)
 
 	let logicdiv = document.createElement('div');
 	logicdiv.classList.add('data-table');
-	logicdiv.appendChild(document.createElement('h3')).appendChild(document.createTextNode("START"));
-	logicdiv.appendChild(make_logic_table(lb.components['STA']));
-	logicdiv.appendChild(document.createElement('h3')).appendChild(document.createTextNode("CANCEL"));
-	logicdiv.appendChild(make_logic_table(lb.components['CAN']));
-	logicdiv.appendChild(document.createElement('h3')).appendChild(document.createTextNode("SUBMIT"));
-	logicdiv.appendChild(make_logic_table(lb.components['SUB']));
-	logicdiv.appendChild(document.createElement('h3')).appendChild(document.createTextNode("VALUE"));
-	logicdiv.appendChild(make_logic_table(lb.components['VAL'], [], (i) => `Value Group ${i+1}`));
+	for (const block of ["START", "CANCEL", "SUBMIT", "VALUE"])
+	{
+		logicdiv.appendChild(document.createElement('h3')).appendChild(document.createTextNode(block));
+		logicdiv.appendChild(make_logic_table(lb.components[block.substring(0, 3)]));
+	}
 	elts.push(logicdiv);
 
 	let statsdiv = document.createElement('div');
@@ -784,7 +816,7 @@ function show_rich_presence(sidebar)
 	elts.push(rpdiv);
 
 	function addLookups(t)
-	{ return t.replaceAll(/(@([_a-z][_a-z0-9]*)\((.+?)\))/gi, '<span class="lookup">@<span class="link">$2</span>(<span class="logic">$3</span>)</span>'); }
+	{ return t.replaceAll(/(@([_a-z][_a-z0-9]*)\((.+?)\))/gi, '<span class="lookup">@<span class="link">$2</span>(<span class="value logic">$3</span>)</span>'); }
 
 	let display = false;
 	rptext = current.rp.text.split(/\r\n|(?!\r\n)[\n-\r\x85\u2028\u2029]/g).map(line => {
@@ -825,7 +857,7 @@ function show_rich_presence(sidebar)
 		sublist.appendChild(document.createElement('li')).innerHTML = `<code>${k}</code> &xrArr; <code>${v.type}</code>`;
 	
 	statslist.appendChild(document.createElement('li'))
-		.appendChild(document.createTextNode(`Lookups: ${stats.lookups.size} (${[...stats.lookups.values()].filter(x => x.has('*')).length} with default values)`));
+		.appendChild(document.createTextNode(`Lookups: ${stats.lookups.size} (${[...stats.lookups.values()].filter(lookup => lookup.some(x => x.isFallback())).length} with default values)`));
 	statslist.appendChild(document.createElement('li'))
 		.appendChild(document.createTextNode(`Display clauses: ${stats.display_groups} (${stats.cond_display} conditional displays)`));
 	sublist = statslist.appendChild(document.createElement('ul'));
@@ -863,7 +895,7 @@ function show_rich_presence(sidebar)
 				e2.classList.remove('selected');
 			elt.classList.add('selected');
 
-			const logic = Logic.fromString(elt.innerText);
+			const logic = Logic.fromString(elt.innerText, elt.classList.contains('value'));
 			logicdiv.replaceChildren(make_logic_table(logic));
 			logicdiv.scrollIntoView({behavior: 'smooth', block: 'nearest'});
 		}

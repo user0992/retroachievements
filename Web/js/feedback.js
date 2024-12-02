@@ -138,12 +138,12 @@ class Issue
 {
 	type;
 	target;
-	detail = null;
+	detail = [];
 	constructor(type, target, detail = null)
 	{
 		this.type = type;
 		this.target = target;
-		this.detail = detail;
+		this.detail = detail || [];
 	}
 }
 
@@ -279,10 +279,10 @@ function assess_logic(logic)
 	{
 		for (const x of missing_notes(logic))
 			res.add(new Issue(Feedback.MISSING_NOTE, x.req, 
-				`Address <code>0x${x.addr.padStart(8, '0')}</code> missing note`));
+				[`Address <code>0x${x.addr.padStart(8, '0')}</code> missing note`]));
 	}
 
-	if (res.stats.deltas + res.stats.priors == 0)
+	if (!logic.value && res.stats.deltas + res.stats.priors == 0)
 		res.add(new Issue(Feedback.MISSING_DELTA, null));
 
 	for (const [gi, g] of logic.groups.entries())
@@ -303,7 +303,7 @@ function assess_logic(logic)
 	// achievement is *possibly* an OCA if there is only one virtual address or only one comparison happens
 	// TODO: there should be a better way to determine this
 	res.stats.oca = res.stats.virtual_addresses.size <= 1 || comparisons.length <= 1;
-	if (res.stats.oca) res.add(new Issue(Feedback.ONE_CONDITION, null));
+	if (!logic.value && res.stats.oca) res.add(new Issue(Feedback.ONE_CONDITION, null));
 
 	// check for Mem>Del Counter
 	res.stats.mem_del = flat.filter(x => x.hits > 0 && x.isCmp() && x.op != '=' && x.lhs.value == x.rhs.value &&
@@ -349,7 +349,7 @@ function assess_logic(logic)
 				}
 				else if (req.flag != ReqFlag.RESETIF)
 				{
-					if (!foundrni && res.stats.reset_ifs == 0)
+					if (!logic.value && !foundrni && res.stats.reset_ifs == 0)
 						res.add(new Issue(Feedback.HIT_NO_RESET, req));
 				}
 			}
@@ -393,16 +393,18 @@ function assess_logic(logic)
 				// if the group has a Measured flag, give a slightly different warning
 				if (group_flags.has(ReqFlag.MEASURED) || group_flags.has(ReqFlag.MEASUREDP))
 					res.add(new Issue(Feedback.PAUSING_MEASURED, req));
-				else
+				else if (!logic.value)
 					res.add(new Issue(Feedback.UUO_PAUSE, req,
-						`Automated recommended change:<br/><pre><code>${invert_chain()}</code></pre>`));
+						["Automated recommended change:", `<pre><code>${invert_chain()}</code></pre>`]));
 			}
+			// TODO: ResetIf with a measured should be fine in a value
 			else if (req.flag == ReqFlag.RESETIF && !has_hits)
 				res.add(new Issue(Feedback.UUO_RESET, req,
-					`Automated recommended change:<br/><pre><code>${invert_chain()}</code></pre>`));
+					["Automated recommended change:", `<pre><code>${invert_chain()}</code></pre>`]));
 			else if (req.flag == ReqFlag.RESETIF && req.hits == 1)
 				res.add(new Issue(Feedback.RESET_HITCOUNT_1, req,
-					`Automated recommended change:<br/><pre><code>${invert_chain()}</code></pre>`));
+					["Automated recommended change:", `<pre><code>${invert_chain()}</code></pre>`]));
+			// TODO: ResetNextIf with a measured should be fine in a value
 			else if (req.flag == ReqFlag.RESETNEXTIF)
 			{
 				for (let i = ri + 1; i < g.length; i++)
@@ -438,7 +440,7 @@ function assess_writing(asset)
 		const links = [...titlecase_links(asset.title).entries()].map(
 			([i, url]) => `[<a href="${url}">${i+1}</a>]`).join(' ');
 		res.add(new Issue(Feedback.TITLE_CASE, 'title', 
-			`Automated suggestion: <em>${res.corrected_title}</em> &mdash; Additional suggestions: ${links}`));
+			[`Automated suggestion: <em>${res.corrected_title}</em> &mdash; Additional suggestions: ${links}`]));
 	}
 
 	if (asset.title.endsWith('.') && !asset.title.endsWith('..'))
@@ -455,15 +457,17 @@ function assess_writing(asset)
 		{
 			let corrected = asset[elt].replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
 			res.add(new Issue(Feedback.SPECIAL_CHARS, elt,
-				'"Smart" quotes are great for typography, but often don\'t render correctly in emulators<br/>' +
-				build_indicated_feedback(asset[elt], TYPOGRAPHY_PUNCT) + ` &xrArr; <code>${corrected}</code>`));
+				[
+					'"Smart" quotes are great for typography, but often don\'t render correctly in emulators',
+					build_indicated_feedback(asset[elt], TYPOGRAPHY_PUNCT) + ` &xrArr; <code>${corrected}</code>`,
+				]));
 		}
 		else if (FOREIGN_RE.test(asset[elt]))
 			res.add(new Issue(Feedback.FOREIGN_CHARS, elt,
-				build_indicated_feedback(asset[elt], FOREIGN_RE)));
+				[build_indicated_feedback(asset[elt], FOREIGN_RE)]));
 		else if (NON_ASCII_RE.test(asset[elt]))
 			res.add(new Issue(Feedback.SPECIAL_CHARS, elt,
-				build_indicated_feedback(asset[elt], NON_ASCII_RE)));
+				[build_indicated_feedback(asset[elt], NON_ASCII_RE)]));
 	}
 
 	if (/[\{\[\(](.+)[\}\]\)]/.test(asset.desc))
@@ -482,16 +486,41 @@ function assess_achievement(ach)
 	return res;
 }
 
+const ignore_feedback = {
+	'STA': new Set([]),
+	'CAN': new Set([
+		Feedback.ONE_CONDITION,
+		Feedback.MISSING_DELTA,
+	]),
+	'SUB': new Set([
+		Feedback.ONE_CONDITION,
+		Feedback.MISSING_DELTA,
+	]),
+	'VAL': new Set([]),
+}
 function assess_leaderboard(lb)
 {
 	// assess writing initially
 	let res = assess_writing(lb);
+	
+	for (let block of ["START", "CANCEL", "SUBMIT", "VALUE"])
+	{
+		const tag = block.substring(0, 3);
+		let comp_res = assess_logic(lb.components[tag]);
 
-	res.combine(assess_logic(lb.components['STA']));
+		// filter out ignored types
+		comp_res.issues = comp_res.issues.filter(x => !ignore_feedback[tag].has(x.type));
+
+		// add context for issues
+		for (let issue of comp_res.issues)
+			issue.detail.push(`(Issue located in ${block} group)`);
+
+		res.combine(comp_res);
+	}
 
 	res.stats.is_instant_submission = lb.components['SUB'].groups.every(g => g.every(req => req.isAlwaysTrue()));
 	res.stats.conditional_value = lb.components['VAL'].groups.length > 1 &&
-		lb.components['VAL'].groups.every(
+		lb.components['VAL'].groups.some(
 			g => 
 				g.some(req => req.flag == ReqFlag.MEASUREDIF) && 
 				g.some(req => req.flag == ReqFlag.MEASURED || req.flag == ReqFlag.MEASUREDP)
@@ -559,11 +588,11 @@ function assess_rich_presence()
 			if (d.condition != null)
 				for (const x of missing_notes(d.condition))
 					res.add(new Issue(Feedback.MISSING_NOTE_RP, null,
-						`Missing note for condition of display #${di+1}: <code>0x${x.addr.padStart(8, '0')}</code>`));
+						[`Missing note for condition of display #${di+1}: <code>0x${x.addr.padStart(8, '0')}</code>`]));
 			for (const [li, look] of d.lookups.entries())
 				for (const x of missing_notes(look.calc))
 					res.add(new Issue(Feedback.MISSING_NOTE_RP, null,
-						`Missing note for ${look.name} lookup of display #${di+1}: <code>0x${x.addr.padStart(8, '0')}</code>`));
+						[`Missing note for ${look.name} lookup of display #${di+1}: <code>0x${x.addr.padStart(8, '0')}</code>`]));
 		}
 
 	return res;
@@ -573,6 +602,7 @@ function assess_set()
 {
 	let res = new Assessment();
 	const achievements = all_achievements();
+	const leaderboards = all_leaderboards();
 	const achfeedback = [...current.assessment.achievements.values()];
 
 	// counts of achievement types
@@ -614,6 +644,13 @@ function assess_set()
 	for (const ach of achievements)
 		for (const flag of current.assessment.achievements.get(ach.id).stats.unique_flags)
 			res.stats.using_flag.set(flag, res.stats.using_flag.get(flag) + 1);
+
+	let lbtype = res.stats.leaderboards_by_type = new Map();
+	for (const lb of leaderboards)
+	{
+		let t = lb.getType();
+		lbtype.set(t, (lbtype.has(t) ? lbtype.get(t) : 0) + 1);
+	}
 
 	return res;
 }
