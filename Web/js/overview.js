@@ -467,6 +467,12 @@ function show_leaderboard(lb, row)
 
 	statsdiv.appendChild(document.createElement('h1'))
 		.appendChild(document.createTextNode('Statistics'));
+
+	let statslist = statsdiv.appendChild(document.createElement('ul'));
+	statslist.appendChild(document.createElement('li'))
+		.innerHTML = `Format: <code>${lb.format.name}</code>`;
+	statslist.appendChild(document.createElement('li'))
+		.innerHTML = `Lower is better? <strong>${lb.lower_is_better ? "yes" : "no"}</strong>`;
 	
 	let buttonpanel = statsdiv.appendChild(document.createElement('div'));
 	let statsbox = statsdiv.appendChild(document.createElement('div'));
@@ -606,6 +612,9 @@ function show_set_overview(sidebar)
 	let statslist = statsdiv.appendChild(document.createElement('ul'));
 	let sublist;
 
+	/*******************
+		ACHIEVEMENTS
+	*******************/
 	statslist.appendChild(document.createElement('li'))
 		.appendChild(document.createTextNode("Achievements"));
 	sublist = statslist.appendChild(document.createElement('ul'));
@@ -625,6 +634,33 @@ function show_set_overview(sidebar)
 	sublist.appendChild(document.createElement('li'))
 		.innerHTML = `<span title="~7 points per achievement is a good target">Average points</span>: ~${stats.avg_points.toFixed(1)}${avg_feedback}`;
 	
+	/*******************
+		LEADERBOARDS
+	*******************/
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode("Leaderboards"));
+	sublist = statslist.appendChild(document.createElement('ul'));
+
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `${stats.leaderboard_count} leaderboards &ndash; <span title="determined heuristically">type breakdown</span>: ` + 
+		[...stats.leaderboard_type.entries()].map(([k,v]) => `${v.length} ${k}`).join(', ');
+
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Instant submission leaderboards: ${stats.lb_instant_submission}`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Leaderboards with complex/conditional value: ${stats.lb_conditional_value}`;
+
+	
+	if (current.rp != null)
+	{
+		if (!current.assessment.rp.stats.is_dynamic_rp)
+			statslist.appendChild(document.createElement('li'))
+				.innerHTML = `<strong>No dynamic Rich Presence</strong> ⚠️`;
+	}
+	
+	/*******************
+		PROFICIENCIES
+	*******************/
 	statslist.appendChild(document.createElement('li'))
 		.appendChild(document.createTextNode("Proficiencies"));
 	sublist = statslist.appendChild(document.createElement('ul'));

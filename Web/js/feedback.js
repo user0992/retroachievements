@@ -630,7 +630,9 @@ function assess_rich_presence()
 	res.stats.cond_display = current.rp.display.filter(x => x.condition != null).length;
 	res.stats.max_lookups = Math.max(...current.rp.display.map(x => x.lookups.length));
 
-	if (res.stats.max_lookups == 0 && res.stats.cond_display == 0)
+	res.stats.is_dynamic_rp = res.stats.max_lookups > 0 || res.stats.cond_display > 0;
+
+	if (!res.stats.is_dynamic_rp)
 		res.add(new Issue(Feedback.NO_DYNAMIC_RP, null));
 	else if (res.stats.cond_display == 0)
 		res.add(new Issue(Feedback.NO_CONDITIONAL_DISPLAY, null));
@@ -654,10 +656,14 @@ function assess_rich_presence()
 function assess_set()
 {
 	let res = new Assessment();
+
 	const achievements = all_achievements();
-	const leaderboards = all_leaderboards();
 	const achfeedback = [...current.assessment.achievements.values()];
 
+	const leaderboards = all_leaderboards();
+	const lbfeedback = [...current.assessment.leaderboards.values()];
+
+	// ACHIEVEMENTS
 	// counts of achievement types
 	res.stats.achievement_count = achievements.length;
 	let achstate = res.stats.achievement_state = new Map(Object.values(AssetState).map(x => [x, 0]));
@@ -698,12 +704,17 @@ function assess_set()
 		for (const flag of current.assessment.achievements.get(ach.id).stats.unique_flags)
 			res.stats.using_flag.set(flag, res.stats.using_flag.get(flag) + 1);
 
-	let lbtype = res.stats.leaderboards_by_type = new Map();
+	// LEADERBOARDS
+	res.stats.leaderboard_count = leaderboards.length;
+	let lbtype = res.stats.leaderboard_type = new Map();
 	for (const lb of leaderboards)
 	{
 		let t = lb.getType();
-		lbtype.set(t, (lbtype.has(t) ? lbtype.get(t) : 0) + 1);
+		if (!lbtype.has(t)) lbtype.set(t, []);
+		lbtype.get(t).push(lb);
 	}
+	res.stats.lb_instant_submission = lbfeedback.filter(x => x.stats.is_instant_submission).length;
+	res.stats.lb_conditional_value = lbfeedback.filter(x => x.stats.conditional_value).length;
 
 	return res;
 }

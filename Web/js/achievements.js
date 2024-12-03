@@ -622,7 +622,7 @@ class RichPresence
 				structCleanup({ type: 'display', });
 			else if (obj && obj.type == 'macro')
 			{
-				if (line.startsWith('FormatType='))
+				if (line.startsWith('FormatType'))
 					obj.param = FormatTypeMap[line.substring(11)];
 			}
 			else if (obj && obj.type == 'lookup')
