@@ -169,11 +169,22 @@ class ReqOperand
 		catch (e) { throw new LogicParseError('operand', def); }
 	}
 
-	static equals(a, b)
+	canonicalize()
+	{
+		if (this.rhs == null || !FLIP_CMP.has(this.op)) return;
+		if (!this.lhs.type.addr && this.rhs.type.addr) // this is backwards
+		{
+			[this.lhs, this.rhs] = [this.rhs, this.lhs];
+			this.op = FLIP_CMP.get(this.op);
+		}
+	}
+
+	static sameValue(a, b)
 	{
 		if (a == b || a == null || b == null) return a == b;
-		return a.type == b.type && a.size == b.size && a.value == b.value;
+		return a.size == b.size && a.value == b.value;
 	}
+	static equals(a, b) { return ReqOperand.sameValue(a, b) && a.type == b.type; }
 
 	maxValue()
 	{

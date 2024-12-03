@@ -241,6 +241,64 @@ function make_issue_list_entry(ii, issue)
 	return text;
 }
 
+function get_logic_stats(stats, logic = null)
+{
+	let statslist = document.createElement('ul');
+
+	let sublist;
+	if (logic != null)
+		statslist.appendChild(document.createElement('li'))
+			.appendChild(document.createTextNode(`Memory Length: ${logic.mem.length}/65535`));
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Group Count: ${stats.group_count} (1 Core + ${z = stats.alt_groups} Alt${z == 1 ? '' : 's'})`));
+
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Requirement Count: ${stats.cond_count}`));
+	sublist = statslist.appendChild(document.createElement('ul'));
+	sublist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Max Requirements Per Group: ${stats.group_maxsize}`));
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<span title="A sequence of achievements linked by flags">Longest Chain</span>: ${stats.max_chain}`;
+	
+	let warn = stats.addresses.size <= 1 ? "☠️" : (stats.oca ? "⚠️" : "");
+	statslist.appendChild(document.createElement('li'))
+		.innerHTML = `Addresses: ${stats.addresses.size} (${stats.virtual_addresses.size} <span title="addresses constructed via a series of AddAddress flags">virtual addresses</span>) ${warn}`;
+
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode("Logic Features"));
+	sublist = statslist.appendChild(document.createElement('ul'));
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<code>Delta</code>s: ${stats.deltas} / <code>Prior</code>s: ${stats.priors} ${stats.deltas + stats.priors == 0 ? '⚠️': ''}`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Unique Flags: (${stats.unique_flags.size}) ` + 
+		[...stats.unique_flags].map(x => `<code>${x.name}</code>`).join(', ');
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<span title="Excluding 8-bit and Bit values">Unique Mem Sizes</span>: (${stats.unique_sizes.size}) ` +
+		[...stats.unique_sizes].map(x => `<code>${x.name}</code>`).join(', ');
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Unique Comparisons: (${stats.unique_cmps.size}) ` +
+		[...stats.unique_cmps].map(x => `<code>${x}</code>`).join(', ');
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `Source Modifications: ` +
+		[...stats.source_modification.entries()].filter(([op, c]) => c > 0).map(([op, c]) => `<code>${op}</code> (${c})`).join(', ');
+
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode(`Requirements with hitcounts: ${stats.hit_counts_one + stats.hit_counts_many}`));
+	sublist = statslist.appendChild(document.createElement('ul'));
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<span title="a checkpoint hit is a hitcount of 1, which locks when satisfied">Checkpoint hits</span>: ${stats.hit_counts_one}`;
+
+	statslist.appendChild(document.createElement('li'))
+		.appendChild(document.createTextNode("Pauses and Resets"));
+	sublist = statslist.appendChild(document.createElement('ul'));
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<code>PauseIf</code>s: ${stats.pause_ifs} (${z = stats.pause_locks} <span title="a PauseLock is a PauseIf with a hitcount">PauseLock${z == 1 ? '' : 's'}</span>)`;
+	sublist.appendChild(document.createElement('li'))
+		.innerHTML = `<code>ResetIf</code>s: ${stats.reset_ifs} (${stats.reset_with_hits} with hits)`;
+
+	return statslist;
+}
+
 function show_achievement(ach, row)
 {
 	let z;
@@ -306,57 +364,7 @@ function show_achievement(ach, row)
 		.appendChild(document.createTextNode('Statistics'));
 
 	const stats = feedback.stats;
-	let statslist = statsdiv.appendChild(document.createElement('ul'));
-
-	let sublist;
-	statslist.appendChild(document.createElement('li'))
-		.appendChild(document.createTextNode(`Memory Length: ${ach.logic.mem.length}/65535`));
-	statslist.appendChild(document.createElement('li'))
-		.appendChild(document.createTextNode(`Group Count: ${stats.group_count} (1 Core + ${z = stats.alt_groups} Alt${z == 1 ? '' : 's'})`));
-
-	statslist.appendChild(document.createElement('li'))
-		.appendChild(document.createTextNode(`Requirement Count: ${stats.cond_count}`));
-	sublist = statslist.appendChild(document.createElement('ul'));
-	sublist.appendChild(document.createElement('li'))
-		.appendChild(document.createTextNode(`Max Requirements Per Group: ${stats.group_maxsize}`));
-	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `<span title="A sequence of achievements linked by flags">Longest Chain</span>: ${stats.max_chain}`;
-	
-	let warn = stats.addresses.size <= 1 ? "☠️" : (stats.oca ? "⚠️" : "");
-	statslist.appendChild(document.createElement('li'))
-		.innerHTML = `Addresses: ${stats.addresses.size} (${stats.virtual_addresses.size} <span title="addresses constructed via a series of AddAddress flags">virtual addresses</span>) ${warn}`;
-
-	statslist.appendChild(document.createElement('li'))
-		.appendChild(document.createTextNode("Logic Features"));
-	sublist = statslist.appendChild(document.createElement('ul'));
-	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `<code>Delta</code>s: ${stats.deltas} / <code>Prior</code>s: ${stats.priors} ${stats.deltas + stats.priors == 0 ? '⚠️': ''}`;
-	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `Unique Flags: (${stats.unique_flags.size}) ` + 
-		[...stats.unique_flags].map(x => `<code>${x.name}</code>`).join(', ');
-	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `<span title="Excluding 8-bit and Bit values">Unique Mem Sizes</span>: (${stats.unique_sizes.size}) ` +
-		[...stats.unique_sizes].map(x => `<code>${x.name}</code>`).join(', ');
-	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `Unique Comparisons: (${stats.unique_cmps.size}) ` +
-		[...stats.unique_cmps].map(x => `<code>${x}</code>`).join(', ');
-	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `Source Modifications: ` +
-		[...stats.source_modification.entries()].filter(([op, c]) => c > 0).map(([op, c]) => `<code>${op}</code> (${c})`).join(', ');
-
-	statslist.appendChild(document.createElement('li'))
-		.appendChild(document.createTextNode(`Requirements with hitcounts: ${stats.hit_counts_one + stats.hit_counts_many}`));
-	sublist = statslist.appendChild(document.createElement('ul'));
-	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `<span title="a checkpoint hit is a hitcount of 1, which locks when satisfied">Checkpoint hits</span>: ${stats.hit_counts_one}`;
-
-	statslist.appendChild(document.createElement('li'))
-		.appendChild(document.createTextNode("Pauses and Resets"));
-	sublist = statslist.appendChild(document.createElement('ul'));
-	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `<code>PauseIf</code>s: ${stats.pause_ifs} (${z = stats.pause_locks} <span title="a PauseLock is a PauseIf with a hitcount">PauseLock${z == 1 ? '' : 's'}</span>)`;
-	sublist.appendChild(document.createElement('li'))
-		.innerHTML = `<code>ResetIf</code>s: ${stats.reset_ifs} (${stats.reset_with_hits} with hits)`;
+	statsdiv.appendChild(get_logic_stats(stats, ach.logic));
 
 	if (feedback.issues.length > 0)
 	{
@@ -459,11 +467,24 @@ function show_leaderboard(lb, row)
 
 	statsdiv.appendChild(document.createElement('h1'))
 		.appendChild(document.createTextNode('Statistics'));
+	
+	let buttonpanel = statsdiv.appendChild(document.createElement('div'));
+	let statsbox = statsdiv.appendChild(document.createElement('div'));
 
-	const stats = feedback.stats;
-	let statslist = statsdiv.appendChild(document.createElement('ul'));
-
-	// TODO
+	let buttons = ["START", "CANCEL", "SUBMIT", "VALUE"].map(c =>
+	{
+		let btn = document.createElement('button');
+		btn.appendChild(document.createTextNode(c));
+		btn.onclick = function() {
+			let tag = c.substring(0, 3);
+			let hdr = document.createElement('h2');
+			hdr.appendChild(document.createTextNode(c));
+			statsbox.replaceChildren(hdr, get_logic_stats(feedback.stats[tag], lb.components[tag]));
+		}
+		return btn;
+	});
+	buttonpanel.replaceChildren(...buttons);
+	buttons[0].click();
 
 	if (feedback.issues.length > 0)
 	{

@@ -105,6 +105,8 @@ const Feedback = Object.freeze({
 			'https://docs.retroachievements.org/developer-docs/delta-values.html',
 			'https://docs.retroachievements.org/developer-docs/prior-values.html',
 		], },
+	BAD_PRIOR: { severity: FeedbackSeverity.WARN, desc: "Invalid use of Prior. See below for more information.",
+		ref: ['https://docs.retroachievements.org/developer-docs/prior-values.html',], },
 	COMMON_ALT: { severity: FeedbackSeverity.INFO, desc: "If every alt group contains the same bit of logic in common, it can be refactored back into the Core group.",
 		ref: [], },
 	STALE_ADDADDRESS: { severity: FeedbackSeverity.WARN, desc: "AddAddress should only ever use Mem. Stale references with AddAddress can be dangerous.",
@@ -282,8 +284,51 @@ function assess_logic(logic)
 				[`Address <code>0x${x.addr.padStart(8, '0')}</code> missing note`]));
 	}
 
-	if (!logic.value && res.stats.deltas + res.stats.priors == 0)
-		res.add(new Issue(Feedback.MISSING_DELTA, null));
+	if (!logic.value)
+	{
+		if (res.stats.deltas + res.stats.priors == 0)
+			res.add(new Issue(Feedback.MISSING_DELTA, null));
+		else (res.stats.deltas == 0) // priors > 0, implicitly
+		{
+			const EQ_OPS = ['=', '!='];
+			for (const [gi, g] of logic.groups.entries())
+			{
+				for (const [ai, a] of g.entries())
+					if (ReqOperand.sameValue(a.lhs, a.rhs) && a.op == '!=')
+						if (new Set([ReqType.MEM, ReqType.PRIOR]).difference(new Set([a.lhs.type, a.rhs.type])).size == 0)
+							res.add(new Issue(Feedback.BAD_PRIOR, a,
+								["A memory value will always be not-equal to its prior, unless the value was has never changed."]));
+
+				function is_acc_value(x, acc)
+				{
+					const z = new Set([x.lhs.type, x.rhs.type]);
+					return z.has(acc) && (z.has(ReqType.VALUE) || z.has(ReqType.FLOAT));
+				}
+				for (const [ai, a] of g.entries())
+				{
+					if (EQ_OPS.includes(a.op) && is_acc_value(a, ReqType.PRIOR))
+					{
+						const [prior, avalue] = a.lhs.type == ReqType.PRIOR
+							? [a.lhs.type, a.rhs.type]
+							: [a.rhs.type, a.lhs.type];
+						const targetop = FLIP_CMP.get(a.op);
+						for (const [bi, b] of g.entries()) if (ai != bi)
+						{
+							if (b.op == targetop && is_acc_value(b, ReqType.MEM))
+							{
+								const [mem, bvalue] = b.lhs.type == ReqType.MEM
+									? [b.lhs.type, b.rhs.type]
+									: [b.rhs.type, b.lhs.type];
+								if (ReqOperand.equals(avalue, bvalue) && ReqOperand.sameValue(mem, prior))
+									res.add(new Issue(Feedback.BAD_PRIOR, a,
+										[`The prior comparison will always be true when <code>${b.toMarkdown()}</code>, unless the value was has never changed.`]));
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 
 	for (const [gi, g] of logic.groups.entries())
 	{
@@ -397,14 +442,14 @@ function assess_logic(logic)
 					res.add(new Issue(Feedback.UUO_PAUSE, req,
 						["Automated recommended change:", `<pre><code>${invert_chain()}</code></pre>`]));
 			}
-			// TODO: ResetIf with a measured should be fine in a value
 			else if (req.flag == ReqFlag.RESETIF && !has_hits)
-				res.add(new Issue(Feedback.UUO_RESET, req,
-					["Automated recommended change:", `<pre><code>${invert_chain()}</code></pre>`]));
+				// ResetIf with a measured should be fine in a value
+				if (!logic.value || g[i].flag == ReqFlag.MEASURED || g[i].flag == ReqFlag.MEASUREDP)
+					res.add(new Issue(Feedback.UUO_RESET, req,
+						["Automated recommended change:", `<pre><code>${invert_chain()}</code></pre>`]));
 			else if (req.flag == ReqFlag.RESETIF && req.hits == 1)
 				res.add(new Issue(Feedback.RESET_HITCOUNT_1, req,
 					["Automated recommended change:", `<pre><code>${invert_chain()}</code></pre>`]));
-			// TODO: ResetNextIf with a measured should be fine in a value
 			else if (req.flag == ReqFlag.RESETNEXTIF)
 			{
 				for (let i = ri + 1; i < g.length; i++)
@@ -415,8 +460,10 @@ function assess_logic(logic)
 					// if this is a combining flag like AddAddress or AndNext, the chain continues
 					if (COMBINING_MODIFIER_FLAGS.has(g[i].flag)) continue;
 
-					// otherwise, RNI was not valid
-					res.add(new Issue(Feedback.UUO_RNI, req));
+					// ResetNextIf with a measured should be fine in a value
+					if (!logic.value || g[i].flag == ReqFlag.MEASURED || g[i].flag == ReqFlag.MEASUREDP)
+						// otherwise, RNI was not valid
+						res.add(new Issue(Feedback.UUO_RNI, req));
 					break;
 				}
 			}
@@ -515,12 +562,18 @@ function assess_leaderboard(lb)
 		for (let issue of comp_res.issues)
 			issue.detail.push(`(Issue located in ${block} group)`);
 
+		// put the computed stats into a labeled group
+		let labeled = {};
+		labeled[tag] = comp_res.stats;
+		comp_res.stats = labeled;
+
 		res.combine(comp_res);
 	}
 
-	res.stats.is_instant_submission = lb.components['SUB'].groups.every(g => g.every(req => req.isAlwaysTrue()));
+	res.stats.is_instant_submission = lb.components['SUB'].groups.every(
+		g => g.every(req => req.isAlwaysTrue()));
 	res.stats.conditional_value = lb.components['VAL'].groups.length > 1 &&
-		lb.components['VAL'].groups.some(
+		lb.components['VAL'].groups.slice(1).some(
 			g => 
 				g.some(req => req.flag == ReqFlag.MEASUREDIF) && 
 				g.some(req => req.flag == ReqFlag.MEASURED || req.flag == ReqFlag.MEASUREDP)
