@@ -1,5 +1,7 @@
+if (typeof window !== 'undefined') {
 const sidebar = ReactDOM.createRoot(document.getElementById('list-body'));
 const container = ReactDOM.createRoot(document.getElementById('info-container'));
+}
 
 function clearSelected()
 {
@@ -967,7 +969,9 @@ function update()
 	current.assessment.notes = assess_code_notes(current.notes);
 	current.assessment.rp = assess_rich_presence(current.rp);
 	current.assessment.set = assess_set();
+if (typeof window !== 'undefined') {
 	sidebar.render(<SidebarTabs />);
+}
 }
 
 function load_achievement_set(json)
