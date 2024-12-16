@@ -3,8 +3,10 @@ const container = ReactDOM.createRoot(document.getElementById('info-container'))
 
 function clearSelected()
 {
-	for (let e of document.querySelectorAll('#list-body .selected'))
-		e.classList.remove('selected');
+	if (typeof window !== 'undefined') {
+		for (let e of document.querySelectorAll('#list-body .selected'))
+			e.classList.remove('selected');
+	}
 }
 
 var current = { id: -1, };
@@ -24,6 +26,7 @@ function __noop(event)
 	event.preventDefault();
 }
 
+if (typeof window !== 'undefined') {
 document.ondragover = __noop;
 document.ondragenter = __noop;
 
@@ -126,6 +129,7 @@ document.onkeydown = function(event)
 		event.preventDefault();
 		event.stopPropagation();
 	}
+}
 }
 
 function select_row(row)
@@ -995,3 +999,15 @@ function load_rich_presence(txt, from_file)
 		current.rp = RichPresence.fromText(txt);
 	update();
 }
+
+this.load_code_notes = load_code_notes
+this.load_achievement_set = load_achievement_set
+this.load_rich_presence = load_rich_presence
+this.load_user_file = load_user_file
+
+this.current = current
+this.update = update
+this.reset_loaded = reset_loaded
+this.all_achievements = all_achievements
+this.all_leaderboards = all_leaderboards
+this.SEVERITY_TO_CLASS = SEVERITY_TO_CLASS
